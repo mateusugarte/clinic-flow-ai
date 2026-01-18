@@ -71,7 +71,7 @@ export default function Agendas() {
         .gte("scheduled_at", startOfMonth.toISOString())
         .lte("scheduled_at", endOfMonth.toISOString());
       
-      if (selectedProfessional) {
+      if (selectedProfessional && selectedProfessional !== "all") {
         query = query.eq("professional_id", selectedProfessional);
       }
       
@@ -136,7 +136,7 @@ export default function Agendas() {
               <SelectValue placeholder="Todos profissionais" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               {professionals?.map((prof) => (
                 <SelectItem key={prof.id} value={prof.id}>
                   {prof.name}
