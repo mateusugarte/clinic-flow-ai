@@ -9,6 +9,12 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Agendas from "./pages/Agendas";
+import CRM from "./pages/CRM";
+import Clientes from "./pages/Clientes";
+import Servicos from "./pages/Servicos";
+import IAConfig from "./pages/IAConfig";
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,11 +38,12 @@ const App = () => (
                 }
               >
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/agendas" element={<Dashboard />} />
-                <Route path="/crm" element={<Dashboard />} />
-                <Route path="/clientes" element={<Dashboard />} />
-                <Route path="/servicos" element={<Dashboard />} />
-                <Route path="/ia-config" element={<Dashboard />} />
+                <Route path="/agendas" element={<Agendas />} />
+                <Route path="/crm" element={<CRM />} />
+                <Route path="/clientes" element={<Clientes />} />
+                <Route path="/servicos" element={<Servicos />} />
+                <Route path="/ia-config" element={<IAConfig />} />
+                <Route path="/relatorios" element={<Relatorios />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
