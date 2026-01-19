@@ -35,7 +35,6 @@ export default function IAConfig() {
 
   useEffect(() => {
     if (config) {
-      // Remove 55 prefix from stored phone numbers for display
       const removePrefix = (phone: string | null) => {
         if (!phone) return "";
         return phone.startsWith("55") ? phone.slice(2) : phone;
@@ -55,7 +54,6 @@ export default function IAConfig() {
 
   const saveConfig = useMutation({
     mutationFn: async () => {
-      // Add 55 prefix to phone numbers, remove spaces
       const addPrefix = (phone: string) => {
         if (!phone) return null;
         const cleaned = phone.replace(/\s/g, "").replace(/\D/g, "");
@@ -90,81 +88,114 @@ export default function IAConfig() {
   const addAddress = () => { if (newAddress.trim()) { setFormData({ ...formData, addresses: [...formData.addresses, newAddress.trim()] }); setNewAddress(""); } };
   const removeAddress = (index: number) => { setFormData({ ...formData, addresses: formData.addresses.filter((_, i) => i !== index) }); };
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (isLoading) return <div className="h-full flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold text-foreground">Agente de IA</h1><p className="text-muted-foreground">Configure o comportamento do seu agente</p></div>
+    <div className="h-full flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Agente de IA</h1>
+          <p className="text-sm text-muted-foreground">Configure o comportamento do seu agente</p>
+        </div>
         <Button onClick={() => saveConfig.mutate()} disabled={saveConfig.isPending} className="gradient-primary">
           {saveConfig.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}Salvar
         </Button>
       </div>
 
-      <Card className="shadow-card">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />Identidade</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>Nome da Clínica</Label><Input value={formData.clinic_name} onChange={(e) => setFormData({ ...formData, clinic_name: e.target.value })} placeholder="Clínica Exemplo" /></div>
-            <div className="space-y-2"><Label>Nome do Agente</Label><Input value={formData.agent_name} onChange={(e) => setFormData({ ...formData, agent_name: e.target.value })} placeholder="Sofia" /></div>
-            <div className="space-y-2"><Label>Proprietário</Label><Input value={formData.owner_name} onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })} placeholder="Dr. João Silva" /></div>
-            <div className="space-y-2"><Label>Telefone de Suporte</Label><Input value={formData.support_phone} onChange={(e) => setFormData({ ...formData, support_phone: e.target.value })} placeholder="(11) 99999-9999" /></div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>Horário de Funcionamento</Label><Input value={formData.opening_hours} onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })} placeholder="Seg a Sex 08:00-18:00" /></div>
-            <div className="space-y-2">
-              <Label>Número Conectado (WhatsApp)</Label>
-              <div className="flex gap-2"><span className="flex items-center px-3 bg-muted rounded-lg text-sm font-medium">+55</span><Input value={formData.connected_phone} onChange={(e) => setFormData({ ...formData, connected_phone: e.target.value.replace(/\D/g, "") })} placeholder="11999999999" /></div>
+      {/* Grid Layout - Fill Screen */}
+      <div className="flex-1 grid grid-cols-12 gap-4 auto-rows-min overflow-y-auto">
+        {/* Identity Card */}
+        <Card className="col-span-12 lg:col-span-6 shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" />Identidade</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-xs">Nome da Clínica</Label><Input value={formData.clinic_name} onChange={(e) => setFormData({ ...formData, clinic_name: e.target.value })} placeholder="Clínica Exemplo" /></div>
+              <div className="space-y-2"><Label className="text-xs">Nome do Agente</Label><Input value={formData.agent_name} onChange={(e) => setFormData({ ...formData, agent_name: e.target.value })} placeholder="Sofia" /></div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-xs">Proprietário</Label><Input value={formData.owner_name} onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })} placeholder="Dr. João Silva" /></div>
+              <div className="space-y-2"><Label className="text-xs">Telefone de Suporte</Label><Input value={formData.support_phone} onChange={(e) => setFormData({ ...formData, support_phone: e.target.value })} placeholder="(11) 99999-9999" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-xs">Horário de Funcionamento</Label><Input value={formData.opening_hours} onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })} placeholder="Seg a Sex 08:00-18:00" /></div>
+              <div className="space-y-2">
+                <Label className="text-xs">Número WhatsApp</Label>
+                <div className="flex gap-2"><span className="flex items-center px-3 bg-muted rounded-lg text-xs font-medium">+55</span><Input value={formData.connected_phone} onChange={(e) => setFormData({ ...formData, connected_phone: e.target.value.replace(/\D/g, "") })} placeholder="11999999999" /></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="shadow-card">
-        <CardHeader><CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" />Unidades</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2"><Input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Adicionar endereço..." onKeyDown={(e) => e.key === "Enter" && addAddress()} /><Button variant="outline" onClick={addAddress}><Plus className="h-4 w-4" /></Button></div>
-          <div className="space-y-2">
-            {formData.addresses.map((address, index) => (
-              <motion.div key={index} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <span className="text-sm">{address}</span>
-                <Button variant="ghost" size="icon" onClick={() => removeAddress(index)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-              </motion.div>
-            ))}
-            {formData.addresses.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum endereço cadastrado</p>}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Addresses Card */}
+        <Card className="col-span-12 lg:col-span-6 shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />Unidades</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Adicionar endereço..." onKeyDown={(e) => e.key === "Enter" && addAddress()} />
+              <Button variant="outline" onClick={addAddress} size="icon"><Plus className="h-4 w-4" /></Button>
+            </div>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {formData.addresses.map((address, index) => (
+                <motion.div key={index} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                  <span className="text-sm truncate">{address}</span>
+                  <Button variant="ghost" size="icon" onClick={() => removeAddress(index)} className="text-destructive hover:text-destructive h-7 w-7"><Trash2 className="h-3 w-3" /></Button>
+                </motion.div>
+              ))}
+              {formData.addresses.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">Nenhum endereço cadastrado</p>}
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="shadow-card">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5 text-primary" />Regras & Vendas</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2"><Label>Restrições / O que NÃO fazer</Label><Textarea value={formData.negative_constraints} onChange={(e) => setFormData({ ...formData, negative_constraints: e.target.value })} placeholder="Ex: Não mencionar concorrentes..." rows={3} /></div>
-          <div className="space-y-2"><Label>Política de Atraso</Label><Textarea value={formData.delay_policy} onChange={(e) => setFormData({ ...formData, delay_policy: e.target.value })} placeholder="Ex: Tolerância de 15 minutos..." rows={2} /></div>
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-            <div><Label className="text-base">Permitir Upsell</Label><p className="text-sm text-muted-foreground">O agente pode sugerir serviços adicionais</p></div>
-            <Switch checked={formData.allow_upsell} onCheckedChange={(checked) => setFormData({ ...formData, allow_upsell: checked })} />
-          </div>
-        </CardContent>
-      </Card>
+        {/* Rules Card */}
+        <Card className="col-span-12 lg:col-span-8 shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2"><Bot className="h-4 w-4 text-primary" />Regras & Vendas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Restrições / O que NÃO fazer</Label>
+                <Textarea value={formData.negative_constraints} onChange={(e) => setFormData({ ...formData, negative_constraints: e.target.value })} placeholder="Ex: Não mencionar concorrentes..." rows={3} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Política de Atraso</Label>
+                <Textarea value={formData.delay_policy} onChange={(e) => setFormData({ ...formData, delay_policy: e.target.value })} placeholder="Ex: Tolerância de 15 minutos..." rows={3} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div>
+                <Label className="text-sm">Permitir Upsell</Label>
+                <p className="text-xs text-muted-foreground">O agente pode sugerir serviços adicionais</p>
+              </div>
+              <Switch checked={formData.allow_upsell} onCheckedChange={(checked) => setFormData({ ...formData, allow_upsell: checked })} />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="shadow-card">
-        <CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5 text-primary" />Números de Gestão</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Números que receberão notificações sobre agendamentos e leads</p>
-          <div className="grid md:grid-cols-3 gap-4">
+        {/* Management Numbers Card */}
+        <Card className="col-span-12 lg:col-span-4 shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2"><Phone className="h-4 w-4 text-primary" />Números de Gestão</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">Números que receberão notificações</p>
             {[1, 2, 3].map((num) => (
-              <div key={num} className="space-y-2">
-                <Label>Número {num}</Label>
+              <div key={num} className="space-y-1">
+                <Label className="text-xs">Número {num}</Label>
                 <div className="flex gap-2">
-                  <span className="flex items-center px-3 bg-muted rounded-lg text-sm font-medium">+55</span>
-                  <Input value={formData[`Aut${num}` as keyof typeof formData] as string} onChange={(e) => setFormData({ ...formData, [`Aut${num}`]: e.target.value.replace(/\D/g, "") })} placeholder="11999999999" />
+                  <span className="flex items-center px-2 bg-muted rounded-lg text-xs font-medium">+55</span>
+                  <Input value={formData[`Aut${num}` as keyof typeof formData] as string} onChange={(e) => setFormData({ ...formData, [`Aut${num}`]: e.target.value.replace(/\D/g, "") })} placeholder="11999999999" className="text-sm" />
                 </div>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
-import { format, subDays, startOfDay } from "date-fns";
+import { StatusSelect } from "@/components/ui/status-select";
+import { useToast } from "@/hooks/use-toast";
+import { format, subDays, startOfDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type DateFilter = "7days" | "15days" | "30days" | "all";
@@ -24,6 +26,8 @@ const dateFilters: { label: string; value: DateFilter }[] = [
 
 export default function Clientes() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
@@ -78,6 +82,17 @@ export default function Clientes() {
     enabled: !!user && !!clients,
   });
 
+  const updateAppointmentStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: AppointmentStatus }) => {
+      const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast({ title: "Status atualizado!" });
+    },
+  });
+
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Header */}
@@ -114,7 +129,7 @@ export default function Clientes() {
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
                   <Badge variant="secondary" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" />{client.appointmentCount}</Badge>
-                  {client.lastAppointment && <span className="text-[10px] text-muted-foreground">{format(new Date(client.lastAppointment.scheduled_at), "dd/MM", { locale: ptBR })}</span>}
+                  {client.lastAppointment && <span className="text-[10px] text-muted-foreground">{format(parseISO(client.lastAppointment.scheduled_at), "dd/MM", { locale: ptBR })}</span>}
                 </div>
               </CardContent>
             </Card>
@@ -139,14 +154,18 @@ export default function Clientes() {
               <Label className="text-muted-foreground text-xs">Histórico de Agendamentos</Label>
               <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
                 {selectedClient.appointments?.map((apt: any) => (
-                  <div key={apt.id} onClick={() => { setSelectedAppointment(apt); setIsAppointmentModalOpen(true); }} className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
+                  <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{apt.serviceName || "Serviço"}</p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
+                        <p className="text-xs text-muted-foreground">{format(parseISO(apt.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
                       </div>
-                      <span className="text-xs text-muted-foreground">{statusLabels[apt.status as AppointmentStatus] || "Pendente"}</span>
+                      <StatusSelect 
+                        value={apt.status as AppointmentStatus} 
+                        onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} 
+                        size="sm" 
+                      />
                     </div>
                   </div>
                 ))}
@@ -163,13 +182,22 @@ export default function Clientes() {
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <StatusIndicator status={selectedAppointment.status as AppointmentStatus} size="lg" />
               <span className="font-medium text-lg">{statusLabels[selectedAppointment.status as AppointmentStatus]}</span>
+              <div className="ml-auto">
+                <StatusSelect 
+                  value={selectedAppointment.status as AppointmentStatus} 
+                  onValueChange={(status) => {
+                    updateAppointmentStatus.mutate({ id: selectedAppointment.id, status });
+                    setSelectedAppointment({ ...selectedAppointment, status });
+                  }} 
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-muted-foreground text-xs">Serviço</Label><p className="font-medium">{selectedAppointment.serviceName}</p></div>
               <div><Label className="text-muted-foreground text-xs">Profissional</Label><p>{selectedAppointment.professionalName || "N/A"}</p></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{format(parseISO(selectedAppointment.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
               <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
             </div>
             <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>

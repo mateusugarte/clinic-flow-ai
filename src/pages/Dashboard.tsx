@@ -180,7 +180,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch no-show risk appointments
+  // Fetch no-show risk appointments (status = 'risco')
   const { data: noShowRiskData } = useQuery({
     queryKey: ["no-show-risk", user?.id],
     queryFn: async () => {
@@ -188,7 +188,7 @@ export default function Dashboard() {
         .from("appointments")
         .select("*")
         .eq("user_id", user!.id)
-        .eq("no_show_risk", true)
+        .eq("status", "risco")
         .gte("scheduled_at", startOfDay(new Date()).toISOString());
       if (error) throw error;
       return data || [];
