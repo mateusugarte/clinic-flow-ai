@@ -309,91 +309,136 @@ export default function NutricaoConfirmacao() {
     return sentIds;
   }, [appointments]);
 
-  // Send confirmation webhook with streaming response
+  // Send confirmation webhook - ONE BY ONE for real-time progress
   const sendConfirmation = async () => {
     if (selectedAppointments.length === 0) {
       toast.error("Selecione pelo menos um agendamento");
       return;
     }
 
+    const appointmentsToSend = appointments.filter(apt => 
+      selectedAppointments.includes(apt.id)
+    );
+
     setSendingConfirmation(true);
     setSendProgress({
-      total: selectedAppointments.length,
+      total: appointmentsToSend.length,
       sent: 0,
       errors: 0,
       messages: [],
     });
     setSentAppointmentIds(new Set());
 
+    const successfulIds: string[] = [];
+    let sentCount = 0;
+    let errorCount = 0;
+
     try {
-      const appointmentsToSend = appointments.filter(apt => 
-        selectedAppointments.includes(apt.id)
-      );
+      // Process each appointment one by one
+      for (const apt of appointmentsToSend) {
+        const phone = apt.phoneNumber?.toString() || apt.lead?.phone || "N/A";
+        
+        // Update current phone being processed
+        setSendProgress(prev => prev ? {
+          ...prev,
+          currentPhone: phone,
+        } : null);
 
-      const payload = {
-        user_id: user?.id,
-        agendamentos: appointmentsToSend.map(apt => ({
-          ...apt,
-          lead: apt.lead || null,
-        })),
-      };
+        try {
+          const payload = {
+            user_id: user?.id,
+            agendamento: {
+              ...apt,
+              lead: apt.lead || null,
+            },
+          };
 
-      const response = await fetch(
-        "https://aula-n8n.riftvt.easypanel.host/webhook/3563be98-d85f-47b1-9eec-895f2a507258",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
+          const response = await fetch(
+            "https://aula-n8n.riftvt.easypanel.host/webhook/3563be98-d85f-47b1-9eec-895f2a507258",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+
+          const responseText = await response.text();
+          
+          if (response.ok) {
+            // Success
+            sentCount++;
+            successfulIds.push(apt.id);
+            setSentAppointmentIds(prev => new Set([...prev, apt.id]));
+            
+            setSendProgress(prev => prev ? {
+              ...prev,
+              sent: sentCount,
+              messages: [...prev.messages, { 
+                phone, 
+                success: true, 
+                message: responseText || "Enviado com sucesso" 
+              }],
+            } : null);
+
+            // Mark as sent in database immediately
+            await supabase
+              .from("appointments")
+              .update({ confirmacaoEnviada: true })
+              .eq("id", apt.id);
+          } else {
+            // Error from webhook
+            errorCount++;
+            setSendProgress(prev => prev ? {
+              ...prev,
+              errors: errorCount,
+              messages: [...prev.messages, { 
+                phone, 
+                success: false, 
+                message: responseText || `Erro ${response.status}` 
+              }],
+            } : null);
+          }
+        } catch (fetchError) {
+          // Network or other error
+          errorCount++;
+          setSendProgress(prev => prev ? {
+            ...prev,
+            errors: errorCount,
+            messages: [...prev.messages, { 
+              phone, 
+              success: false, 
+              message: "Erro de conexão" 
+            }],
+          } : null);
         }
-      );
 
-      if (!response.ok) {
-        throw new Error("Falha ao enviar confirmação");
+        // Small delay between requests to avoid overwhelming the webhook
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      // Try to read streamed response
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        await processStreamedResponse(reader, decoder, selectedAppointments.length);
-      }
-
-      // Mark successfully sent appointments in database
-      const idsToMark = selectedAppointments.filter(id => {
-        const apt = appointments.find(a => a.id === id);
-        if (!apt) return false;
-        // Check if this appointment was successfully sent (no error logged for its phone)
-        const phone = apt.phoneNumber?.toString() || apt.lead?.phone;
-        return !sendProgress?.messages.some(m => m.phone === phone && !m.success);
-      });
-
-      if (idsToMark.length > 0) {
-        await markConfirmationSentMutation.mutateAsync(idsToMark);
-      }
-
-      const finalProgress = sendProgress;
-      const successCount = finalProgress?.sent || selectedAppointments.length;
-      const errorCount = finalProgress?.errors || 0;
-
+      // Final notification
       if (errorCount > 0) {
-        toast.warning(`${successCount} enviado(s), ${errorCount} erro(s)`);
+        toast.warning(`${sentCount} enviado(s), ${errorCount} erro(s)`);
       } else {
-        toast.success(`Confirmação enviada para ${successCount} agendamento(s)!`);
+        toast.success(`Confirmação enviada para ${sentCount} agendamento(s)!`);
       }
       
       setSelectedAppointments([]);
+      queryClient.invalidateQueries({ queryKey: ["appointments-confirmacao"] });
     } catch (error) {
       console.error("Error sending confirmation:", error);
       toast.error("Erro ao enviar confirmação");
     } finally {
       setSendingConfirmation(false);
+      // Clear current phone
+      setSendProgress(prev => prev ? { ...prev, currentPhone: undefined } : null);
       // Keep progress visible for a moment before clearing
       setTimeout(() => {
         setSendProgress(null);
         setSentAppointmentIds(new Set());
-      }, 3000);
+      }, 5000);
     }
   };
 
