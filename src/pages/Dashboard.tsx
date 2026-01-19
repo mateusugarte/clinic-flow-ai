@@ -99,7 +99,8 @@ export default function Dashboard() {
     let startHour = 8;
     let endHour = 18;
     if (openingHours) {
-      const timeMatch = openingHours.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
+      // Match format like "seg a sex das 08:00 as 18:00" or "08:00 - 18:00"
+      const timeMatch = openingHours.match(/(\d{1,2}):(\d{2})\s*(?:[-–]|as|às)\s*(\d{1,2}):(\d{2})/i);
       if (timeMatch) {
         startHour = parseInt(timeMatch[1]);
         endHour = parseInt(timeMatch[3]);
