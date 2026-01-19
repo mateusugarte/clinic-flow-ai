@@ -3,14 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import {
-  Users,
-  Calendar,
-  Clock,
-  Moon,
-} from "lucide-react";
+import { Users, Calendar, Clock, Moon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { GlassButton } from "@/components/ui/glass-button";
+import { BlurFade } from "@/components/ui/blur-fade";
+import { WelcomeMessage } from "@/components/WelcomeMessage";
 import {
   XAxis,
   YAxis,
@@ -79,12 +76,10 @@ export default function Dashboard() {
 
   // Parse opening hours from config
   const parseOpeningHours = (openingHours: string | null | undefined) => {
-    // Default: 08:00-18:00
     let startHour = 8;
     let endHour = 18;
     
     if (openingHours) {
-      // Try to parse format like "Seg a Sex 08:00-18:00" or "08:00-18:00"
       const timeMatch = openingHours.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
       if (timeMatch) {
         startHour = parseInt(timeMatch[1]);
@@ -148,7 +143,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch after-hours appointments - based on scheduled_at time being outside opening hours
+  // Fetch after-hours appointments
   const { data: afterHoursData } = useQuery({
     queryKey: ["after-hours", user?.id, dateRange, aiConfig?.opening_hours],
     queryFn: async () => {
@@ -165,7 +160,6 @@ export default function Dashboard() {
       
       const afterHours = data?.filter((apt) => {
         const scheduledHour = new Date(apt.scheduled_at).getHours();
-        // Outside business hours: before start OR after end
         return scheduledHour < startHour || scheduledHour >= endHour;
       }).length || 0;
       
@@ -174,7 +168,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch chart data (appointments per day)
+  // Fetch chart data
   const { data: chartData } = useQuery({
     queryKey: ["chart-data", user?.id, dateRange],
     queryFn: async () => {
@@ -188,14 +182,12 @@ export default function Dashboard() {
       
       if (error) throw error;
       
-      // Group by day
       const grouped: Record<string, number> = {};
       data?.forEach((apt) => {
         const day = format(parseISO(apt.scheduled_at), "yyyy-MM-dd");
         grouped[day] = (grouped[day] || 0) + 1;
       });
 
-      // Fill missing days
       const days: { date: string; label: string; count: number }[] = [];
       const current = new Date(start);
       while (current <= end) {
@@ -228,27 +220,30 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Header with Welcome Message */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral da sua clínica</p>
+        <div className="space-y-1">
+          <WelcomeMessage />
+          <BlurFade delay={0.2} duration={0.5}>
+            <p className="text-muted-foreground">Visão geral da sua clínica</p>
+          </BlurFade>
         </div>
         
         {/* Date Filter */}
-        <div className="flex gap-2 flex-wrap">
-          {dateRanges.map((range) => (
-            <Button
-              key={range.value}
-              variant={dateRange === range.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(range.value)}
-              className={dateRange === range.value ? "gradient-primary" : ""}
-            >
-              {range.label}
-            </Button>
-          ))}
-        </div>
+        <BlurFade delay={0.3} duration={0.5}>
+          <div className="flex gap-2 flex-wrap">
+            {dateRanges.map((range) => (
+              <GlassButton
+                key={range.value}
+                variant={dateRange === range.value ? "primary" : "default"}
+                size="sm"
+                onClick={() => setDateRange(range.value)}
+              >
+                {range.label}
+              </GlassButton>
+            ))}
+          </div>
+        </BlurFade>
       </div>
 
       {/* KPI Cards */}
@@ -260,12 +255,14 @@ export default function Dashboard() {
       >
         {/* Leads Card */}
         <motion.div variants={itemVariants}>
-          <Card className="shadow-card hover:shadow-lg transition-shadow">
+          <Card className="shadow-card hover:shadow-card-hover transition-all duration-300 aurora-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Leads
               </CardTitle>
-              <Users className="h-5 w-5 text-primary" />
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{leadsData ?? 0}</div>
@@ -278,12 +275,14 @@ export default function Dashboard() {
 
         {/* Appointments Card */}
         <motion.div variants={itemVariants}>
-          <Card className="shadow-card hover:shadow-lg transition-shadow">
+          <Card className="shadow-card hover:shadow-card-hover transition-all duration-300 aurora-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Agendamentos
               </CardTitle>
-              <Calendar className="h-5 w-5 text-primary" />
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{appointmentsData ?? 0}</div>
@@ -296,12 +295,14 @@ export default function Dashboard() {
 
         {/* Time Saved Card - Featured */}
         <motion.div variants={itemVariants}>
-          <Card className="shadow-card hover:shadow-lg transition-shadow gradient-primary text-primary-foreground animate-pulse-glow">
+          <Card className="shadow-primary hover:shadow-lg transition-all duration-300 gradient-primary text-primary-foreground animate-pulse-glow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-primary-foreground/80">
                 Tempo Economizado
               </CardTitle>
-              <Clock className="h-5 w-5 text-primary-foreground" />
+              <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-primary-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
@@ -316,12 +317,14 @@ export default function Dashboard() {
 
         {/* After Hours Card */}
         <motion.div variants={itemVariants}>
-          <Card className="shadow-card hover:shadow-lg transition-shadow">
+          <Card className="shadow-card hover:shadow-card-hover transition-all duration-300 aurora-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Pós-horário
               </CardTitle>
-              <Moon className="h-5 w-5 text-primary" />
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Moon className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{afterHoursData ?? 0}</div>
@@ -334,12 +337,8 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Card className="shadow-card">
+      <BlurFade delay={0.5} duration={0.6}>
+        <Card className="shadow-card hover:shadow-card-hover transition-all duration-300">
           <CardHeader>
             <CardTitle>Evolução de Agendamentos</CardTitle>
           </CardHeader>
@@ -369,7 +368,7 @@ export default function Dashboard() {
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
-                      borderRadius: "0.5rem",
+                      borderRadius: "0.75rem",
                     }}
                     labelStyle={{ color: "hsl(var(--foreground))" }}
                   />
@@ -386,7 +385,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </BlurFade>
     </div>
   );
 }
