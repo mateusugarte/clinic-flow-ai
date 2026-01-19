@@ -1,17 +1,18 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, CheckCircle, XCircle, Send, ChevronLeft, ChevronRight, Clock, User, Phone, Briefcase, DollarSign, Edit2, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, CheckCircle, XCircle, Send, ChevronLeft, ChevronRight, Clock, User, Phone, Briefcase, DollarSign, Loader2, AlertTriangle, HourglassIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, startOfWeek, endOfWeek, addDays, isSameDay, startOfDay, endOfDay, isToday, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import { format, startOfWeek, endOfWeek, addDays, isSameDay, isToday, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatISOToDisplay, extractTimeFromISO } from "@/lib/dateUtils";
+import { formatISOToDisplay } from "@/lib/dateUtils";
 import { StatusSelect } from "@/components/ui/status-select";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,6 +51,14 @@ interface Appointment {
   };
 }
 
+interface SendProgress {
+  total: number;
+  sent: number;
+  errors: number;
+  currentPhone?: string;
+  messages: { phone: string; success: boolean; message: string }[];
+}
+
 export default function NutricaoConfirmacao() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -57,6 +66,8 @@ export default function NutricaoConfirmacao() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
   const [sendingConfirmation, setSendingConfirmation] = useState(false);
+  const [sendProgress, setSendProgress] = useState<SendProgress | null>(null);
+  const [sentAppointmentIds, setSentAppointmentIds] = useState<Set<string>>(new Set());
 
   // Fetch appointments with leads
   const { data: appointments = [], isLoading } = useQuery({
@@ -141,6 +152,30 @@ export default function NutricaoConfirmacao() {
       return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "cancelado";
     }), [appointments, weekStart, weekEnd]);
 
+  const selectedDayPending = useMemo(() => 
+    appointments.filter(apt => {
+      const aptDate = new Date(apt.scheduled_at);
+      return isSameDay(aptDate, selectedDate) && apt.status === "pendente";
+    }), [appointments, selectedDate]);
+
+  const weekPending = useMemo(() => 
+    appointments.filter(apt => {
+      const aptDate = new Date(apt.scheduled_at);
+      return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "pendente";
+    }), [appointments, weekStart, weekEnd]);
+
+  const selectedDayRisk = useMemo(() => 
+    appointments.filter(apt => {
+      const aptDate = new Date(apt.scheduled_at);
+      return isSameDay(aptDate, selectedDate) && apt.status === "risco";
+    }), [appointments, selectedDate]);
+
+  const weekRisk = useMemo(() => 
+    appointments.filter(apt => {
+      const aptDate = new Date(apt.scheduled_at);
+      return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "risco";
+    }), [appointments, weekStart, weekEnd]);
+
   // Get all appointments for selected date in calendar
   const selectedDateAppointments = useMemo(() => 
     appointments.filter(apt => {
@@ -201,7 +236,80 @@ export default function NutricaoConfirmacao() {
     setSelectedAppointments([]);
   };
 
-  // Send confirmation webhook
+  // Process streamed text response
+  const processStreamedResponse = useCallback(async (reader: ReadableStreamDefaultReader<Uint8Array>, decoder: TextDecoder, total: number) => {
+    let buffer = "";
+    const sentIds = new Set<string>();
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      
+      // Process complete lines
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        
+        try {
+          // Try to parse as JSON first
+          const data = JSON.parse(line);
+          const phone = data.phone || data.destinatario || data.recipient;
+          const success = data.success !== false && !data.error;
+          const message = data.message || data.error || (success ? "Enviado" : "Erro");
+          
+          if (phone) {
+            setSendProgress(prev => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                sent: prev.sent + (success ? 1 : 0),
+                errors: prev.errors + (success ? 0 : 1),
+                currentPhone: phone,
+                messages: [...prev.messages, { phone, success, message }],
+              };
+            });
+
+            // Find and mark the appointment as sent if successful
+            if (success) {
+              const apt = appointments.find(a => 
+                (a.phoneNumber?.toString() === phone || a.lead?.phone === phone)
+              );
+              if (apt) {
+                sentIds.add(apt.id);
+                setSentAppointmentIds(prev => new Set([...prev, apt.id]));
+              }
+            }
+          }
+        } catch {
+          // If not JSON, try to parse as text
+          const phoneMatch = line.match(/(\d{10,})/);
+          const isError = /erro|error|falha|fail/i.test(line);
+          
+          if (phoneMatch) {
+            const phone = phoneMatch[1];
+            setSendProgress(prev => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                sent: prev.sent + (isError ? 0 : 1),
+                errors: prev.errors + (isError ? 1 : 0),
+                currentPhone: phone,
+                messages: [...prev.messages, { phone, success: !isError, message: line }],
+              };
+            });
+          }
+        }
+      }
+    }
+    
+    return sentIds;
+  }, [appointments]);
+
+  // Send confirmation webhook with streaming response
   const sendConfirmation = async () => {
     if (selectedAppointments.length === 0) {
       toast.error("Selecione pelo menos um agendamento");
@@ -209,6 +317,14 @@ export default function NutricaoConfirmacao() {
     }
 
     setSendingConfirmation(true);
+    setSendProgress({
+      total: selectedAppointments.length,
+      sent: 0,
+      errors: 0,
+      messages: [],
+    });
+    setSentAppointmentIds(new Set());
+
     try {
       const appointmentsToSend = appointments.filter(apt => 
         selectedAppointments.includes(apt.id)
@@ -237,16 +353,47 @@ export default function NutricaoConfirmacao() {
         throw new Error("Falha ao enviar confirmação");
       }
 
-      // Mark as sent in database
-      await markConfirmationSentMutation.mutateAsync(selectedAppointments);
+      // Try to read streamed response
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        await processStreamedResponse(reader, decoder, selectedAppointments.length);
+      }
 
-      toast.success(`Confirmação enviada para ${selectedAppointments.length} agendamento(s)!`);
+      // Mark successfully sent appointments in database
+      const idsToMark = selectedAppointments.filter(id => {
+        const apt = appointments.find(a => a.id === id);
+        if (!apt) return false;
+        // Check if this appointment was successfully sent (no error logged for its phone)
+        const phone = apt.phoneNumber?.toString() || apt.lead?.phone;
+        return !sendProgress?.messages.some(m => m.phone === phone && !m.success);
+      });
+
+      if (idsToMark.length > 0) {
+        await markConfirmationSentMutation.mutateAsync(idsToMark);
+      }
+
+      const finalProgress = sendProgress;
+      const successCount = finalProgress?.sent || selectedAppointments.length;
+      const errorCount = finalProgress?.errors || 0;
+
+      if (errorCount > 0) {
+        toast.warning(`${successCount} enviado(s), ${errorCount} erro(s)`);
+      } else {
+        toast.success(`Confirmação enviada para ${successCount} agendamento(s)!`);
+      }
+      
       setSelectedAppointments([]);
     } catch (error) {
       console.error("Error sending confirmation:", error);
       toast.error("Erro ao enviar confirmação");
     } finally {
       setSendingConfirmation(false);
+      // Keep progress visible for a moment before clearing
+      setTimeout(() => {
+        setSendProgress(null);
+        setSentAppointmentIds(new Set());
+      }, 3000);
     }
   };
 
@@ -348,7 +495,19 @@ export default function NutricaoConfirmacao() {
   return (
     <div className="h-full flex flex-col gap-6 p-6 overflow-auto">
       {/* Header Stats - Week always fixed */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <StatCard 
+          title={`Pendentes ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
+          count={selectedDayPending.length} 
+          icon={HourglassIcon} 
+          color="bg-yellow-500/10 text-yellow-500" 
+        />
+        <StatCard 
+          title="Pendentes Semana" 
+          count={weekPending.length} 
+          icon={HourglassIcon} 
+          color="bg-yellow-500/10 text-yellow-500" 
+        />
         <StatCard 
           title={`Confirmados ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
           count={selectedDayConfirmed.length} 
@@ -360,6 +519,18 @@ export default function NutricaoConfirmacao() {
           count={weekConfirmed.length} 
           icon={CheckCircle} 
           color="bg-emerald-500/10 text-emerald-500" 
+        />
+        <StatCard 
+          title={`Risco ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
+          count={selectedDayRisk.length} 
+          icon={AlertTriangle} 
+          color="bg-orange-500/10 text-orange-500" 
+        />
+        <StatCard 
+          title="Risco Semana" 
+          count={weekRisk.length} 
+          icon={AlertTriangle} 
+          color="bg-orange-500/10 text-orange-500" 
         />
         <StatCard 
           title={`Cancelados ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
@@ -385,15 +556,36 @@ export default function NutricaoConfirmacao() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 min-h-0">
-            <Tabs defaultValue="confirmados" className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="confirmados">
+            <Tabs defaultValue="pendentes" className="h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
+                <TabsTrigger value="pendentes" className="text-xs px-2">
+                  Pendentes ({selectedDayPending.length})
+                </TabsTrigger>
+                <TabsTrigger value="confirmados" className="text-xs px-2">
                   Confirmados ({selectedDayConfirmed.length})
                 </TabsTrigger>
-                <TabsTrigger value="cancelados">
+                <TabsTrigger value="risco" className="text-xs px-2">
+                  Risco ({selectedDayRisk.length})
+                </TabsTrigger>
+                <TabsTrigger value="cancelados" className="text-xs px-2">
                   Cancelados ({selectedDayCancelled.length})
                 </TabsTrigger>
               </TabsList>
+              <TabsContent value="pendentes" className="flex-1 min-h-0 mt-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3 pr-4">
+                    {selectedDayPending.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        Nenhum agendamento pendente nesta data
+                      </p>
+                    ) : (
+                      selectedDayPending.map(apt => (
+                        <AppointmentCard key={apt.id} appointment={apt} />
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
               <TabsContent value="confirmados" className="flex-1 min-h-0 mt-0">
                 <ScrollArea className="h-[400px]">
                   <div className="space-y-3 pr-4">
@@ -403,6 +595,21 @@ export default function NutricaoConfirmacao() {
                       </p>
                     ) : (
                       selectedDayConfirmed.map(apt => (
+                        <AppointmentCard key={apt.id} appointment={apt} />
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="risco" className="flex-1 min-h-0 mt-0">
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3 pr-4">
+                    {selectedDayRisk.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        Nenhum agendamento com risco nesta data
+                      </p>
+                    ) : (
+                      selectedDayRisk.map(apt => (
                         <AppointmentCard key={apt.id} appointment={apt} />
                       ))
                     )}
@@ -508,22 +715,22 @@ export default function NutricaoConfirmacao() {
               </div>
             </div>
 
-            {/* Selected Date Appointments - Only pending */}
+            {/* Selected Date Appointments - Only pending - LARGER AREA */}
             <div className="flex-1 min-h-0 flex flex-col border-t pt-4">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h4 className="text-base font-medium">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-base font-medium truncate">
                     {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
                   </h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground truncate">
                     {pendingConfirmationAppointments.length} agendamento(s) aguardando confirmação
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={selectAllForDate}>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button variant="outline" size="sm" onClick={selectAllForDate} className="whitespace-nowrap">
                     Selecionar todos
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={clearSelection}>
+                  <Button variant="ghost" size="sm" onClick={clearSelection} className="whitespace-nowrap">
                     Limpar
                   </Button>
                 </div>
@@ -553,12 +760,74 @@ export default function NutricaoConfirmacao() {
                 </div>
               </ScrollArea>
 
-              {/* Send Confirmation Button */}
-              <div className="pt-4 border-t mt-4">
+              {/* Send Confirmation Button and Progress */}
+              <div className="pt-4 border-t mt-4 space-y-4">
+                {/* Progress Bar */}
+                {sendProgress && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-3 p-4 rounded-lg bg-muted/50 border"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Progresso do envio</span>
+                      <span className="text-muted-foreground">
+                        {sendProgress.sent + sendProgress.errors} / {sendProgress.total}
+                      </span>
+                    </div>
+                    
+                    <Progress 
+                      value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} 
+                      className="h-3"
+                    />
+                    
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1 text-emerald-500">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          {sendProgress.sent} enviado(s)
+                        </span>
+                        {sendProgress.errors > 0 && (
+                          <span className="flex items-center gap-1 text-red-500">
+                            <XCircle className="h-3.5 w-3.5" />
+                            {sendProgress.errors} erro(s)
+                          </span>
+                        )}
+                      </div>
+                      {sendProgress.currentPhone && (
+                        <span className="text-muted-foreground animate-pulse">
+                          Enviando: {sendProgress.currentPhone}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Recent Messages */}
+                    {sendProgress.messages.length > 0 && (
+                      <ScrollArea className="h-24 mt-2">
+                        <div className="space-y-1">
+                          {sendProgress.messages.slice(-5).map((msg, idx) => (
+                            <div 
+                              key={idx} 
+                              className={cn(
+                                "text-xs px-2 py-1 rounded flex items-center gap-2",
+                                msg.success ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+                              )}
+                            >
+                              {msg.success ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                              <span className="font-mono">{msg.phone}</span>
+                              <span className="truncate">{msg.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </motion.div>
+                )}
+
                 <Button 
                   onClick={sendConfirmation}
                   disabled={sendingConfirmation || selectedAppointments.length === 0}
-                  className="w-full gap-2 h-12 text-base"
+                  className="w-full gap-2 h-14 text-base font-semibold"
                   size="lg"
                 >
                   {sendingConfirmation ? (
@@ -574,7 +843,7 @@ export default function NutricaoConfirmacao() {
                   )}
                 </Button>
                 {isSameDay(selectedDate, confirmationTargetDate) && (
-                  <p className="text-sm text-center text-primary mt-3 font-medium">
+                  <p className="text-sm text-center text-primary font-medium">
                     📅 Data recomendada para envio de confirmações
                   </p>
                 )}
