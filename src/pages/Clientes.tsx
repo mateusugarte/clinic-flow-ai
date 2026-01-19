@@ -7,17 +7,14 @@ import { User, Phone, Mail, Calendar, TrendingUp, Star, Clock } from "lucide-rea
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
+import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type DateFilter = "7days" | "15days" | "30days" | "all";
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
 
-const statusColors: Record<AppointmentStatus, string> = {
-  pendente: "bg-yellow-500", confirmado: "bg-green-400", risco: "bg-orange-500", cancelado: "bg-red-500", atendido: "bg-green-400",
-};
 const statusLabels: Record<AppointmentStatus, string> = {
   pendente: "Pendente", confirmado: "Confirmado", risco: "Risco", cancelado: "Cancelado", atendido: "Atendido",
 };
@@ -29,9 +26,9 @@ export default function Clientes() {
   const { user } = useAuth();
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [isClientSheetOpen, setIsClientSheetOpen] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [isAppointmentSheetOpen, setIsAppointmentSheetOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
   const getFilterDate = () => {
     if (dateFilter === "all") return null;
@@ -102,7 +99,7 @@ export default function Clientes() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {clients?.map((client) => (
           <motion.div key={client.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => { setSelectedClient(client); setIsClientSheetOpen(true); }}>
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => { setSelectedClient(client); setIsClientModalOpen(true); }}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><User className="h-6 w-6 text-primary" /></div>
@@ -123,54 +120,73 @@ export default function Clientes() {
         {clients?.length === 0 && <div className="col-span-full text-center py-12 text-muted-foreground">Nenhum cliente encontrado.</div>}
       </motion.div>
 
-      <Sheet open={isClientSheetOpen} onOpenChange={setIsClientSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader><SheetTitle>Detalhes do Cliente</SheetTitle></SheetHeader>
-          {selectedClient && (
-            <div className="mt-6 space-y-6">
-              <div className="space-y-4">
-                <div><Label className="text-muted-foreground">Nome</Label><p className="font-medium">{selectedClient.name}</p></div>
-                <div><Label className="text-muted-foreground">Telefone</Label><p>{selectedClient.phone}</p></div>
-                <div><Label className="text-muted-foreground">Email</Label><p>{selectedClient.email || "Não informado"}</p></div>
-              </div>
-              <div>
-                <Label className="text-muted-foreground">Histórico de Agendamentos</Label>
-                <div className="mt-2 space-y-2">
-                  {selectedClient.appointments?.map((apt: any) => (
-                    <div key={apt.id} onClick={() => { setSelectedAppointment(apt); setIsAppointmentSheetOpen(true); }} className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${statusColors[apt.status as AppointmentStatus] || statusColors.pendente}`} />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{apt.serviceName || "Serviço"}</p>
-                          <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{statusLabels[apt.status as AppointmentStatus] || "Pendente"}</span>
+      {/* Client Detail Modal */}
+      <DetailModal
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
+        title="Detalhes do Cliente"
+      >
+        {selectedClient && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Nome</Label><p className="font-medium">{selectedClient.name}</p></div>
+              <div><Label className="text-muted-foreground text-xs">ID</Label><p className="font-mono text-sm">{selectedClient.id.slice(0, 8)}</p></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Telefone</Label><p>{selectedClient.phone}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Email</Label><p>{selectedClient.email || "Não informado"}</p></div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <Label className="text-muted-foreground text-xs">Histórico de Agendamentos</Label>
+              <div className="mt-3 space-y-2">
+                {selectedClient.appointments?.map((apt: any) => (
+                  <div 
+                    key={apt.id} 
+                    onClick={() => { setSelectedAppointment(apt); setIsAppointmentModalOpen(true); }} 
+                    className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{apt.serviceName || "Serviço"}</p>
+                        <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
                       </div>
+                      <span className="text-xs text-muted-foreground">{statusLabels[apt.status as AppointmentStatus] || "Pendente"}</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+          </div>
+        )}
+      </DetailModal>
 
-      <Sheet open={isAppointmentSheetOpen} onOpenChange={setIsAppointmentSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader><SheetTitle>Detalhes do Agendamento</SheetTitle></SheetHeader>
-          {selectedAppointment && (
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3"><div className={`w-4 h-4 rounded-full ${statusColors[selectedAppointment.status as AppointmentStatus]}`} /><span className="font-medium">{statusLabels[selectedAppointment.status as AppointmentStatus]}</span></div>
-              <div><Label className="text-muted-foreground">Serviço</Label><p>{selectedAppointment.serviceName}</p></div>
-              <div><Label className="text-muted-foreground">Profissional</Label><p>{selectedAppointment.professionalName || "N/A"}</p></div>
-              <div><Label className="text-muted-foreground">Data e Hora</Label><p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
-              <div><Label className="text-muted-foreground">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
-              <div><Label className="text-muted-foreground">Preço</Label><p>R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
-              {selectedAppointment.notes && <div><Label className="text-muted-foreground">Observações</Label><p>{selectedAppointment.notes}</p></div>}
+      {/* Appointment Detail Modal */}
+      <DetailModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+        title="Detalhes do Agendamento"
+      >
+        {selectedAppointment && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <StatusIndicator status={selectedAppointment.status as AppointmentStatus} size="lg" />
+              <span className="font-medium text-lg">{statusLabels[selectedAppointment.status as AppointmentStatus]}</span>
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Serviço</Label><p className="font-medium">{selectedAppointment.serviceName}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Profissional</Label><p>{selectedAppointment.professionalName || "N/A"}</p></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
+            </div>
+            <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
+            {selectedAppointment.notes && <div><Label className="text-muted-foreground text-xs">Observações</Label><p className="text-sm">{selectedAppointment.notes}</p></div>}
+          </div>
+        )}
+      </DetailModal>
     </div>
   );
 }

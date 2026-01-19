@@ -12,13 +12,12 @@ import {
   TrendingUp,
   Users,
   Calendar,
-  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
+import { DetailModal } from "@/components/ui/detail-modal";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -46,7 +45,7 @@ export default function CRM() {
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState<DateFilter>("30days");
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [isLeadSheetOpen, setIsLeadSheetOpen] = useState(false);
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
 
   const getFilterDate = () => {
@@ -68,6 +67,21 @@ export default function CRM() {
         .eq("user_id", user!.id)
         .gte("last_interaction", getFilterDate().toISOString())
         .order("last_interaction", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch appointments to calculate real conversion rate
+  const { data: appointments } = useQuery({
+    queryKey: ["appointments-for-conversion", user?.id, dateFilter],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("lead_id")
+        .eq("user_id", user!.id)
+        .gte("created_at", getFilterDate().toISOString());
       if (error) throw error;
       return data;
     },
@@ -100,10 +114,13 @@ export default function CRM() {
     }
   };
 
+  // Metrics calculation - CORRECTED conversion rate
   const totalLeads = leads?.length || 0;
   const leadsWithIA = leads?.filter(l => l.ia === "sim").length || 0;
-  const leadsAgendados = leads?.filter(l => l.qualification === "fez_agendamento").length || 0;
-  const conversionRate = totalLeads > 0 ? ((leadsAgendados / totalLeads) * 100).toFixed(1) : "0";
+  
+  // Conversion = unique leads that have at least one appointment / total leads
+  const uniqueLeadsWithAppointments = new Set(appointments?.map(a => a.lead_id) || []).size;
+  const conversionRate = totalLeads > 0 ? ((uniqueLeadsWithAppointments / totalLeads) * 100).toFixed(1) : "0";
 
   return (
     <div className="space-y-6">
@@ -134,7 +151,10 @@ export default function CRM() {
         </Card>
         <Card className="shadow-card">
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Taxa de Conversão</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{conversionRate}%</p></CardContent>
+          <CardContent>
+            <p className="text-2xl font-bold">{conversionRate}%</p>
+            <p className="text-xs text-muted-foreground">{uniqueLeadsWithAppointments} de {totalLeads} agendaram</p>
+          </CardContent>
         </Card>
       </div>
 
@@ -152,7 +172,7 @@ export default function CRM() {
                   draggable onDragStart={() => handleDragStart(lead.id)} onDragEnd={handleDragEnd}
                   className={`group cursor-grab active:cursor-grabbing ${draggedLead === lead.id ? "opacity-50" : ""}`}>
                   <Card className="shadow-sm hover:shadow-md transition-all border-l-4 border-l-primary"
-                    onClick={() => { setSelectedLead(lead); setIsLeadSheetOpen(true); }}>
+                    onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); }}>
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
@@ -183,26 +203,40 @@ export default function CRM() {
         ))}
       </div>
 
-      {/* Lead Sheet */}
-      <Sheet open={isLeadSheetOpen} onOpenChange={setIsLeadSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader><SheetTitle>Detalhes do Lead</SheetTitle></SheetHeader>
-          {selectedLead && (
-            <div className="mt-6 space-y-4">
-              <div><Label className="text-muted-foreground">Nome</Label><p className="font-medium">{selectedLead.name}</p></div>
-              <div><Label className="text-muted-foreground">ID</Label><p className="font-mono text-sm">{selectedLead.id.slice(0, 8)}</p></div>
-              <div><Label className="text-muted-foreground">Telefone</Label><p>{selectedLead.phone}</p></div>
-              <div><Label className="text-muted-foreground">Email</Label><p>{selectedLead.email || "Não informado"}</p></div>
-              <div><Label className="text-muted-foreground">Qualificação</Label><p>{columns.find(c => c.id === selectedLead.qualification)?.title || selectedLead.qualification}</p></div>
-              <div><Label className="text-muted-foreground">IA</Label><p>{selectedLead.ia === "sim" ? "Ativa" : "Pausada"}</p></div>
-              <div><Label className="text-muted-foreground">Última Interação</Label><p>{selectedLead.last_interaction ? format(new Date(selectedLead.last_interaction), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "N/A"}</p></div>
-              <div><Label className="text-muted-foreground">Tempo Economizado</Label><p>{selectedLead.tempo_economizado || 0} min</p></div>
-              {selectedLead.notes && <div><Label className="text-muted-foreground">Notas</Label><p>{selectedLead.notes}</p></div>}
-              {selectedLead.tags?.length > 0 && <div><Label className="text-muted-foreground">Tags</Label><div className="flex gap-1 flex-wrap mt-1">{selectedLead.tags.map((tag: string, i: number) => <Badge key={i} variant="secondary">{tag}</Badge>)}</div></div>}
+      {/* Lead Modal */}
+      <DetailModal
+        isOpen={isLeadModalOpen}
+        onClose={() => setIsLeadModalOpen(false)}
+        title="Detalhes do Lead"
+      >
+        {selectedLead && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Nome</Label><p className="font-medium">{selectedLead.name}</p></div>
+              <div><Label className="text-muted-foreground text-xs">ID</Label><p className="font-mono text-sm">{selectedLead.id.slice(0, 8)}</p></div>
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Telefone</Label><p>{selectedLead.phone}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Email</Label><p>{selectedLead.email || "Não informado"}</p></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Qualificação</Label><p>{columns.find(c => c.id === selectedLead.qualification)?.title || selectedLead.qualification}</p></div>
+              <div><Label className="text-muted-foreground text-xs">IA</Label><p>{selectedLead.ia === "sim" ? "Ativa" : "Pausada"}</p></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-muted-foreground text-xs">Última Interação</Label><p>{selectedLead.last_interaction ? format(new Date(selectedLead.last_interaction), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "N/A"}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Tempo Economizado</Label><p>{selectedLead.tempo_economizado || 0} min</p></div>
+            </div>
+            {selectedLead.notes && <div><Label className="text-muted-foreground text-xs">Notas</Label><p className="text-sm">{selectedLead.notes}</p></div>}
+            {selectedLead.tags?.length > 0 && (
+              <div>
+                <Label className="text-muted-foreground text-xs">Tags</Label>
+                <div className="flex gap-1 flex-wrap mt-1">{selectedLead.tags.map((tag: string, i: number) => <Badge key={i} variant="secondary">{tag}</Badge>)}</div>
+              </div>
+            )}
+          </div>
+        )}
+      </DetailModal>
     </div>
   );
 }
