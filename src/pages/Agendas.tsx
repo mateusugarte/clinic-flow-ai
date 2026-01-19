@@ -34,12 +34,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,16 +41,9 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
-
-const statusColors: Record<AppointmentStatus, string> = {
-  pendente: "bg-yellow-500",
-  confirmado: "bg-green-400",
-  risco: "bg-orange-500",
-  cancelado: "bg-red-500",
-  atendido: "bg-green-400",
-};
 
 const statusLabels: Record<AppointmentStatus, string> = {
   pendente: "Pendente",
@@ -573,132 +560,136 @@ export default function Agendas() {
         </CardContent>
       </Card>
 
-      {/* Day Sheet */}
-      <Sheet open={isDaySheetOpen} onOpenChange={setIsDaySheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>
-              {selectedDay && format(
-                new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay),
-                "dd 'de' MMMM",
-                { locale: ptBR }
-              )}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6 space-y-3">
-            {selectedDay && getAppointmentsForDay(selectedDay).length > 0 ? (
-              getAppointmentsForDay(selectedDay).map((apt) => (
-                <div
-                  key={apt.id}
-                  onClick={() => handleAppointmentClick(apt)}
-                  className="p-4 rounded-lg border hover:bg-muted/50 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${statusColors[apt.status as AppointmentStatus] || statusColors.pendente}`} />
-                    <div className="flex-1">
-                      <p className="font-medium">{apt.patientName || "Paciente"}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(apt.scheduled_at), "HH:mm")} - {apt.serviceName || "Serviço"}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {statusLabels[apt.status as AppointmentStatus] || "Pendente"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum agendamento neste dia
-              </p>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Appointment Details Sheet */}
-      <Sheet open={isAppointmentSheetOpen} onOpenChange={setIsAppointmentSheetOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Detalhes do Agendamento</SheetTitle>
-          </SheetHeader>
-          {selectedAppointment && (
-            <div className="mt-6 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className={`w-4 h-4 rounded-full ${statusColors[selectedAppointment.status as AppointmentStatus] || statusColors.pendente}`} />
-                <span className="font-medium">
-                  {statusLabels[selectedAppointment.status as AppointmentStatus] || "Pendente"}
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-muted-foreground">Paciente</Label>
-                  <p className="font-medium">{selectedAppointment.patientName || "Não informado"}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Lead ID</Label>
-                  <p className="font-mono text-sm">{selectedAppointment.lead_id?.slice(0, 8)}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Telefone</Label>
-                  <p>{selectedAppointment.phoneNumber || selectedAppointment.leads?.phone || "Não informado"}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Serviço</Label>
-                  <p>{selectedAppointment.serviceName || "Não informado"}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Profissional</Label>
-                  <p>{selectedAppointment.professionalName || "Não informado"}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Data e Hora</Label>
-                  <p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Duração</Label>
-                  <p>{selectedAppointment.duracao || 0} minutos</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Preço</Label>
-                  <p>R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p>
-                </div>
-                {selectedAppointment.notes && (
-                  <div>
-                    <Label className="text-muted-foreground">Observações</Label>
-                    <p>{selectedAppointment.notes}</p>
-                  </div>
-                )}
-                <div>
-                  <Label className="text-muted-foreground">Confirmação Enviada</Label>
-                  <p>{selectedAppointment.confirmacaoEnviada ? "Sim" : "Não"}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Risco de No-Show</Label>
-                  <p>{selectedAppointment.no_show_risk ? "Sim" : "Não"}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Criado em</Label>
-                  <p>{format(new Date(selectedAppointment.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
-                </div>
-              </div>
-
-              <Button
-                onClick={() => {
-                  setIsAppointmentSheetOpen(false);
-                  handleEditAppointment(selectedAppointment);
-                }}
-                className="w-full"
-                variant="outline"
+      {/* Day Modal */}
+      <DetailModal
+        isOpen={isDaySheetOpen}
+        onClose={() => setIsDaySheetOpen(false)}
+        title={selectedDay ? `Agendamentos do dia ${format(
+          new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay),
+          "dd 'de' MMMM",
+          { locale: ptBR }
+        )}` : "Agendamentos"}
+      >
+        <div className="space-y-3">
+          {selectedDay && getAppointmentsForDay(selectedDay).length > 0 ? (
+            getAppointmentsForDay(selectedDay).map((apt) => (
+              <div
+                key={apt.id}
+                onClick={() => handleAppointmentClick(apt)}
+                className="p-4 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar Agendamento
-              </Button>
-            </div>
+                <div className="flex items-center gap-3">
+                  <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
+                  <div className="flex-1">
+                    <p className="font-medium">{apt.patientName || "Paciente"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(apt.scheduled_at), "HH:mm")} - {apt.serviceName || "Serviço"}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {statusLabels[apt.status as AppointmentStatus] || "Pendente"}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-muted-foreground py-8">
+              Nenhum agendamento neste dia
+            </p>
           )}
-        </SheetContent>
-      </Sheet>
+        </div>
+      </DetailModal>
+
+      {/* Appointment Details Modal */}
+      <DetailModal
+        isOpen={isAppointmentSheetOpen}
+        onClose={() => setIsAppointmentSheetOpen(false)}
+        title="Detalhes do Agendamento"
+      >
+        {selectedAppointment && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <StatusIndicator status={selectedAppointment.status as AppointmentStatus} size="lg" />
+              <span className="font-medium text-lg">
+                {statusLabels[selectedAppointment.status as AppointmentStatus] || "Pendente"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Paciente</Label>
+                <p className="font-medium">{selectedAppointment.patientName || "Não informado"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Lead ID</Label>
+                <p className="font-mono text-sm">{selectedAppointment.lead_id?.slice(0, 8)}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Telefone</Label>
+                <p>{selectedAppointment.phoneNumber || selectedAppointment.leads?.phone || "Não informado"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Serviço</Label>
+                <p>{selectedAppointment.serviceName || "Não informado"}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Profissional</Label>
+                <p>{selectedAppointment.professionalName || "Não informado"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Data e Hora</Label>
+                <p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Duração</Label>
+                <p>{selectedAppointment.duracao || 0} minutos</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Preço</Label>
+                <p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p>
+              </div>
+            </div>
+            {selectedAppointment.notes && (
+              <div>
+                <Label className="text-muted-foreground text-xs">Observações</Label>
+                <p className="text-sm">{selectedAppointment.notes}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Confirmação Enviada</Label>
+                <p>{selectedAppointment.confirmacaoEnviada ? "Sim" : "Não"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Risco de No-Show</Label>
+                <p>{selectedAppointment.no_show_risk ? "Sim" : "Não"}</p>
+              </div>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-xs">Criado em</Label>
+              <p>{format(new Date(selectedAppointment.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
+            </div>
+
+            <Button
+              onClick={() => {
+                setIsAppointmentSheetOpen(false);
+                handleEditAppointment(selectedAppointment);
+              }}
+              className="w-full"
+              variant="outline"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar Agendamento
+            </Button>
+          </div>
+        )}
+      </DetailModal>
 
       {/* New Appointment Dialog */}
       <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
