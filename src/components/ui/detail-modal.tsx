@@ -40,41 +40,41 @@ export function DetailModal({ isOpen, onClose, title, children, className }: Det
             onClick={onClose}
           />
           
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={cn(
-              "fixed z-50 inset-0 m-auto",
-              "w-[95vw] max-w-2xl h-fit max-h-[85vh] overflow-hidden",
-              "bg-card border border-border rounded-2xl shadow-2xl",
-              className
-            )}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
+          {/* Modal wrapper (true viewport centering) */}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={onClose}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
-              <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
-              >
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
-            
-            {/* Content */}
-            <div className="overflow-y-auto max-h-[calc(85vh-80px)] p-6">
-              {children}
-            </div>
-          </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className={cn(
+                "w-[95vw] max-w-2xl h-fit max-h-[85vh] overflow-hidden",
+                "bg-card border border-border rounded-2xl shadow-2xl",
+                className
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+                <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-full hover:bg-muted transition-colors"
+                  aria-label="Fechar"
+                >
+                  <X className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="overflow-y-auto max-h-[calc(85vh-80px)] p-6">
+                {children}
+              </div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
