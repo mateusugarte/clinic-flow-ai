@@ -27,6 +27,7 @@ export type Database = {
           delay_policy: string | null
           human_handoff_criteria: string | null
           id: string
+          instance_name: string | null
           negative_constraints: string | null
           opening_hours: string | null
           owner_name: string | null
@@ -46,6 +47,7 @@ export type Database = {
           delay_policy?: string | null
           human_handoff_criteria?: string | null
           id?: string
+          instance_name?: string | null
           negative_constraints?: string | null
           opening_hours?: string | null
           owner_name?: string | null
@@ -65,6 +67,7 @@ export type Database = {
           delay_policy?: string | null
           human_handoff_criteria?: string | null
           id?: string
+          instance_name?: string | null
           negative_constraints?: string | null
           opening_hours?: string | null
           owner_name?: string | null
