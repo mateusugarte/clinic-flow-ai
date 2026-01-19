@@ -47,11 +47,17 @@ export function DetailModal({ isOpen, onClose, title, children, className }: Det
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={cn(
-              "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-              "w-[95vw] max-w-2xl max-h-[85vh] overflow-hidden",
+              "fixed z-50 inset-0 m-auto",
+              "w-[95vw] max-w-2xl h-fit max-h-[85vh] overflow-hidden",
               "bg-card border border-border rounded-2xl shadow-2xl",
               className
             )}
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
