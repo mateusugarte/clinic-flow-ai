@@ -68,13 +68,8 @@ function formatMinutesToHours(minutes: number) {
   return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
 }
 
-function formatTimeFromISO(isoString: string): string {
-  // Parse ISO and format in local timezone (America/Sao_Paulo)
-  const date = new Date(isoString);
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
+// Import from dateUtils for consistent timezone handling
+import { extractTimeFromISO, extractHourFromISO } from "@/lib/dateUtils";
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange>("7days");
@@ -175,9 +170,8 @@ export default function Dashboard() {
       if (error) throw error;
       const { startHour, endHour } = parseOpeningHours(aiConfig?.opening_hours);
       const afterHours = data?.filter((apt) => {
-        // Get the local hour from the ISO string
-        const scheduledDate = new Date(apt.scheduled_at);
-        const scheduledHour = scheduledDate.getHours();
+        // Extract hour directly from ISO string to avoid timezone issues
+        const scheduledHour = extractHourFromISO(apt.scheduled_at);
         return scheduledHour < startHour || scheduledHour >= endHour;
       }).length || 0;
       return afterHours;
@@ -437,7 +431,7 @@ export default function Dashboard() {
                   <div key={apt.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{apt.patientName || "Paciente"}</span>
-                      <span className="text-xs text-muted-foreground">{formatTimeFromISO(apt.scheduled_at)}</span>
+                      <span className="text-xs text-muted-foreground">{extractTimeFromISO(apt.scheduled_at)}</span>
                     </div>
                     <StatusSelect
                       value={apt.status as AppointmentStatus}
@@ -501,7 +495,7 @@ export default function Dashboard() {
                   className="p-3 rounded-xl border bg-card/50 hover:bg-muted/50 cursor-pointer transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="text-lg font-bold text-primary">{formatTimeFromISO(apt.scheduled_at)}</div>
+                    <div className="text-lg font-bold text-primary">{extractTimeFromISO(apt.scheduled_at)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{apt.patientName || "Paciente"}</p>
                       <p className="text-xs text-muted-foreground truncate">{apt.serviceName}</p>

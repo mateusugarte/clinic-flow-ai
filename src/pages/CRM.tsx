@@ -14,8 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, startOfDay, parseISO } from "date-fns";
+import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { extractTimeFromISO, formatISOToShortDisplay } from "@/lib/dateUtils";
 
 type LeadQualification = "entrou_em_contato" | "respondendo_duvidas" | "repassando_disponibilidade" | "fez_agendamento" | "repassado_atendimento";
 type DateFilter = "today" | "7days" | "15days" | "30days";
@@ -317,7 +318,7 @@ export default function CRM() {
                               <div key={apt.id} className="flex items-center gap-2 text-[10px]">
                                 <StatusIndicator status={apt.status as AppointmentStatus} size="sm" />
                                 <span className="truncate">{apt.serviceName}</span>
-                                <span className="text-muted-foreground">{format(parseISO(apt.scheduled_at), "dd/MM HH:mm")}</span>
+                                <span className="text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)}</span>
                               </div>
                             ))}
                             {leadAppointments.length > 2 && (
@@ -374,7 +375,7 @@ export default function CRM() {
                         <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                         <div className="flex-1">
                           <p className="font-medium text-sm">{apt.serviceName}</p>
-                          <p className="text-xs text-muted-foreground">{format(parseISO(apt.scheduled_at), "dd/MM/yyyy HH:mm")} - {apt.professionalName}</p>
+                          <p className="text-xs text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)} - {apt.professionalName}</p>
                         </div>
                         <StatusSelect 
                           value={apt.status as AppointmentStatus} 

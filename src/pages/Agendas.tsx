@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isToday, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { extractTimeFromISO, extractDateTimeFromISO } from "@/lib/dateUtils";
 import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -213,10 +214,12 @@ export default function Agendas() {
   };
 
   const openEditAppointment = (apt: any) => {
+    // Use extractDateTimeFromISO to get correct time without timezone conversion
+    const { date, time } = extractDateTimeFromISO(apt.scheduled_at);
     setEditingAppointment({
       ...apt,
-      date: apt.scheduled_at ? format(parseISO(apt.scheduled_at), "yyyy-MM-dd") : "",
-      time: apt.scheduled_at ? format(parseISO(apt.scheduled_at), "HH:mm") : "",
+      date,
+      time,
     });
     setIsEditAppointmentOpen(true);
   };
@@ -404,7 +407,7 @@ export default function Agendas() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{apt.patientName || "Paciente"}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />{format(parseISO(apt.scheduled_at), "HH:mm")} - {apt.serviceName}
+                      <Clock className="h-3 w-3" />{extractTimeFromISO(apt.scheduled_at)} - {apt.serviceName}
                     </p>
                   </div>
                   <div onClick={(e) => e.stopPropagation()}>
@@ -542,7 +545,7 @@ export default function Agendas() {
                   <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                   <div className="flex-1">
                     <p className="font-medium text-sm">{apt.patientName || "Paciente"}</p>
-                    <p className="text-xs text-muted-foreground">{format(parseISO(apt.scheduled_at), "HH:mm")} - {apt.serviceName}</p>
+                    <p className="text-xs text-muted-foreground">{extractTimeFromISO(apt.scheduled_at)} - {apt.serviceName}</p>
                   </div>
                   <div onClick={(e) => e.stopPropagation()}>
                     <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
