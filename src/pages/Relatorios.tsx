@@ -58,7 +58,10 @@ export default function Relatorios() {
       const totalRevenue = appointments?.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0) || 0;
       const totalLeads = leads?.length || 0;
       const totalAppointments = appointments?.length || 0;
-      const conversionRate = totalLeads > 0 ? ((totalAppointments / totalLeads) * 100).toFixed(1) : 0;
+      
+      // Count unique clients (leads) with at least one appointment
+      const uniqueLeadsWithAppointments = new Set(appointments?.map(apt => apt.lead_id)).size;
+      const conversionRate = totalLeads > 0 ? ((uniqueLeadsWithAppointments / totalLeads) * 100).toFixed(1) : 0;
 
       // Status distribution
       const statusCounts: Record<string, number> = {};
