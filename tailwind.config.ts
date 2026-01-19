@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+// Add spinner animation
+
 export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
@@ -123,6 +125,20 @@ export default {
           from: { backgroundPosition: "50% 50%, 50% 50%" },
           to: { backgroundPosition: "350% 50%, 350% 50%" },
         },
+        "spinner-blade": {
+          "0%": { opacity: "0.85" },
+          "50%": { opacity: "0.25" },
+          "100%": { opacity: "0.25" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in-right": "slide-in-right 0.3s ease-out",
+        aurora: "aurora 60s linear infinite",
+        "spinner-blade": "spinner-blade 1s linear infinite",
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

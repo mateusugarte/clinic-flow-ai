@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Users, Calendar, Clock, Moon, TrendingUp, UserCheck, Briefcase } from "lucide-react";
+import { Users, Calendar, Clock, Moon, TrendingUp, UserCheck, Briefcase, User, Phone, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { WelcomeMessage } from "@/components/WelcomeMessage";
-import { EconomicCalendar, AgendaEvent } from "@/components/ui/economic-calendar";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import {
   XAxis,
   YAxis,
@@ -22,6 +24,15 @@ import { format, subDays, startOfDay, endOfDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type DateRange = "today" | "7days" | "15days" | "30days";
+type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
+
+const statusLabels: Record<AppointmentStatus, string> = {
+  pendente: "Pendente",
+  confirmado: "Confirmado",
+  risco: "Risco",
+  cancelado: "Cancelado",
+  atendido: "Atendido",
+};
 
 const dateRanges: { label: string; value: DateRange }[] = [
   { label: "Hoje", value: "today" },
@@ -55,8 +66,16 @@ function formatMinutesToHours(minutes: number) {
   return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
 }
 
+// Format time from ISO date correctly
+function formatTimeFromISO(isoString: string): string {
+  const date = new Date(isoString);
+  return format(date, "HH:mm", { locale: ptBR });
+}
+
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange>("7days");
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const { user } = useAuth();
   const { start, end } = getDateRange(dateRange);
 
@@ -206,7 +225,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch today's appointments for Economic Calendar
+  // Fetch today's appointments - FIX: format time correctly from ISO
   const { data: todayAppointments } = useQuery({
     queryKey: ["today-appointments", user?.id],
     queryFn: async () => {
@@ -222,16 +241,24 @@ export default function Dashboard() {
         .order("scheduled_at");
       
       if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch recent leads (by created_at)
+  const { data: recentLeads } = useQuery({
+    queryKey: ["recent-leads", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
       
-      return data?.map((apt): AgendaEvent => ({
-        id: apt.id,
-        time: format(new Date(apt.scheduled_at), "HH:mm"),
-        patientName: apt.patientName || "Paciente",
-        serviceName: apt.serviceName,
-        professionalName: apt.professionalName,
-        status: (apt.status as AgendaEvent['status']) || 'pendente',
-        duration: apt.duracao,
-      })) || [];
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!user,
   });
@@ -275,6 +302,11 @@ export default function Dashboard() {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
+  };
+
+  const handleAppointmentClick = (apt: any) => {
+    setSelectedAppointment(apt);
+    setIsAppointmentModalOpen(true);
   };
 
   return (
@@ -513,13 +545,183 @@ export default function Dashboard() {
         </Card>
       </BlurFade>
 
-      {/* Today's Appointments */}
-      <BlurFade delay={0.6} duration={0.6}>
-        <EconomicCalendar
-          title="Agendamentos de Hoje"
-          events={todayAppointments || []}
-        />
-      </BlurFade>
+      {/* Two Column Layout: Today's Appointments + Recent Leads */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Today's Appointments - Clickable */}
+        <BlurFade delay={0.6} duration={0.6}>
+          <Card className="shadow-card h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Agendamentos de Hoje
+                <Badge variant="secondary" className="ml-auto">
+                  {todayAppointments?.length || 0}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+              {todayAppointments && todayAppointments.length > 0 ? (
+                todayAppointments.map((apt) => (
+                  <motion.div
+                    key={apt.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleAppointmentClick(apt)}
+                    className="p-4 rounded-xl border bg-card/50 hover:bg-muted/50 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl font-bold text-primary">
+                        {formatTimeFromISO(apt.scheduled_at)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{apt.patientName || "Paciente"}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {apt.serviceName || "Serviço"}
+                        </p>
+                      </div>
+                      <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>{apt.professionalName || "Profissional"}</span>
+                      <span>•</span>
+                      <span>{apt.duracao || 0} min</span>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum agendamento para hoje
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </BlurFade>
+
+        {/* Recent Leads */}
+        <BlurFade delay={0.7} duration={0.6}>
+          <Card className="shadow-card h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                Leads Mais Recentes
+                <Badge variant="secondary" className="ml-auto">
+                  {recentLeads?.length || 0}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+              {recentLeads && recentLeads.length > 0 ? (
+                recentLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className="p-4 rounded-xl border bg-card/50 hover:bg-muted/50 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{lead.name}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {lead.phone}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(lead.created_at), "dd/MM", { locale: ptBR })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(lead.created_at), "HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    {lead.tags && lead.tags.length > 0 && (
+                      <div className="mt-2 flex gap-1 flex-wrap">
+                        {lead.tags.slice(0, 3).map((tag: string, i: number) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum lead recente
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </BlurFade>
+      </div>
+
+      {/* Appointment Detail Modal */}
+      <DetailModal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+        title="Detalhes do Agendamento"
+      >
+        {selectedAppointment && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <StatusIndicator status={selectedAppointment.status as AppointmentStatus} size="lg" />
+              <span className="font-medium text-lg">
+                {statusLabels[selectedAppointment.status as AppointmentStatus] || "Pendente"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Paciente</Label>
+                <p className="font-medium">{selectedAppointment.patientName || "Não informado"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Lead ID</Label>
+                <p className="font-mono text-sm">{selectedAppointment.lead_id?.slice(0, 8)}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Telefone</Label>
+                <p>{selectedAppointment.phoneNumber || "Não informado"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Serviço</Label>
+                <p>{selectedAppointment.serviceName || "Não informado"}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Profissional</Label>
+                <p>{selectedAppointment.professionalName || "Não informado"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Data e Hora</Label>
+                <p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-muted-foreground text-xs">Duração</Label>
+                <p>{selectedAppointment.duracao || 0} minutos</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground text-xs">Preço</Label>
+                <p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p>
+              </div>
+            </div>
+            {selectedAppointment.notes && (
+              <div>
+                <Label className="text-muted-foreground text-xs">Observações</Label>
+                <p className="text-sm">{selectedAppointment.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </DetailModal>
     </div>
   );
 }

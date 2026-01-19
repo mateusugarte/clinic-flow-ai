@@ -45,6 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { GlassCalendar } from "@/components/ui/glass-calendar";
+import ProfessionalsTable from "@/components/ui/professionals-table";
 
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
 
@@ -550,7 +551,16 @@ export default function Agendas() {
         onNewAppointment={() => setIsNewAppointmentOpen(true)}
       />
 
-      {/* Calendar */}
+      {/* Professionals Table */}
+      <ProfessionalsTable
+        professionals={allProfessionals || []}
+        services={services || []}
+        onToggleActive={(id, isActive) => toggleProfessionalActive.mutate({ id, is_active: isActive })}
+        onRowClick={(prof) => {
+          setEditingProfessional(prof);
+          setIsEditProfOpen(true);
+        }}
+      />
       <Card className="shadow-card">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
