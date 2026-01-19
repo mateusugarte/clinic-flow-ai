@@ -13,6 +13,7 @@ import { StatusSelect } from "@/components/ui/status-select";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatISOToDisplay, extractTimeFromISO } from "@/lib/dateUtils";
 
 type DateFilter = "7days" | "15days" | "30days" | "all";
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
@@ -159,7 +160,7 @@ export default function Clientes() {
                       <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{apt.serviceName || "Serviço"}</p>
-                        <p className="text-xs text-muted-foreground">{format(parseISO(apt.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
+                        <p className="text-xs text-muted-foreground">{formatISOToDisplay(apt.scheduled_at)}</p>
                       </div>
                       <StatusSelect 
                         value={apt.status as AppointmentStatus} 
@@ -197,7 +198,7 @@ export default function Clientes() {
               <div><Label className="text-muted-foreground text-xs">Profissional</Label><p>{selectedAppointment.professionalName || "N/A"}</p></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{format(parseISO(selectedAppointment.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{formatISOToDisplay(selectedAppointment.scheduled_at)}</p></div>
               <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
             </div>
             <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
