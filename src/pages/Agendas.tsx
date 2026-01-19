@@ -43,6 +43,8 @@ export default function Agendas() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isAppointmentSheetOpen, setIsAppointmentSheetOpen] = useState(false);
+  const [isEditAppointmentOpen, setIsEditAppointmentOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<any>(null);
   const [isDaySheetOpen, setIsDaySheetOpen] = useState(false);
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [appointmentTab, setAppointmentTab] = useState<"existing" | "new">("existing");
@@ -175,6 +177,28 @@ export default function Agendas() {
     },
   });
 
+  const updateAppointment = useMutation({
+    mutationFn: async (data: { id: string; service_id: string; professional_id: string; scheduled_at: string; notes: string; serviceName: string; professionalName: string; duracao: number; price: number }) => {
+      const { error } = await supabase.from("appointments").update({
+        service_id: data.service_id,
+        professional_id: data.professional_id,
+        scheduled_at: data.scheduled_at,
+        notes: data.notes,
+        serviceName: data.serviceName,
+        professionalName: data.professionalName,
+        duracao: data.duracao,
+        price: data.price,
+      }).eq("id", data.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      setIsEditAppointmentOpen(false);
+      setEditingAppointment(null);
+      toast({ title: "Agendamento atualizado!" });
+    },
+  });
+
   const resetAppointmentForm = () => {
     setSelectedLead(null);
     setLeadSearch("");
@@ -186,6 +210,33 @@ export default function Agendas() {
     setNewLeadName("");
     setNewLeadPhone("");
     setAppointmentTab("existing");
+  };
+
+  const openEditAppointment = (apt: any) => {
+    setEditingAppointment({
+      ...apt,
+      date: apt.scheduled_at ? format(parseISO(apt.scheduled_at), "yyyy-MM-dd") : "",
+      time: apt.scheduled_at ? format(parseISO(apt.scheduled_at), "HH:mm") : "",
+    });
+    setIsEditAppointmentOpen(true);
+  };
+
+  const handleUpdateAppointment = () => {
+    if (!editingAppointment) return;
+    const service = allServices?.find(s => s.id === editingAppointment.service_id);
+    const professional = allProfessionals?.find(p => p.id === editingAppointment.professional_id);
+    const scheduledAt = new Date(`${editingAppointment.date}T${editingAppointment.time}`);
+    updateAppointment.mutate({
+      id: editingAppointment.id,
+      service_id: editingAppointment.service_id,
+      professional_id: editingAppointment.professional_id,
+      scheduled_at: scheduledAt.toISOString(),
+      notes: editingAppointment.notes || "",
+      serviceName: service?.name || "",
+      professionalName: professional?.name || "",
+      duracao: service?.duration || 0,
+      price: service?.price || 0,
+    });
   };
 
   const getAppointmentsForDay = (date: Date) => {
@@ -347,7 +398,7 @@ export default function Agendas() {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-2">
             {todaysAppointments.length > 0 ? todaysAppointments.map((apt) => (
-              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => openEditAppointment(apt)}>
                 <div className="flex items-center gap-3">
                   <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                   <div className="flex-1 min-w-0">
@@ -356,7 +407,9 @@ export default function Agendas() {
                       <Clock className="h-3 w-3" />{format(parseISO(apt.scheduled_at), "HH:mm")} - {apt.serviceName}
                     </p>
                   </div>
-                  <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+                  </div>
                 </div>
               </div>
             )) : (
@@ -484,14 +537,16 @@ export default function Agendas() {
         <div className="space-y-3">
           {selectedDay && getAppointmentsForDay(selectedDay).length > 0 ? (
             getAppointmentsForDay(selectedDay).map((apt) => (
-              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => { setIsDaySheetOpen(false); openEditAppointment(apt); }}>
                 <div className="flex items-center gap-3">
                   <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                   <div className="flex-1">
                     <p className="font-medium text-sm">{apt.patientName || "Paciente"}</p>
                     <p className="text-xs text-muted-foreground">{format(parseISO(apt.scheduled_at), "HH:mm")} - {apt.serviceName}</p>
                   </div>
-                  <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+                  </div>
                 </div>
               </div>
             ))
@@ -540,6 +595,69 @@ export default function Agendas() {
               {createAppointment.isPending ? "Criando..." : "Criar Agendamento"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Appointment Dialog */}
+      <Dialog open={isEditAppointmentOpen} onOpenChange={setIsEditAppointmentOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Agendamento</DialogTitle></DialogHeader>
+          {editingAppointment && (
+            <div className="space-y-4 pt-2">
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-xs text-muted-foreground">Paciente</Label>
+                <p className="font-medium">{editingAppointment.patientName || "Paciente"}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <StatusSelect 
+                  value={editingAppointment.status as AppointmentStatus} 
+                  onValueChange={(status) => {
+                    setEditingAppointment({ ...editingAppointment, status });
+                    updateAppointmentStatus.mutate({ id: editingAppointment.id, status });
+                  }} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Serviço</Label>
+                <Select value={editingAppointment.service_id} onValueChange={(v) => setEditingAppointment({ ...editingAppointment, service_id: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {allServices?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Profissional</Label>
+                <Select value={editingAppointment.professional_id} onValueChange={(v) => setEditingAppointment({ ...editingAppointment, professional_id: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {allProfessionals?.filter(p => p.is_active).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Data</Label>
+                  <Input type="date" value={editingAppointment.date} onChange={(e) => setEditingAppointment({ ...editingAppointment, date: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Hora</Label>
+                  <Input type="time" value={editingAppointment.time} onChange={(e) => setEditingAppointment({ ...editingAppointment, time: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Textarea value={editingAppointment.notes || ""} onChange={(e) => setEditingAppointment({ ...editingAppointment, notes: e.target.value })} />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditAppointmentOpen(false)}>Cancelar</Button>
+                <Button className="gradient-primary" onClick={handleUpdateAppointment} disabled={updateAppointment.isPending}>
+                  {updateAppointment.isPending ? "Salvando..." : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

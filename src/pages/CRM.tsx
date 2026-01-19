@@ -99,7 +99,7 @@ export default function CRM() {
         .from("appointments")
         .select("lead_id, id, scheduled_at, serviceName, professionalName, status, price")
         .eq("user_id", user!.id)
-        .gte("created_at", getFilterDate().toISOString());
+        .gte("scheduled_at", getFilterDate().toISOString());
       if (error) throw error;
       return data;
     },

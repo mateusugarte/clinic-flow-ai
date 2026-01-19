@@ -26,7 +26,9 @@ const GitHubCalendar = ({
 }: GitHubCalendarProps) => {
   const [contributions, setContributions] = useState<{ date: Date; count: number }[]>([]);
   const today = new Date();
-  const startDate = subDays(today, 364);
+  // Show current year from Jan 1st
+  const currentYear = today.getFullYear();
+  const startDate = new Date(currentYear, 0, 1);
   const weeks = 53;
 
   useEffect(() => {
