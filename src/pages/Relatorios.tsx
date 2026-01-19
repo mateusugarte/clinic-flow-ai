@@ -18,14 +18,14 @@ import {
   TrendingUp,
   Users,
   Calendar,
-  Clock,
   DollarSign,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { GitHubCalendar } from "@/components/ui/github-calendar";
+import { format, subDays, startOfDay, subYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const COLORS = ["hsl(0, 84%, 60%)", "hsl(0, 70%, 50%)", "hsl(0, 60%, 45%)", "hsl(0, 50%, 40%)"];
+const COLORS = ["hsl(var(--primary))", "hsl(var(--primary) / 0.7)", "hsl(var(--primary) / 0.5)", "hsl(var(--primary) / 0.3)"];
 
 export default function Relatorios() {
   const { user } = useAuth();
@@ -70,8 +70,16 @@ export default function Relatorios() {
         statusCounts[status] = (statusCounts[status] || 0) + 1;
       });
 
+      const statusLabels: Record<string, string> = {
+        pendente: "Pendente",
+        confirmado: "Confirmado",
+        risco: "Risco",
+        cancelado: "Cancelado",
+        atendido: "Atendido",
+      };
+
       const statusData = Object.entries(statusCounts).map(([name, value]) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
+        name: statusLabels[name] || name,
         value,
       }));
 
@@ -94,6 +102,35 @@ export default function Relatorios() {
         statusData,
         chartData,
       };
+    },
+    enabled: !!user,
+  });
+
+  // Fetch yearly appointments for GitHub Calendar
+  const { data: yearlyAppointments } = useQuery({
+    queryKey: ["yearly-appointments", user?.id],
+    queryFn: async () => {
+      const oneYearAgo = startOfDay(subYears(new Date(), 1));
+
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("scheduled_at")
+        .eq("user_id", user!.id)
+        .gte("scheduled_at", oneYearAgo.toISOString());
+
+      if (error) throw error;
+
+      // Group by date
+      const groupedByDate: Record<string, number> = {};
+      data?.forEach((apt) => {
+        const dateKey = format(new Date(apt.scheduled_at), "yyyy-MM-dd");
+        groupedByDate[dateKey] = (groupedByDate[dateKey] || 0) + 1;
+      });
+
+      return Object.entries(groupedByDate).map(([date, count]) => ({
+        date,
+        count,
+      }));
     },
     enabled: !!user,
   });
@@ -172,6 +209,19 @@ export default function Relatorios() {
         </motion.div>
       </div>
 
+      {/* Yearly Calendar Heatmap */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle>Calendário Anual de Agendamentos</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Visualização dos agendamentos no último ano
+          </p>
+        </CardHeader>
+        <CardContent>
+          <GitHubCalendar data={yearlyAppointments || []} />
+        </CardContent>
+      </Card>
+
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Daily Appointments Chart */}
@@ -193,7 +243,7 @@ export default function Relatorios() {
                       borderRadius: "0.5rem",
                     }}
                   />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Agendamentos" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

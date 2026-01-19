@@ -17,6 +17,7 @@ import {
   Edit,
   Search,
   Check,
+  Power,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,9 +40,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
+import { GlassCalendar } from "@/components/ui/glass-calendar";
 
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
 
@@ -88,19 +91,40 @@ export default function Agendas() {
   // Edit appointment form
   const [editAppointmentData, setEditAppointmentData] = useState<any>(null);
 
-  // Fetch professionals
-  const { data: professionals } = useQuery({
-    queryKey: ["professionals", user?.id],
+  // Fetch all professionals (including inactive for management)
+  const { data: allProfessionals } = useQuery({
+    queryKey: ["all-professionals", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("professionals")
         .select("*")
         .eq("user_id", user!.id)
-        .eq("is_active", true);
+        .order("name");
       if (error) throw error;
       return data;
     },
     enabled: !!user,
+  });
+
+  // Active professionals only for dropdown
+  const professionals = allProfessionals?.filter(p => p.is_active);
+
+  // Toggle professional active status
+  const toggleProfessionalActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from("professionals")
+        .update({ is_active })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-professionals"] });
+      toast({ title: "Status do profissional atualizado!" });
+    },
+    onError: () => {
+      toast({ variant: "destructive", title: "Erro ao atualizar status" });
+    },
   });
 
   // Fetch services
@@ -390,6 +414,20 @@ export default function Agendas() {
     ? professionals?.filter(p => p.service_ids?.includes(selectedServiceId)) || []
     : [];
 
+  // Calculate appointments count per day for GlassCalendar
+  const appointmentsByDate = appointments?.reduce((acc, apt) => {
+    const dateKey = format(new Date(apt.scheduled_at), "yyyy-MM-dd");
+    acc[dateKey] = (acc[dateKey] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+
+  const handleGlassCalendarDateSelect = (date: Date) => {
+    setCurrentDate(date);
+    const day = date.getDate();
+    setSelectedDay(day);
+    setIsDaySheetOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -421,7 +459,7 @@ export default function Agendas() {
                 Novo Profissional
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Novo Profissional</DialogTitle>
               </DialogHeader>
@@ -468,6 +506,32 @@ export default function Agendas() {
                   Criar Profissional
                 </Button>
               </div>
+
+              {/* Professionals List with Toggle */}
+              <div className="border-t pt-4 mt-4">
+                <Label className="text-muted-foreground text-xs mb-2 block">Gerenciar Profissionais</Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {allProfessionals?.map((prof) => (
+                    <div key={prof.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className={prof.is_active ? "" : "text-muted-foreground line-through"}>
+                          {prof.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {prof.is_active ? "Ativo" : "Inativo"}
+                        </span>
+                        <Switch
+                          checked={prof.is_active}
+                          onCheckedChange={(checked) => toggleProfessionalActive.mutate({ id: prof.id, is_active: checked })}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
 
@@ -477,6 +541,14 @@ export default function Agendas() {
           </Button>
         </div>
       </div>
+
+      {/* Glass Calendar */}
+      <GlassCalendar
+        selectedDate={currentDate}
+        onDateSelect={handleGlassCalendarDateSelect}
+        appointmentsByDate={appointmentsByDate}
+        onNewAppointment={() => setIsNewAppointmentOpen(true)}
+      />
 
       {/* Calendar */}
       <Card className="shadow-card">
