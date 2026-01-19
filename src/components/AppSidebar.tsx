@@ -73,17 +73,23 @@ export function AppSidebar() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2.5"
               >
-                <img src={logo} alt="GetMore" className="h-8 w-8 object-contain flex-shrink-0" />
+                <img src={logo} alt="GetMore" className="h-10 w-10 object-contain flex-shrink-0" />
                 <motion.span
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2, delay: 0.05 }}
-                  className="text-sm font-semibold text-foreground whitespace-nowrap"
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 25,
+                    delay: 0.05 
+                  }}
+                  className="text-base font-bold text-foreground whitespace-nowrap tracking-tight"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
-                  GetMore
+                  GetMore<span className="text-primary">.</span>
                 </motion.span>
               </motion.div>
             ) : (
@@ -93,7 +99,7 @@ export function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="mx-auto"
               >
-                <img src={logo} alt="GetMore" className="h-8 w-8 object-contain" />
+                <img src={logo} alt="GetMore" className="h-10 w-10 object-contain" />
               </motion.div>
             )}
           </AnimatePresence>
