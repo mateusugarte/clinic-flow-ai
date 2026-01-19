@@ -558,21 +558,47 @@ export default function NutricaoConfirmacao() {
           <CardContent className="flex-1 min-h-0">
             <Tabs defaultValue="pendentes" className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-4 mb-4">
-                <TabsTrigger value="pendentes" className="text-xs px-2">
-                  Pendentes ({selectedDayPending.length})
+                <TabsTrigger value="pendentes" className="text-xs sm:text-sm px-1 sm:px-2">
+                  <span className="truncate">Pendentes</span>
+                  <span className="ml-1">({selectedDayPending.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="confirmados" className="text-xs px-2">
-                  Confirmados ({selectedDayConfirmed.length})
+                <TabsTrigger value="confirmados" className="text-xs sm:text-sm px-1 sm:px-2">
+                  <span className="truncate">Confirmados</span>
+                  <span className="ml-1">({selectedDayConfirmed.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="risco" className="text-xs px-2">
-                  Risco ({selectedDayRisk.length})
+                <TabsTrigger value="risco" className="text-xs sm:text-sm px-1 sm:px-2">
+                  <span className="truncate">Risco</span>
+                  <span className="ml-1">({selectedDayRisk.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="cancelados" className="text-xs px-2">
-                  Cancelados ({selectedDayCancelled.length})
+                <TabsTrigger value="cancelados" className="text-xs sm:text-sm px-1 sm:px-2">
+                  <span className="truncate">Cancelados</span>
+                  <span className="ml-1">({selectedDayCancelled.length})</span>
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="pendentes" className="flex-1 min-h-0 mt-0">
-                <ScrollArea className="h-[400px]">
+              <TabsContent value="pendentes" className="flex-1 min-h-0 mt-0 flex flex-col">
+                {/* Pending appointments with send confirmation button */}
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedDayPending.filter(apt => !apt.confirmacaoEnviada).length} pendente(s) sem confirmação enviada
+                  </p>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const pendingNotSent = selectedDayPending.filter(apt => !apt.confirmacaoEnviada);
+                        setSelectedAppointments(pendingNotSent.map(apt => apt.id));
+                      }}
+                      className="text-xs"
+                    >
+                      Selecionar todos
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={clearSelection} className="text-xs">
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+                <ScrollArea className="flex-1 max-h-[280px]">
                   <div className="space-y-3 pr-4">
                     {selectedDayPending.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
@@ -580,11 +606,97 @@ export default function NutricaoConfirmacao() {
                       </p>
                     ) : (
                       selectedDayPending.map(apt => (
-                        <AppointmentCard key={apt.id} appointment={apt} />
+                        <AppointmentCard key={apt.id} appointment={apt} showCheckbox={!apt.confirmacaoEnviada} />
                       ))
                     )}
                   </div>
                 </ScrollArea>
+                
+                {/* Send button only in pendentes tab */}
+                {selectedDayPending.length > 0 && (
+                  <div className="pt-4 border-t mt-4 space-y-3">
+                    {/* Progress Bar */}
+                    {sendProgress && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-3 p-4 rounded-lg bg-muted/50 border"
+                      >
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">Progresso do envio</span>
+                          <span className="text-muted-foreground">
+                            {sendProgress.sent + sendProgress.errors} / {sendProgress.total}
+                          </span>
+                        </div>
+                        
+                        <Progress 
+                          value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} 
+                          className="h-3"
+                        />
+                        
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1 text-emerald-500">
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              {sendProgress.sent} enviado(s)
+                            </span>
+                            {sendProgress.errors > 0 && (
+                              <span className="flex items-center gap-1 text-red-500">
+                                <XCircle className="h-3.5 w-3.5" />
+                                {sendProgress.errors} erro(s)
+                              </span>
+                            )}
+                          </div>
+                          {sendProgress.currentPhone && (
+                            <span className="text-muted-foreground animate-pulse truncate max-w-[150px]">
+                              Enviando: {sendProgress.currentPhone}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Recent Messages */}
+                        {sendProgress.messages.length > 0 && (
+                          <ScrollArea className="h-20 mt-2">
+                            <div className="space-y-1">
+                              {sendProgress.messages.slice(-5).map((msg, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={cn(
+                                    "text-xs px-2 py-1 rounded flex items-center gap-2",
+                                    msg.success ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+                                  )}
+                                >
+                                  {msg.success ? <CheckCircle className="h-3 w-3 flex-shrink-0" /> : <XCircle className="h-3 w-3 flex-shrink-0" />}
+                                  <span className="font-mono flex-shrink-0">{msg.phone}</span>
+                                  <span className="truncate">{msg.message}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        )}
+                      </motion.div>
+                    )}
+
+                    <Button 
+                      onClick={sendConfirmation}
+                      disabled={sendingConfirmation || selectedAppointments.length === 0}
+                      className="w-full gap-2 h-12"
+                      size="lg"
+                    >
+                      {sendingConfirmation ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Enviando confirmações...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-5 w-5" />
+                          Enviar Confirmação ({selectedAppointments.length})
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
               <TabsContent value="confirmados" className="flex-1 min-h-0 mt-0">
                 <ScrollArea className="h-[400px]">
