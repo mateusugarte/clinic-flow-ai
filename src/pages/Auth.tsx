@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { AnimatedText } from "@/components/AnimatedText";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import { z } from "zod";
+import logo from "@/assets/logo.png";
 
 const authSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -113,7 +113,7 @@ export default function Auth() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -126,181 +126,156 @@ export default function Auth() {
             key="hero"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -50 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.3 }}
             className="text-center space-y-6"
           >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-              <AnimatedText text="GetMore" className="text-foreground" />
-              <AnimatedText text=" AI" className="text-primary" delay={0.4} />
-            </h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
-              className="text-sm uppercase tracking-widest text-muted-foreground"
-            >
-              AI first software
-            </motion.p>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1, duration: 0.5 }}
-              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto leading-relaxed"
-            >
-              Estrutura que te ajuda a vender mais e organizar sua clínica em um só lugar
-            </motion.p>
-            
+            {/* Logo */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1.2, duration: 0.5 }}
+              transition={{ duration: 0.4 }}
+              className="flex justify-center"
+            >
+              <img src={logo} alt="GetMore" className="h-20 w-20 object-contain" />
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground"
+            >
+              GetMore
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="text-xs uppercase tracking-widest text-muted-foreground"
+            >
+              Sistema de Gestão
+            </motion.p>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+              className="text-sm text-muted-foreground max-w-sm mx-auto"
+            >
+              Organize sua clínica e aumente suas vendas em um só lugar
+            </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
             >
               <Button
                 size="lg"
                 onClick={() => setShowLogin(true)}
-                className="gradient-primary hover:opacity-90 transition-opacity shadow-primary text-lg px-8 py-6"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-10 text-sm"
               >
-                Fazer Login
-                <ArrowRight className="ml-2 h-5 w-5" />
+                Entrar
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
           </motion.div>
         ) : (
           <motion.div
             key="login"
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            transition={{ duration: 0.4 }}
-            className="w-full max-w-md mx-auto"
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.3 }}
+            className="w-full max-w-sm mx-auto"
           >
-            <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
-              <div className="text-center mb-8">
-                <motion.h1
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-3xl font-bold tracking-tight mb-2"
-                >
-                  <span className="text-foreground">GetMore</span>
-                  <span className="text-primary"> AI</span>
-                </motion.h1>
-                <motion.h2
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-xl font-semibold text-foreground"
-                >
-                  {isLogin ? "Entrar" : "Criar conta"}
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-muted-foreground mt-2"
-                >
-                  {isLogin
-                    ? "Acesse sua conta GetMore AI"
-                    : "Crie sua conta para começar"}
-                </motion.p>
+            <div className="bg-card border border-border rounded-lg p-6 shadow-card">
+              {/* Logo in login form */}
+              <div className="flex justify-center mb-4">
+                <img src={logo} alt="GetMore" className="h-12 w-12 object-contain" />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="space-y-2"
-                >
-                  <Label htmlFor="email">Email</Label>
+              <div className="text-center mb-6">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {isLogin ? "Entrar" : "Criar conta"}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isLogin ? "Acesse sua conta" : "Crie sua conta para começar"}
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
+                      className="pl-8 h-9 text-sm"
                     />
                   </div>
                   {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
+                    <p className="text-xs text-destructive">{errors.email}</p>
                   )}
-                </motion.div>
+                </div>
 
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="space-y-2"
-                >
-                  <Label htmlFor="password">Senha</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-xs">Senha</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       id="password"
                       type="password"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10"
+                      className="pl-8 h-9 text-sm"
                     />
                   </div>
                   {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
+                    <p className="text-xs text-destructive">{errors.password}</p>
                   )}
-                </motion.div>
+                </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90 h-9 text-sm"
+                  disabled={isLoading}
                 >
-                  <Button
-                    type="submit"
-                    className="w-full gradient-primary hover:opacity-90"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : isLogin ? (
-                      "Entrar"
-                    ) : (
-                      "Criar conta"
-                    )}
-                  </Button>
-                </motion.div>
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isLogin ? (
+                    "Entrar"
+                  ) : (
+                    "Criar conta"
+                  )}
+                </Button>
               </form>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="mt-6 text-center space-y-3"
-              >
+              <div className="mt-4 text-center space-y-2">
                 <button
                   type="button"
                   onClick={() => setIsLogin(!isLogin)}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {isLogin
-                    ? "Não tem conta? Criar agora"
-                    : "Já tem conta? Entrar"}
+                  {isLogin ? "Não tem conta? Criar agora" : "Já tem conta? Entrar"}
                 </button>
                 <div>
                   <button
                     type="button"
                     onClick={() => setShowLogin(false)}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
                     ← Voltar
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         )}

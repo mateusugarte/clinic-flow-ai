@@ -20,23 +20,10 @@ export function AppLayout() {
     <div className="min-h-screen bg-background relative">
       <PageLoading isLoading={isLoading} />
       
-      {/* Aurora background effect - subtle */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute inset-0 opacity-30 dark:opacity-40"
-          style={{
-            background: `
-              radial-gradient(ellipse 80% 50% at 20% -20%, hsl(var(--primary) / 0.15), transparent),
-              radial-gradient(ellipse 60% 40% at 80% 120%, hsl(var(--primary) / 0.1), transparent)
-            `,
-          }}
-        />
-      </div>
-      
       <AppSidebar />
-      {/* Sidebar is always 72px collapsed */}
-      <main className="lg:ml-[72px] pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen relative z-10">
-        <div className="p-4 lg:p-6 h-[calc(100vh-4rem)] lg:h-screen overflow-y-auto">
+      {/* Sidebar is 56px collapsed */}
+      <main className="lg:ml-14 pt-14 lg:pt-0 pb-16 lg:pb-0 min-h-screen relative z-10">
+        <div className="p-3 lg:p-4 h-[calc(100vh-3.5rem)] lg:h-screen overflow-y-auto">
           <Outlet />
         </div>
       </main>
