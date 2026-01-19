@@ -16,7 +16,7 @@ const authSchema = z.object({
 });
 
 export default function Auth() {
-  const [showModal, setShowModal] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -120,120 +120,146 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-center space-y-6 mb-12"
-      >
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-          <AnimatedText text="GetMore" className="text-foreground" />
-          <AnimatedText text=" AI" className="text-primary" delay={0.4} />
-        </h1>
-        
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="text-sm uppercase tracking-widest text-muted-foreground"
-        >
-          AI first software
-        </motion.p>
-        
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
-          className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto leading-relaxed"
-        >
-          Estrutura que te ajuda a vender mais e organizar sua clínica em um só lugar
-        </motion.p>
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
-        >
-          <Button
-            size="lg"
-            onClick={() => setShowModal(true)}
-            className="gradient-primary hover:opacity-90 transition-opacity shadow-primary text-lg px-8 py-6"
+      <AnimatePresence mode="wait">
+        {!showLogin ? (
+          <motion.div
+            key="hero"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.4 }}
+            className="text-center space-y-6"
           >
-            Fazer Login
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </motion.div>
-      </motion.div>
-
-      {/* Login Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
-              onClick={() => setShowModal(false)}
-            />
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
+              <AnimatedText text="GetMore" className="text-foreground" />
+              <AnimatedText text=" AI" className="text-primary" delay={0.4} />
+            </h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+              className="text-sm uppercase tracking-widest text-muted-foreground"
+            >
+              AI first software
+            </motion.p>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto leading-relaxed"
+            >
+              Estrutura que te ajuda a vender mais e organizar sua clínica em um só lugar
+            </motion.p>
             
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:inset-auto md:left-1/2 md:-translate-x-1/2 z-50 w-full max-w-md"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.2, duration: 0.5 }}
             >
-              <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-foreground">
-                    {isLogin ? "Entrar" : "Criar conta"}
-                  </h2>
-                  <p className="text-muted-foreground mt-2">
-                    {isLogin
-                      ? "Acesse sua conta GetMore AI"
-                      : "Crie sua conta para começar"}
-                  </p>
-                </div>
+              <Button
+                size="lg"
+                onClick={() => setShowLogin(true)}
+                className="gradient-primary hover:opacity-90 transition-opacity shadow-primary text-lg px-8 py-6"
+              >
+                Fazer Login
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="login"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-md mx-auto"
+          >
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
+              <div className="text-center mb-8">
+                <motion.h1
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-3xl font-bold tracking-tight mb-2"
+                >
+                  <span className="text-foreground">GetMore</span>
+                  <span className="text-primary"> AI</span>
+                </motion.h1>
+                <motion.h2
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-xl font-semibold text-foreground"
+                >
+                  {isLogin ? "Entrar" : "Criar conta"}
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-muted-foreground mt-2"
+                >
+                  {isLogin
+                    ? "Acesse sua conta GetMore AI"
+                    : "Crie sua conta para começar"}
+                </motion.p>
+              </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
+                </motion.div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
-                    )}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor="password">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
+                </motion.div>
 
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
                   <Button
                     type="submit"
                     className="w-full gradient-primary hover:opacity-90"
@@ -247,22 +273,36 @@ export default function Auth() {
                       "Criar conta"
                     )}
                   </Button>
-                </form>
+                </motion.div>
+              </form>
 
-                <div className="mt-6 text-center">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="mt-6 text-center space-y-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {isLogin
+                    ? "Não tem conta? Criar agora"
+                    : "Já tem conta? Entrar"}
+                </button>
+                <div>
                   <button
                     type="button"
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setShowLogin(false)}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {isLogin
-                      ? "Não tem conta? Criar agora"
-                      : "Já tem conta? Entrar"}
+                    ← Voltar
                   </button>
                 </div>
-              </div>
-            </motion.div>
-          </>
+              </motion.div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
