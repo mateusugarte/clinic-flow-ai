@@ -2,24 +2,25 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isToday, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, User, Search, Edit } from "lucide-react";
+import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
-import { GlassCalendar } from "@/components/ui/glass-calendar";
 import ProfessionalsTable from "@/components/ui/professionals-table";
+import { cn } from "@/lib/utils";
 
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
 
@@ -38,7 +39,8 @@ export default function Agendas() {
   const [editingProfessional, setEditingProfessional] = useState<any>(null);
   const [newProfName, setNewProfName] = useState("");
   const [newProfServiceIds, setNewProfServiceIds] = useState<string[]>([]);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [editProfServiceIds, setEditProfServiceIds] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isAppointmentSheetOpen, setIsAppointmentSheetOpen] = useState(false);
   const [isDaySheetOpen, setIsDaySheetOpen] = useState(false);
@@ -66,26 +68,17 @@ export default function Agendas() {
 
   const professionals = allProfessionals?.filter(p => p.is_active);
 
-  const toggleProfessionalActive = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from("professionals").update({ is_active }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-professionals"] });
-      toast({ title: "Status do profissional atualizado!" });
-    },
-  });
-
-  const { data: services } = useQuery({
-    queryKey: ["services", user?.id],
+  const { data: allServices } = useQuery({
+    queryKey: ["all-services", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*").eq("user_id", user!.id).eq("is_available", true);
+      const { data, error } = await supabase.from("services").select("*").eq("user_id", user!.id);
       if (error) throw error;
       return data;
     },
     enabled: !!user,
   });
+
+  const services = allServices?.filter(s => s.is_available);
 
   const { data: leads } = useQuery({
     queryKey: ["leads", user?.id],
@@ -100,15 +93,26 @@ export default function Agendas() {
   const { data: appointments } = useQuery({
     queryKey: ["appointments", user?.id, selectedProfessional, currentDate],
     queryFn: async () => {
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-      let query = supabase.from("appointments").select("*, leads(name, phone)").eq("user_id", user!.id).gte("scheduled_at", startOfMonth.toISOString()).lte("scheduled_at", endOfMonth.toISOString());
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+      let query = supabase.from("appointments").select("*, leads(name, phone)").eq("user_id", user!.id).gte("scheduled_at", monthStart.toISOString()).lte("scheduled_at", monthEnd.toISOString());
       if (selectedProfessional && selectedProfessional !== "all") query = query.eq("professional_id", selectedProfessional);
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
     enabled: !!user,
+  });
+
+  const toggleProfessionalActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase.from("professionals").update({ is_active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-professionals"] });
+      toast({ title: "Status do profissional atualizado!" });
+    },
   });
 
   const createProfessional = useMutation({
@@ -122,6 +126,19 @@ export default function Agendas() {
       setNewProfServiceIds([]);
       setIsNewProfOpen(false);
       toast({ title: "Profissional criado com sucesso!" });
+    },
+  });
+
+  const updateProfessional = useMutation({
+    mutationFn: async ({ id, name, serviceIds, startTime, endTime }: { id: string; name: string; serviceIds: string[]; startTime: string; endTime: string }) => {
+      const { error } = await supabase.from("professionals").update({ name, service_ids: serviceIds, start_time: startTime, end_time: endTime }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-professionals"] });
+      setIsEditProfOpen(false);
+      setEditingProfessional(null);
+      toast({ title: "Profissional atualizado!" });
     },
   });
 
@@ -171,14 +188,16 @@ export default function Agendas() {
     setAppointmentTab("existing");
   };
 
-  const getAppointmentsForDay = (day: number) => {
+  const getAppointmentsForDay = (date: Date) => {
     if (!appointments) return [];
-    return appointments.filter((apt) => new Date(apt.scheduled_at).getDate() === day);
+    return appointments.filter((apt) => {
+      const aptDate = parseISO(apt.scheduled_at);
+      return aptDate.getDate() === date.getDate() && aptDate.getMonth() === date.getMonth() && aptDate.getFullYear() === date.getFullYear();
+    });
   };
 
-  const handleGlassCalendarDateSelect = (date: Date) => {
-    setCurrentDate(date);
-    setSelectedDay(date.getDate());
+  const handleDayClick = (date: Date) => {
+    setSelectedDay(date);
     setIsDaySheetOpen(true);
   };
 
@@ -202,14 +221,35 @@ export default function Agendas() {
     });
   };
 
+  const openEditProfessional = (prof: any) => {
+    setEditingProfessional(prof);
+    setEditProfServiceIds(prof.service_ids || []);
+    setIsEditProfOpen(true);
+  };
+
+  const filteredLeads = leads?.filter(lead => lead.name.toLowerCase().includes(leadSearch.toLowerCase()) || lead.phone.includes(leadSearch)) || [];
+  const professionalsForService = selectedServiceId ? professionals?.filter(p => p.service_ids?.includes(selectedServiceId)) || [] : [];
+
+  // Calendar helpers
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const daysInMonth = [];
+  const startDay = monthStart.getDay();
+  
+  for (let i = 0; i < startDay; i++) {
+    daysInMonth.push(null);
+  }
+  for (let i = 1; i <= monthEnd.getDate(); i++) {
+    daysInMonth.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i));
+  }
+
   const appointmentsByDate = appointments?.reduce((acc, apt) => {
-    const dateKey = format(new Date(apt.scheduled_at), "yyyy-MM-dd");
+    const dateKey = format(parseISO(apt.scheduled_at), "yyyy-MM-dd");
     acc[dateKey] = (acc[dateKey] || 0) + 1;
     return acc;
   }, {} as Record<string, number>) || {};
 
-  const filteredLeads = leads?.filter(lead => lead.name.toLowerCase().includes(leadSearch.toLowerCase()) || lead.phone.includes(leadSearch)) || [];
-  const professionalsForService = selectedServiceId ? professionals?.filter(p => p.service_ids?.includes(selectedServiceId)) || [] : [];
+  const todaysAppointments = appointments?.filter(apt => isToday(parseISO(apt.scheduled_at))) || [];
 
   return (
     <div className="h-full flex flex-col gap-4">
@@ -236,7 +276,7 @@ export default function Agendas() {
                 <div className="space-y-2">
                   <Label>Serviços</Label>
                   <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-2">
-                    {services?.map((service) => (
+                    {allServices?.map((service) => (
                       <div key={service.id} className="flex items-center space-x-2">
                         <Checkbox id={`s-${service.id}`} checked={newProfServiceIds.includes(service.id)} onCheckedChange={(checked) => setNewProfServiceIds(checked ? [...newProfServiceIds, service.id] : newProfServiceIds.filter(id => id !== service.id))} />
                         <label htmlFor={`s-${service.id}`} className="text-sm">{service.name}</label>
@@ -254,24 +294,193 @@ export default function Agendas() {
 
       {/* Grid Layout */}
       <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
-        {/* Calendar */}
-        <div className="col-span-12 lg:col-span-5 overflow-hidden">
-          <GlassCalendar selectedDate={currentDate} onDateSelect={handleGlassCalendarDateSelect} appointmentsByDate={appointmentsByDate} onNewAppointment={() => setIsNewAppointmentOpen(true)} />
+        {/* Main Calendar */}
+        <Card className="col-span-12 lg:col-span-5 shadow-card overflow-hidden flex flex-col">
+          <CardHeader className="pb-2 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+              <CardTitle className="text-sm font-semibold capitalize">{format(currentDate, "MMMM yyyy", { locale: ptBR })}</CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden">
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => (
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-1">{day}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {daysInMonth.map((day, index) => {
+                if (!day) return <div key={`empty-${index}`} className="aspect-square" />;
+                const dateKey = format(day, "yyyy-MM-dd");
+                const count = appointmentsByDate[dateKey] || 0;
+                const isTodayDate = isToday(day);
+                return (
+                  <button
+                    key={dateKey}
+                    onClick={() => handleDayClick(day)}
+                    className={cn(
+                      "aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-colors hover:bg-muted relative",
+                      isTodayDate && "ring-2 ring-primary",
+                      count > 0 && "bg-primary/10"
+                    )}
+                  >
+                    <span className={cn("font-medium", isTodayDate && "text-primary")}>{day.getDate()}</span>
+                    {count > 0 && (
+                      <span className="absolute bottom-0.5 text-[10px] text-primary font-semibold">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Today's Appointments */}
+        <Card className="col-span-12 lg:col-span-4 shadow-card flex flex-col">
+          <CardHeader className="pb-2 flex-shrink-0">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              Hoje
+              <Badge variant="secondary" className="ml-auto">{todaysAppointments.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto space-y-2">
+            {todaysAppointments.length > 0 ? todaysAppointments.map((apt) => (
+              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{apt.patientName || "Paciente"}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />{format(parseISO(apt.scheduled_at), "HH:mm")} - {apt.serviceName}
+                    </p>
+                  </div>
+                  <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+                </div>
+              </div>
+            )) : (
+              <p className="text-center text-muted-foreground py-6 text-sm">Nenhum agendamento hoje</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Stats */}
+        <div className="col-span-12 lg:col-span-3 grid grid-rows-3 gap-4">
+          <Card className="shadow-card">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{allProfessionals?.filter(p => p.is_active).length || 0}</p>
+                <p className="text-xs text-muted-foreground">Profissionais Ativos</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{services?.length || 0}</p>
+                <p className="text-xs text-muted-foreground">Serviços Disponíveis</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <CalendarIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{appointments?.length || 0}</p>
+                <p className="text-xs text-muted-foreground">Agendamentos no Mês</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Professionals Table */}
-        <div className="col-span-12 lg:col-span-7 overflow-auto">
+        <div className="col-span-12 overflow-auto">
           <ProfessionalsTable
             professionals={allProfessionals || []}
-            services={services || []}
+            services={allServices || []}
             onToggleActive={(id, isActive) => toggleProfessionalActive.mutate({ id, is_active: isActive })}
-            onRowClick={(prof) => { setEditingProfessional(prof); setIsEditProfOpen(true); }}
+            onRowClick={(prof) => openEditProfessional(prof)}
           />
         </div>
       </div>
 
+      {/* Edit Professional Modal */}
+      <Dialog open={isEditProfOpen} onOpenChange={setIsEditProfOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Profissional</DialogTitle></DialogHeader>
+          {editingProfessional && (
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input value={editingProfessional.name} onChange={(e) => setEditingProfessional({ ...editingProfessional, name: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Início Expediente</Label>
+                  <Input type="time" value={editingProfessional.start_time || "08:00"} onChange={(e) => setEditingProfessional({ ...editingProfessional, start_time: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fim Expediente</Label>
+                  <Input type="time" value={editingProfessional.end_time || "18:00"} onChange={(e) => setEditingProfessional({ ...editingProfessional, end_time: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Serviços ({editProfServiceIds.length} selecionados)</Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2">
+                  {allServices?.map((service) => (
+                    <div key={service.id} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`edit-s-${service.id}`} 
+                        checked={editProfServiceIds.includes(service.id)} 
+                        onCheckedChange={(checked) => setEditProfServiceIds(checked ? [...editProfServiceIds, service.id] : editProfServiceIds.filter(id => id !== service.id))} 
+                      />
+                      <label htmlFor={`edit-s-${service.id}`} className="text-sm flex-1">{service.name}</label>
+                      {!service.is_available && <Badge variant="outline" className="text-xs">Inativo</Badge>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div>
+                  <Label className="text-sm">Status</Label>
+                  <p className="text-xs text-muted-foreground">{editingProfessional.is_active ? "Ativo" : "Inativo"}</p>
+                </div>
+                <Switch 
+                  checked={editingProfessional.is_active} 
+                  onCheckedChange={(checked) => setEditingProfessional({ ...editingProfessional, is_active: checked })}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditProfOpen(false)}>Cancelar</Button>
+                <Button 
+                  className="gradient-primary" 
+                  onClick={() => updateProfessional.mutate({ 
+                    id: editingProfessional.id, 
+                    name: editingProfessional.name, 
+                    serviceIds: editProfServiceIds,
+                    startTime: editingProfessional.start_time || "08:00",
+                    endTime: editingProfessional.end_time || "18:00"
+                  })}
+                >
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Day Modal */}
-      <DetailModal isOpen={isDaySheetOpen} onClose={() => setIsDaySheetOpen(false)} title={selectedDay ? `Agendamentos - ${format(new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay), "dd 'de' MMMM", { locale: ptBR })}` : "Agendamentos"}>
+      <DetailModal isOpen={isDaySheetOpen} onClose={() => setIsDaySheetOpen(false)} title={selectedDay ? `Agendamentos - ${format(selectedDay, "dd 'de' MMMM", { locale: ptBR })}` : "Agendamentos"}>
         <div className="space-y-3">
           {selectedDay && getAppointmentsForDay(selectedDay).length > 0 ? (
             getAppointmentsForDay(selectedDay).map((apt) => (
@@ -280,7 +489,7 @@ export default function Agendas() {
                   <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                   <div className="flex-1">
                     <p className="font-medium text-sm">{apt.patientName || "Paciente"}</p>
-                    <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "HH:mm")} - {apt.serviceName}</p>
+                    <p className="text-xs text-muted-foreground">{format(parseISO(apt.scheduled_at), "HH:mm")} - {apt.serviceName}</p>
                   </div>
                   <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
                 </div>
@@ -327,7 +536,9 @@ export default function Agendas() {
               <div className="space-y-2"><Label>Hora *</Label><Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} /></div>
             </div>
             <div className="space-y-2"><Label>Observações</Label><Textarea value={appointmentNotes} onChange={(e) => setAppointmentNotes(e.target.value)} /></div>
-            <Button onClick={handleCreateAppointment} className="w-full gradient-primary" disabled={createAppointment.isPending}>Criar Agendamento</Button>
+            <Button onClick={handleCreateAppointment} className="w-full gradient-primary" disabled={createAppointment.isPending}>
+              {createAppointment.isPending ? "Criando..." : "Criar Agendamento"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
