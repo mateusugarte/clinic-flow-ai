@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Users, Calendar, Clock, Moon } from "lucide-react";
+import { Users, Calendar, Clock, Moon, TrendingUp, UserCheck, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { WelcomeMessage } from "@/components/WelcomeMessage";
+import { EconomicCalendar, AgendaEvent } from "@/components/ui/economic-calendar";
 import {
   XAxis,
   YAxis,
@@ -205,6 +206,64 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // Fetch today's appointments for Economic Calendar
+  const { data: todayAppointments } = useQuery({
+    queryKey: ["today-appointments", user?.id],
+    queryFn: async () => {
+      const todayStart = startOfDay(new Date());
+      const todayEnd = endOfDay(new Date());
+      
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .eq("user_id", user!.id)
+        .gte("scheduled_at", todayStart.toISOString())
+        .lte("scheduled_at", todayEnd.toISOString())
+        .order("scheduled_at");
+      
+      if (error) throw error;
+      
+      return data?.map((apt): AgendaEvent => ({
+        id: apt.id,
+        time: format(new Date(apt.scheduled_at), "HH:mm"),
+        patientName: apt.patientName || "Paciente",
+        serviceName: apt.serviceName,
+        professionalName: apt.professionalName,
+        status: (apt.status as AgendaEvent['status']) || 'pendente',
+        duration: apt.duracao,
+      })) || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch extra stats
+  const { data: extraStats } = useQuery({
+    queryKey: ["extra-stats", user?.id],
+    queryFn: async () => {
+      const [professionalsRes, servicesRes, clientsRes] = await Promise.all([
+        supabase.from("professionals").select("*", { count: "exact", head: true }).eq("user_id", user!.id).eq("is_active", true),
+        supabase.from("services").select("*", { count: "exact", head: true }).eq("user_id", user!.id).eq("is_available", true),
+        supabase.from("leads").select("id").eq("user_id", user!.id),
+      ]);
+      
+      // Count unique clients with appointments
+      const { data: appointmentsWithLeads } = await supabase
+        .from("appointments")
+        .select("lead_id")
+        .eq("user_id", user!.id);
+      
+      const uniqueClients = new Set(appointmentsWithLeads?.map(a => a.lead_id)).size;
+      
+      return {
+        professionals: professionalsRes.count || 0,
+        services: servicesRes.count || 0,
+        totalLeads: clientsRes.data?.length || 0,
+        uniqueClients,
+      };
+    },
+    enabled: !!user,
+  });
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -336,6 +395,73 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
+      {/* Extra Stats Row */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid gap-6 md:grid-cols-3"
+      >
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-card hover:shadow-card-hover transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Profissionais Ativos
+              </CardTitle>
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <UserCheck className="h-5 w-5 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{extraStats?.professionals ?? 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                profissionais cadastrados
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-card hover:shadow-card-hover transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Serviços Disponíveis
+              </CardTitle>
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{extraStats?.services ?? 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                serviços ativos
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <Card className="shadow-card hover:shadow-card-hover transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Taxa de Conversão
+              </CardTitle>
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {extraStats?.totalLeads ? ((extraStats.uniqueClients / extraStats.totalLeads) * 100).toFixed(1) : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                leads que agendaram
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
+
       {/* Chart */}
       <BlurFade delay={0.5} duration={0.6}>
         <Card className="shadow-card hover:shadow-card-hover transition-all duration-300">
@@ -385,6 +511,14 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </BlurFade>
+
+      {/* Today's Appointments */}
+      <BlurFade delay={0.6} duration={0.6}>
+        <EconomicCalendar
+          title="Agendamentos de Hoje"
+          events={todayAppointments || []}
+        />
       </BlurFade>
     </div>
   );

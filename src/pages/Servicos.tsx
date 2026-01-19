@@ -33,7 +33,7 @@ export default function Servicos() {
   const { data: services } = useQuery({
     queryKey: ["services", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*").eq("user_id", user!.id).order("name");
+      const { data, error } = await supabase.from("services").select("*").eq("user_id", user!.id).order("is_available", { ascending: false }).order("name");
       if (error) throw error;
       return data;
     },
@@ -151,14 +151,20 @@ export default function Servicos() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {services?.map((service) => (
           <motion.div key={service.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="shadow-card hover:shadow-lg transition-shadow group cursor-pointer" onClick={() => handleServiceClick(service)}>
+            <Card className={`shadow-card hover:shadow-lg transition-shadow group cursor-pointer ${!service.is_available ? 'opacity-60' : ''}`} onClick={() => handleServiceClick(service)}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground">{service.name}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`font-semibold text-lg ${!service.is_available ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{service.name}</h3>
+                      {!service.is_available && <Badge variant="outline" className="text-xs">Inativo</Badge>}
+                    </div>
                     {service.category && <Badge variant="secondary" className="mt-1"><Tag className="h-3 w-3 mr-1" />{service.category}</Badge>}
                   </div>
-                  <Switch checked={service.is_available ?? true} onCheckedChange={(checked) => { toggleAvailability.mutate({ id: service.id, is_available: checked }); }} onClick={(e) => e.stopPropagation()} />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{service.is_available ? 'Ativo' : 'Inativo'}</span>
+                    <Switch checked={service.is_available ?? true} onCheckedChange={(checked) => { toggleAvailability.mutate({ id: service.id, is_available: checked }); }} onClick={(e) => e.stopPropagation()} />
+                  </div>
                 </div>
                 {service.description && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{service.description}</p>}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
