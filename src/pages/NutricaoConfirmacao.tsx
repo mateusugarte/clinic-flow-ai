@@ -116,12 +116,12 @@ export default function NutricaoConfirmacao() {
   const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
   const weekEnd = useMemo(() => endOfWeek(today, { weekStartsOn: 1 }), [today]);
 
-  // Filter appointments
-  const todayConfirmed = useMemo(() => 
+  // Filter appointments - using selectedDate for daily view
+  const selectedDayConfirmed = useMemo(() => 
     appointments.filter(apt => {
       const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, today) && apt.status === "confirmado";
-    }), [appointments, today]);
+      return isSameDay(aptDate, selectedDate) && apt.status === "confirmado";
+    }), [appointments, selectedDate]);
 
   const weekConfirmed = useMemo(() => 
     appointments.filter(apt => {
@@ -129,11 +129,11 @@ export default function NutricaoConfirmacao() {
       return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "confirmado";
     }), [appointments, weekStart, weekEnd]);
 
-  const todayCancelled = useMemo(() => 
+  const selectedDayCancelled = useMemo(() => 
     appointments.filter(apt => {
       const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, today) && apt.status === "cancelado";
-    }), [appointments, today]);
+      return isSameDay(aptDate, selectedDate) && apt.status === "cancelado";
+    }), [appointments, selectedDate]);
 
   const weekCancelled = useMemo(() => 
     appointments.filter(apt => {
@@ -141,12 +141,17 @@ export default function NutricaoConfirmacao() {
       return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "cancelado";
     }), [appointments, weekStart, weekEnd]);
 
-  // Get appointments for selected date in calendar
+  // Get all appointments for selected date in calendar
   const selectedDateAppointments = useMemo(() => 
     appointments.filter(apt => {
       const aptDate = new Date(apt.scheduled_at);
       return isSameDay(aptDate, selectedDate);
     }), [appointments, selectedDate]);
+
+  // Only appointments that haven't been sent confirmation yet
+  const pendingConfirmationAppointments = useMemo(() => 
+    selectedDateAppointments.filter(apt => !apt.confirmacaoEnviada), 
+    [selectedDateAppointments]);
 
   // Get calendar days
   const calendarDays = useMemo(() => {
@@ -342,11 +347,11 @@ export default function NutricaoConfirmacao() {
 
   return (
     <div className="h-full flex flex-col gap-6 p-6 overflow-auto">
-      {/* Header Stats */}
+      {/* Header Stats - Week always fixed */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard 
-          title="Confirmados Hoje" 
-          count={todayConfirmed.length} 
+          title={`Confirmados ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
+          count={selectedDayConfirmed.length} 
           icon={CheckCircle} 
           color="bg-emerald-500/10 text-emerald-500" 
         />
@@ -357,8 +362,8 @@ export default function NutricaoConfirmacao() {
           color="bg-emerald-500/10 text-emerald-500" 
         />
         <StatCard 
-          title="Cancelados Hoje" 
-          count={todayCancelled.length} 
+          title={`Cancelados ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
+          count={selectedDayCancelled.length} 
           icon={XCircle} 
           color="bg-red-500/10 text-red-500" 
         />
@@ -370,34 +375,34 @@ export default function NutricaoConfirmacao() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-        {/* Left Panel - Today's Appointments */}
-        <Card className="lg:col-span-2 shadow-card flex flex-col min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+        {/* Left Panel - Selected Day Appointments */}
+        <Card className="shadow-card flex flex-col min-h-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Agendamentos do Dia
+              Agendamentos - {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 min-h-0">
             <Tabs defaultValue="confirmados" className="h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="confirmados">
-                  Confirmados ({todayConfirmed.length})
+                  Confirmados ({selectedDayConfirmed.length})
                 </TabsTrigger>
                 <TabsTrigger value="cancelados">
-                  Cancelados ({todayCancelled.length})
+                  Cancelados ({selectedDayCancelled.length})
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="confirmados" className="flex-1 min-h-0 mt-0">
                 <ScrollArea className="h-[400px]">
                   <div className="space-y-3 pr-4">
-                    {todayConfirmed.length === 0 ? (
+                    {selectedDayConfirmed.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
-                        Nenhum agendamento confirmado hoje
+                        Nenhum agendamento confirmado nesta data
                       </p>
                     ) : (
-                      todayConfirmed.map(apt => (
+                      selectedDayConfirmed.map(apt => (
                         <AppointmentCard key={apt.id} appointment={apt} />
                       ))
                     )}
@@ -407,12 +412,12 @@ export default function NutricaoConfirmacao() {
               <TabsContent value="cancelados" className="flex-1 min-h-0 mt-0">
                 <ScrollArea className="h-[400px]">
                   <div className="space-y-3 pr-4">
-                    {todayCancelled.length === 0 ? (
+                    {selectedDayCancelled.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
-                        Nenhum agendamento cancelado hoje
+                        Nenhum agendamento cancelado nesta data
                       </p>
                     ) : (
-                      todayCancelled.map(apt => (
+                      selectedDayCancelled.map(apt => (
                         <AppointmentCard key={apt.id} appointment={apt} />
                       ))
                     )}
@@ -423,7 +428,7 @@ export default function NutricaoConfirmacao() {
           </CardContent>
         </Card>
 
-        {/* Right Panel - Confirmation Calendar */}
+        {/* Right Panel - Confirmation Calendar (Larger) */}
         <Card className="shadow-card flex flex-col min-h-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -432,13 +437,13 @@ export default function NutricaoConfirmacao() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 min-h-0 flex flex-col">
-            {/* Mini Calendar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-3">
+            {/* Calendar */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <Button variant="ghost" size="icon" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm font-medium">
+                <span className="text-base font-medium">
                   {format(calendarMonth, "MMMM yyyy", { locale: ptBR })}
                 </span>
                 <Button variant="ghost" size="icon" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
@@ -446,15 +451,15 @@ export default function NutricaoConfirmacao() {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+              <div className="grid grid-cols-7 gap-2 text-center text-sm mb-2">
                 {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(day => (
-                  <div key={day} className="text-muted-foreground font-medium py-1">
+                  <div key={day} className="text-muted-foreground font-medium py-2">
                     {day}
                   </div>
                 ))}
               </div>
               
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map(day => {
                   const dateKey = format(day, "yyyy-MM-dd");
                   const dayData = appointmentsByDay[dateKey];
@@ -467,22 +472,22 @@ export default function NutricaoConfirmacao() {
                       key={dateKey}
                       onClick={() => setSelectedDate(day)}
                       className={cn(
-                        "relative p-1 text-xs rounded-md transition-colors aspect-square flex flex-col items-center justify-center",
+                        "relative p-2 text-sm rounded-lg transition-colors aspect-square flex flex-col items-center justify-center",
                         isSelected && "bg-primary text-primary-foreground",
                         !isSelected && isToday(day) && "bg-accent",
                         !isSelected && !isToday(day) && "hover:bg-accent",
                         !isCurrentMonth && "text-muted-foreground/50",
-                        isTargetDate && !isSelected && "ring-2 ring-primary ring-offset-1"
+                        isTargetDate && !isSelected && "ring-2 ring-primary ring-offset-2"
                       )}
                     >
                       <span>{format(day, "d")}</span>
                       {dayData && dayData.total > 0 && (
-                        <div className="flex gap-0.5 mt-0.5">
+                        <div className="flex gap-1 mt-1">
                           {dayData.confirmed > 0 && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
                           )}
                           {dayData.pending > 0 && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
                           )}
                         </div>
                       )}
@@ -491,48 +496,56 @@ export default function NutricaoConfirmacao() {
                 })}
               </div>
               
-              <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>Enviada</span>
+              <div className="flex items-center gap-6 mt-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <span>Confirmação enviada</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                  <span>Pendente</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <span>Pendente envio</span>
                 </div>
               </div>
             </div>
 
-            {/* Selected Date Appointments */}
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium">
-                  {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-                </h4>
+            {/* Selected Date Appointments - Only pending */}
+            <div className="flex-1 min-h-0 flex flex-col border-t pt-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-base font-medium">
+                    {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {pendingConfirmationAppointments.length} agendamento(s) aguardando confirmação
+                  </p>
+                </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={selectAllForDate} className="text-xs h-7">
+                  <Button variant="outline" size="sm" onClick={selectAllForDate}>
                     Selecionar todos
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={clearSelection} className="text-xs h-7">
+                  <Button variant="ghost" size="sm" onClick={clearSelection}>
                     Limpar
                   </Button>
                 </div>
               </div>
 
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="space-y-2 pr-2">
+              <ScrollArea className="flex-1 min-h-0 max-h-[300px]">
+                <div className="space-y-3 pr-2">
                   <AnimatePresence mode="wait">
-                    {selectedDateAppointments.length === 0 ? (
-                      <motion.p
+                    {pendingConfirmationAppointments.length === 0 ? (
+                      <motion.div
                         key="empty"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="text-center text-muted-foreground py-4 text-sm"
+                        className="text-center py-8"
                       >
-                        Nenhum agendamento nesta data
-                      </motion.p>
+                        <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                        <p className="text-muted-foreground">
+                          Todas as confirmações já foram enviadas para esta data!
+                        </p>
+                      </motion.div>
                     ) : (
-                      selectedDateAppointments.map(apt => (
+                      pendingConfirmationAppointments.map(apt => (
                         <AppointmentCard key={apt.id} appointment={apt} showCheckbox />
                       ))
                     )}
@@ -545,22 +558,23 @@ export default function NutricaoConfirmacao() {
                 <Button 
                   onClick={sendConfirmation}
                   disabled={sendingConfirmation || selectedAppointments.length === 0}
-                  className="w-full gap-2"
+                  className="w-full gap-2 h-12 text-base"
+                  size="lg"
                 >
                   {sendingConfirmation ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Enviando...
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Enviando confirmações...
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4" />
-                      Enviar Confirmação ({selectedAppointments.length})
+                      <Send className="h-5 w-5" />
+                      Enviar Confirmação ({selectedAppointments.length} selecionado{selectedAppointments.length !== 1 ? 's' : ''})
                     </>
                   )}
                 </Button>
                 {isSameDay(selectedDate, confirmationTargetDate) && (
-                  <p className="text-xs text-center text-muted-foreground mt-2">
+                  <p className="text-sm text-center text-primary mt-3 font-medium">
                     📅 Data recomendada para envio de confirmações
                   </p>
                 )}
