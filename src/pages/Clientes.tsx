@@ -1,215 +1,176 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import {
-  User,
-  Phone,
-  Mail,
-  Calendar,
-  TrendingUp,
-  Star,
-  Clock,
-} from "lucide-react";
+import { User, Phone, Mail, Calendar, TrendingUp, Star, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+type DateFilter = "7days" | "15days" | "30days" | "all";
+type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
+
+const statusColors: Record<AppointmentStatus, string> = {
+  pendente: "bg-yellow-500", confirmado: "bg-green-400", risco: "bg-orange-500", cancelado: "bg-red-500", atendido: "bg-green-400",
+};
+const statusLabels: Record<AppointmentStatus, string> = {
+  pendente: "Pendente", confirmado: "Confirmado", risco: "Risco", cancelado: "Cancelado", atendido: "Atendido",
+};
+const dateFilters: { label: string; value: DateFilter }[] = [
+  { label: "7 dias", value: "7days" }, { label: "15 dias", value: "15days" }, { label: "30 dias", value: "30days" }, { label: "Todo período", value: "all" },
+];
 
 export default function Clientes() {
   const { user } = useAuth();
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [isClientSheetOpen, setIsClientSheetOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [isAppointmentSheetOpen, setIsAppointmentSheetOpen] = useState(false);
 
-  // Fetch clients (leads with at least one appointment)
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ["clients", user?.id],
+  const getFilterDate = () => {
+    if (dateFilter === "all") return null;
+    const now = new Date();
+    switch (dateFilter) {
+      case "7days": return startOfDay(subDays(now, 7));
+      case "15days": return startOfDay(subDays(now, 15));
+      case "30days": return startOfDay(subDays(now, 30));
+    }
+  };
+
+  const { data: clients } = useQuery({
+    queryKey: ["clients", user?.id, dateFilter],
     queryFn: async () => {
-      // First get all appointments
-      const { data: appointments, error: aptError } = await supabase
-        .from("appointments")
-        .select("lead_id, service_id, scheduled_at, serviceName")
-        .eq("user_id", user!.id);
-      
+      let query = supabase.from("appointments").select("lead_id, service_id, scheduled_at, serviceName, status, id, patientName, professionalName, duracao, price, notes, created_at").eq("user_id", user!.id);
+      const filterDate = getFilterDate();
+      if (filterDate) query = query.gte("created_at", filterDate.toISOString());
+      const { data: appointments, error: aptError } = await query;
       if (aptError) throw aptError;
-
-      // Get unique lead IDs that have appointments
       const leadIds = [...new Set(appointments?.map((a) => a.lead_id) || [])];
-      
       if (leadIds.length === 0) return [];
-
-      // Fetch those leads
-      const { data: leads, error: leadError } = await supabase
-        .from("leads")
-        .select("*")
-        .eq("user_id", user!.id)
-        .in("id", leadIds);
-      
+      const { data: leads, error: leadError } = await supabase.from("leads").select("*").eq("user_id", user!.id).in("id", leadIds);
       if (leadError) throw leadError;
-
-      // Combine with appointment count
       return leads?.map((lead) => ({
         ...lead,
+        appointments: appointments?.filter((a) => a.lead_id === lead.id).sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()) || [],
         appointmentCount: appointments?.filter((a) => a.lead_id === lead.id).length || 0,
-        lastAppointment: appointments
-          ?.filter((a) => a.lead_id === lead.id)
-          .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())[0],
+        lastAppointment: appointments?.filter((a) => a.lead_id === lead.id).sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())[0],
       })) || [];
     },
     enabled: !!user,
   });
 
-  // Calculate stats
   const { data: stats } = useQuery({
     queryKey: ["client-stats", user?.id],
     queryFn: async () => {
-      const { data: appointments, error } = await supabase
-        .from("appointments")
-        .select("service_id, serviceName, scheduled_at")
-        .eq("user_id", user!.id);
-      
+      const { data: appointments, error } = await supabase.from("appointments").select("service_id, serviceName, scheduled_at").eq("user_id", user!.id);
       if (error) throw error;
-
-      // Top service
       const serviceCounts: Record<string, { name: string; count: number }> = {};
-      appointments?.forEach((apt) => {
-        const key = apt.service_id;
-        if (!serviceCounts[key]) {
-          serviceCounts[key] = { name: apt.serviceName || "Serviço", count: 0 };
-        }
-        serviceCounts[key].count++;
-      });
+      appointments?.forEach((apt) => { const key = apt.service_id; if (!serviceCounts[key]) serviceCounts[key] = { name: apt.serviceName || "Serviço", count: 0 }; serviceCounts[key].count++; });
       const topService = Object.values(serviceCounts).sort((a, b) => b.count - a.count)[0];
-
-      // Top day
       const dayCounts: Record<number, number> = {};
-      appointments?.forEach((apt) => {
-        const day = new Date(apt.scheduled_at).getDay();
-        dayCounts[day] = (dayCounts[day] || 0) + 1;
-      });
+      appointments?.forEach((apt) => { const day = new Date(apt.scheduled_at).getDay(); dayCounts[day] = (dayCounts[day] || 0) + 1; });
       const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
       const topDay = Object.entries(dayCounts).sort(([, a], [, b]) => b - a)[0];
-
-      return {
-        topService: topService?.name || "N/A",
-        topDay: topDay ? days[parseInt(topDay[0])] : "N/A",
-        totalClients: clients?.length || 0,
-      };
+      return { topService: topService?.name || "N/A", topDay: topDay ? days[parseInt(topDay[0])] : "N/A", totalClients: clients?.length || 0 };
     },
     enabled: !!user && !!clients,
   });
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 },
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
-        <p className="text-muted-foreground">Leads que já realizaram agendamentos</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div><h1 className="text-3xl font-bold text-foreground">Clientes</h1><p className="text-muted-foreground">Leads que já realizaram agendamentos</p></div>
+        <div className="flex gap-2">
+          {dateFilters.map((f) => (
+            <Button key={f.value} variant={dateFilter === f.value ? "default" : "outline"} size="sm" onClick={() => setDateFilter(f.value)} className={dateFilter === f.value ? "gradient-primary" : ""}>{f.label}</Button>
+          ))}
+        </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              Serviço Mais Agendado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats?.topService || "N/A"}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              Dia com Mais Agendamentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats?.topDay || "N/A"}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Star className="h-4 w-4 text-primary" />
-              Total de Clientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{clients?.length || 0}</p>
-          </CardContent>
-        </Card>
+        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Serviço Mais Agendado</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats?.topService || "N/A"}</p></CardContent></Card>
+        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />Dia com Mais Agendamentos</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats?.topDay || "N/A"}</p></CardContent></Card>
+        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Star className="h-4 w-4 text-primary" />Total de Clientes</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{clients?.length || 0}</p></CardContent></Card>
       </div>
 
-      {/* Clients List */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {clients?.map((client) => (
-          <motion.div key={client.id} variants={itemVariants}>
-            <Card className="shadow-card hover:shadow-lg transition-shadow">
+          <motion.div key={client.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => { setSelectedClient(client); setIsClientSheetOpen(true); }}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <User className="h-6 w-6 text-primary" />
-                  </div>
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><User className="h-6 w-6 text-primary" /></div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{client.name}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {client.phone}
-                    </p>
-                    {client.email && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
-                        <Mail className="h-3 w-3" />
-                        {client.email}
-                      </p>
-                    )}
+                    <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{client.phone}</p>
+                    {client.email && <p className="text-sm text-muted-foreground flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{client.email}</p>}
                   </div>
                 </div>
-
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {client.appointmentCount} agendamentos
-                  </Badge>
-                  {client.lastAppointment && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(client.lastAppointment.scheduled_at), "dd/MM/yy", { locale: ptBR })}
-                    </span>
-                  )}
+                  <Badge variant="secondary" className="flex items-center gap-1"><Calendar className="h-3 w-3" />{client.appointmentCount} agendamentos</Badge>
+                  {client.lastAppointment && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{format(new Date(client.lastAppointment.scheduled_at), "dd/MM/yy", { locale: ptBR })}</span>}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
-
-        {clients?.length === 0 && (
-          <div className="col-span-full text-center py-12 text-muted-foreground">
-            Nenhum cliente encontrado. Clientes aparecerão aqui após realizarem agendamentos.
-          </div>
-        )}
+        {clients?.length === 0 && <div className="col-span-full text-center py-12 text-muted-foreground">Nenhum cliente encontrado.</div>}
       </motion.div>
+
+      <Sheet open={isClientSheetOpen} onOpenChange={setIsClientSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader><SheetTitle>Detalhes do Cliente</SheetTitle></SheetHeader>
+          {selectedClient && (
+            <div className="mt-6 space-y-6">
+              <div className="space-y-4">
+                <div><Label className="text-muted-foreground">Nome</Label><p className="font-medium">{selectedClient.name}</p></div>
+                <div><Label className="text-muted-foreground">Telefone</Label><p>{selectedClient.phone}</p></div>
+                <div><Label className="text-muted-foreground">Email</Label><p>{selectedClient.email || "Não informado"}</p></div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Histórico de Agendamentos</Label>
+                <div className="mt-2 space-y-2">
+                  {selectedClient.appointments?.map((apt: any) => (
+                    <div key={apt.id} onClick={() => { setSelectedAppointment(apt); setIsAppointmentSheetOpen(true); }} className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${statusColors[apt.status as AppointmentStatus] || statusColors.pendente}`} />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{apt.serviceName || "Serviço"}</p>
+                          <p className="text-xs text-muted-foreground">{format(new Date(apt.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{statusLabels[apt.status as AppointmentStatus] || "Pendente"}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={isAppointmentSheetOpen} onOpenChange={setIsAppointmentSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader><SheetTitle>Detalhes do Agendamento</SheetTitle></SheetHeader>
+          {selectedAppointment && (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-3"><div className={`w-4 h-4 rounded-full ${statusColors[selectedAppointment.status as AppointmentStatus]}`} /><span className="font-medium">{statusLabels[selectedAppointment.status as AppointmentStatus]}</span></div>
+              <div><Label className="text-muted-foreground">Serviço</Label><p>{selectedAppointment.serviceName}</p></div>
+              <div><Label className="text-muted-foreground">Profissional</Label><p>{selectedAppointment.professionalName || "N/A"}</p></div>
+              <div><Label className="text-muted-foreground">Data e Hora</Label><p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p></div>
+              <div><Label className="text-muted-foreground">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
+              <div><Label className="text-muted-foreground">Preço</Label><p>R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
+              {selectedAppointment.notes && <div><Label className="text-muted-foreground">Observações</Label><p>{selectedAppointment.notes}</p></div>}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

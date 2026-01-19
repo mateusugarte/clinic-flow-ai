@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,14 +8,10 @@ import {
   Calendar,
   Clock,
   Moon,
-  TrendingUp,
-  TrendingDown,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -65,6 +61,39 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange>("7days");
   const { user } = useAuth();
   const { start, end } = getDateRange(dateRange);
+
+  // Fetch AI config for opening hours
+  const { data: aiConfig } = useQuery({
+    queryKey: ["ai-config", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ai_configs")
+        .select("opening_hours")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Parse opening hours from config
+  const parseOpeningHours = (openingHours: string | null | undefined) => {
+    // Default: 08:00-18:00
+    let startHour = 8;
+    let endHour = 18;
+    
+    if (openingHours) {
+      // Try to parse format like "Seg a Sex 08:00-18:00" or "08:00-18:00"
+      const timeMatch = openingHours.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
+      if (timeMatch) {
+        startHour = parseInt(timeMatch[1]);
+        endHour = parseInt(timeMatch[3]);
+      }
+    }
+    
+    return { startHour, endHour };
+  };
 
   // Fetch leads count
   const { data: leadsData } = useQuery({
@@ -119,22 +148,25 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch after-hours appointments
+  // Fetch after-hours appointments - based on scheduled_at time being outside opening hours
   const { data: afterHoursData } = useQuery({
-    queryKey: ["after-hours", user?.id, dateRange],
+    queryKey: ["after-hours", user?.id, dateRange, aiConfig?.opening_hours],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("created_at")
+        .select("scheduled_at")
         .eq("user_id", user!.id)
-        .gte("created_at", start.toISOString())
-        .lte("created_at", end.toISOString());
+        .gte("scheduled_at", start.toISOString())
+        .lte("scheduled_at", end.toISOString());
       
       if (error) throw error;
       
+      const { startHour, endHour } = parseOpeningHours(aiConfig?.opening_hours);
+      
       const afterHours = data?.filter((apt) => {
-        const hour = new Date(apt.created_at!).getHours();
-        return hour < 8 || hour >= 18;
+        const scheduledHour = new Date(apt.scheduled_at).getHours();
+        // Outside business hours: before start OR after end
+        return scheduledHour < startHour || scheduledHour >= endHour;
       }).length || 0;
       
       return afterHours;
@@ -294,7 +326,7 @@ export default function Dashboard() {
             <CardContent>
               <div className="text-3xl font-bold">{afterHoursData ?? 0}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                agendamentos fora do horário
+                agendados fora do horário comercial
               </p>
             </CardContent>
           </Card>
