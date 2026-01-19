@@ -313,7 +313,7 @@ export default function CRM() {
                         {/* Show appointment info if exists */}
                         {leadAppointments.length > 0 && (
                           <div className="pt-2 border-t border-border space-y-1">
-                            {leadAppointments.slice(0, 2).map(apt => (
+                            {leadAppointments.slice(0, 2).map(apt => apt.scheduled_at && (
                               <div key={apt.id} className="flex items-center gap-2 text-[10px]">
                                 <StatusIndicator status={apt.status as AppointmentStatus} size="sm" />
                                 <span className="truncate">{apt.serviceName}</span>
@@ -368,7 +368,7 @@ export default function CRM() {
               <div className="border-t pt-4">
                 <Label className="text-muted-foreground text-xs">Agendamentos</Label>
                 <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                  {getLeadAppointments(selectedLead.id).map(apt => (
+                  {getLeadAppointments(selectedLead.id).filter(apt => apt.scheduled_at).map(apt => (
                     <div key={apt.id} className="p-3 rounded-lg border">
                       <div className="flex items-center gap-3">
                         <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
