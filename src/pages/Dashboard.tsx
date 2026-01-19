@@ -69,8 +69,11 @@ function formatMinutesToHours(minutes: number) {
 }
 
 function formatTimeFromISO(isoString: string): string {
+  // Parse ISO and format in local timezone (America/Sao_Paulo)
   const date = new Date(isoString);
-  return format(date, "HH:mm", { locale: ptBR });
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 export default function Dashboard() {
@@ -172,7 +175,9 @@ export default function Dashboard() {
       if (error) throw error;
       const { startHour, endHour } = parseOpeningHours(aiConfig?.opening_hours);
       const afterHours = data?.filter((apt) => {
-        const scheduledHour = new Date(apt.scheduled_at).getHours();
+        // Get the local hour from the ISO string
+        const scheduledDate = new Date(apt.scheduled_at);
+        const scheduledHour = scheduledDate.getHours();
         return scheduledHour < startHour || scheduledHour >= endHour;
       }).length || 0;
       return afterHours;

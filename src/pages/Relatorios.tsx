@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GitHubCalendar } from "@/components/ui/github-calendar";
-import { format, subDays, startOfDay, subYears } from "date-fns";
+import { format, subDays, startOfDay, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--primary) / 0.7)", "hsl(var(--primary) / 0.5)", "hsl(var(--primary) / 0.3)"];
@@ -80,12 +80,16 @@ export default function Relatorios() {
   const { data: yearlyAppointments } = useQuery({
     queryKey: ["yearly-appointments", user?.id],
     queryFn: async () => {
-      const oneYearAgo = startOfDay(subYears(new Date(), 1));
+      // Get all appointments for the current year
+      const currentYear = new Date().getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1);
+      const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59);
       const { data, error } = await supabase
         .from("appointments")
         .select("scheduled_at")
         .eq("user_id", user!.id)
-        .gte("scheduled_at", oneYearAgo.toISOString());
+        .gte("scheduled_at", startOfYear.toISOString())
+        .lte("scheduled_at", endOfYear.toISOString());
       if (error) throw error;
       const groupedByDate: Record<string, number> = {};
       data?.forEach((apt) => {
