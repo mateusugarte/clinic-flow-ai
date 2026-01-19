@@ -2,69 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* GetMore AI Design System - Sophisticated & Modern */
+/* GetMore AI Design System - Professional & Clean */
 
 @layer base {
   :root {
-    /* Light Mode - Elegant & Clean */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Light Mode - Clean White with Red Accent */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary - Elegant Indigo/Purple */
-    --primary: 243 75% 59%;
+    /* Primary - Professional Red #a01010 */
+    --primary: 0 83% 34%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* Secondary - Neutral Gray */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 243 75% 97%;
-    --accent-foreground: 243 75% 45%;
+    --accent: 0 83% 97%;
+    --accent-foreground: 0 83% 30%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 243 75% 59%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 83% 34%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
     /* Sidebar Light */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 243 75% 59%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 83% 34%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 243 75% 97%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 243 75% 59%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 0 83% 34%;
 
     /* Custom Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(243 75% 59%), hsl(263 75% 55%));
-    --gradient-glow: linear-gradient(135deg, hsl(243 75% 59% / 0.12), hsl(263 75% 55% / 0.06));
-    --shadow-primary: 0 8px 32px -8px hsl(243 75% 59% / 0.3);
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.04);
-    --shadow-card-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.08);
+    --gradient-primary: linear-gradient(135deg, hsl(0 83% 34%), hsl(0 83% 28%));
+    --gradient-glow: linear-gradient(135deg, hsl(0 83% 34% / 0.08), hsl(0 83% 28% / 0.04));
+    --shadow-primary: 0 4px 14px -4px hsl(0 83% 34% / 0.25);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.03);
+    --shadow-card-hover: 0 4px 16px -4px hsl(0 0% 0% / 0.08);
 
-    /* Chart Colors */
-    --chart-1: 243 75% 59%;
-    --chart-2: 263 75% 55%;
-    --chart-3: 283 75% 50%;
-    --chart-4: 303 75% 45%;
-    --chart-5: 323 75% 40%;
+    /* Chart Colors - Monochrome with Red accent */
+    --chart-1: 0 83% 34%;
+    --chart-2: 0 0% 30%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 0 0% 70%;
+    --chart-5: 0 0% 85%;
 
-    /* Status Colors */
-    --success: 152 69% 41%;
+    /* Status Colors - Keep these colorful for visibility */
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
@@ -73,63 +73,63 @@
   }
 
   .dark {
-    /* Dark Mode - Rich & Sophisticated */
-    --background: 224 71% 4%;
-    --foreground: 210 40% 98%;
+    /* Dark Mode - Rich Black with Red Accent */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Primary - Vibrant Purple */
-    --primary: 250 89% 67%;
+    /* Primary - Lighter Red for Dark Mode */
+    --primary: 0 75% 50%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary */
-    --secondary: 217 33% 14%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 250 89% 15%;
-    --accent-foreground: 250 89% 75%;
+    --accent: 0 75% 15%;
+    --accent-foreground: 0 75% 70%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 250 89% 67%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 75% 50%;
 
     /* Sidebar Dark */
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 250 89% 67%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 75% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 250 89% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 250 89% 67%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 0 75% 50%;
 
     /* Custom Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(250 89% 67%), hsl(270 89% 60%));
-    --gradient-glow: linear-gradient(135deg, hsl(250 89% 67% / 0.2), hsl(270 89% 60% / 0.1));
-    --shadow-primary: 0 8px 32px -8px hsl(250 89% 67% / 0.4);
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
-    --shadow-card-hover: 0 8px 32px -4px hsl(0 0% 0% / 0.4);
+    --gradient-primary: linear-gradient(135deg, hsl(0 75% 50%), hsl(0 75% 42%));
+    --gradient-glow: linear-gradient(135deg, hsl(0 75% 50% / 0.15), hsl(0 75% 42% / 0.08));
+    --shadow-primary: 0 4px 20px -4px hsl(0 75% 50% / 0.35);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.15);
+    --shadow-card-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.3);
 
     /* Chart Colors */
-    --chart-1: 250 89% 67%;
-    --chart-2: 270 89% 62%;
-    --chart-3: 290 89% 57%;
-    --chart-4: 310 89% 52%;
-    --chart-5: 330 89% 47%;
+    --chart-1: 0 75% 50%;
+    --chart-2: 0 0% 70%;
+    --chart-3: 0 0% 55%;
+    --chart-4: 0 0% 40%;
+    --chart-5: 0 0% 25%;
 
-    /* Status Colors */
-    --success: 152 69% 50%;
+    /* Status Colors - Keep colorful */
+    --success: 142 71% 50%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 0%;
@@ -145,6 +145,7 @@
 
   html {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
   }
 
   body {
@@ -154,10 +155,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Custom Scrollbar */
+  /* Custom Scrollbar - Minimal */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
@@ -165,11 +166,11 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/20 rounded-full;
+    @apply bg-muted-foreground/15 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
+    @apply bg-muted-foreground/25;
   }
 }
 
@@ -207,59 +208,24 @@
     background: var(--gradient-primary);
   }
 
-  /* Aurora hover effect for cards */
-  .aurora-hover {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .aurora-hover::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      135deg,
-      hsl(var(--primary) / 0) 0%,
-      hsl(var(--primary) / 0.08) 50%,
-      hsl(var(--primary) / 0) 100%
-    );
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-  }
-
-  .aurora-hover:hover::before {
-    opacity: 1;
-    animation: aurora-shift 3s ease-in-out infinite;
-  }
-
-  @keyframes aurora-shift {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
-
-  /* Status glow effects */
+  /* Status glow effects - Keep colorful for visibility */
   .status-glow-yellow {
-    box-shadow: 0 0 12px 2px hsl(45 93% 47% / 0.6);
+    box-shadow: 0 0 8px 1px hsl(45 93% 47% / 0.5);
   }
 
   .status-glow-green {
-    box-shadow: 0 0 12px 2px hsl(152 69% 45% / 0.6);
+    box-shadow: 0 0 8px 1px hsl(142 71% 45% / 0.5);
   }
 
   .status-glow-orange {
-    box-shadow: 0 0 12px 2px hsl(25 95% 53% / 0.6);
+    box-shadow: 0 0 8px 1px hsl(25 95% 53% / 0.5);
   }
 
   .status-glow-red {
-    box-shadow: 0 0 12px 2px hsl(0 84% 60% / 0.6);
+    box-shadow: 0 0 8px 1px hsl(0 84% 60% / 0.5);
   }
 
-  .status-glow-purple {
-    box-shadow: 0 0 12px 2px hsl(250 89% 67% / 0.6);
+  .status-glow-blue {
+    box-shadow: 0 0 8px 1px hsl(221 83% 53% / 0.5);
   }
 }

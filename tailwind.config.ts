@@ -90,7 +90,11 @@ export default {
         sans: ["'Inter'", "system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "sans-serif"],
       },
       fontSize: {
+        "3xs": ["0.5rem", { lineHeight: "0.625rem" }],
         "2xs": ["0.625rem", { lineHeight: "0.75rem" }],
+        "xs": ["0.75rem", { lineHeight: "1rem" }],
+        "sm": ["0.8125rem", { lineHeight: "1.25rem" }],
+        "base": ["0.875rem", { lineHeight: "1.375rem" }],
       },
       spacing: {
         "4.5": "1.125rem",

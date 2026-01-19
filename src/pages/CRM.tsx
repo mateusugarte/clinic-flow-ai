@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { User, Phone, Clock, Play, Pause, TrendingUp, Users, Calendar } from "lucide-react";
+import { User, Phone, Clock, Play, Pause, TrendingUp, Users, Calendar, Pencil, Save, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
@@ -31,9 +32,9 @@ const columns: { id: LeadQualification; title: string }[] = [
 
 const dateFilters: { label: string; value: DateFilter }[] = [
   { label: "Hoje", value: "today" },
-  { label: "7 dias", value: "7days" },
-  { label: "15 dias", value: "15days" },
-  { label: "30 dias", value: "30days" },
+  { label: "7d", value: "7days" },
+  { label: "15d", value: "15days" },
+  { label: "30d", value: "30days" },
 ];
 
 export default function CRM() {
@@ -44,6 +45,8 @@ export default function CRM() {
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [draggedLead, setDraggedLead] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
   
   // Appointment creation state
   const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
@@ -132,7 +135,10 @@ export default function CRM() {
       const { error } = await supabase.from("leads").update(updates).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast({ title: "Lead atualizado!" });
+    },
     onError: () => toast({ variant: "destructive", title: "Erro ao atualizar lead" }),
   });
 
@@ -146,7 +152,7 @@ export default function CRM() {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
       setIsAppointmentDialogOpen(false);
       resetAppointmentForm();
-      toast({ title: "Agendamento criado com sucesso!" });
+      toast({ title: "Agendamento criado!" });
     },
     onError: () => toast({ variant: "destructive", title: "Erro ao criar agendamento" }),
   });
@@ -174,7 +180,36 @@ export default function CRM() {
   const toggleIA = (leadId: string, currentIA: string | null) => {
     const newIA = currentIA === "sim" ? "não" : "sim";
     updateLead.mutate({ id: leadId, updates: { ia: newIA } });
-    toast({ title: newIA === "sim" ? "IA ativada" : "IA pausada" });
+  };
+
+  const startEditing = () => {
+    setEditForm({
+      name: selectedLead?.name || "",
+      phone: selectedLead?.phone || "",
+      email: selectedLead?.email || "",
+      notes: selectedLead?.notes || "",
+    });
+    setIsEditing(true);
+  };
+
+  const saveEdits = () => {
+    if (!selectedLead) return;
+    updateLead.mutate({ 
+      id: selectedLead.id, 
+      updates: {
+        name: editForm.name,
+        phone: editForm.phone,
+        email: editForm.email,
+        notes: editForm.notes,
+      }
+    });
+    setSelectedLead({ ...selectedLead, ...editForm });
+    setIsEditing(false);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditForm({});
   };
 
   const getLeadsForColumn = (q: LeadQualification) => leads?.filter((l) => l.qualification === q) || [];
@@ -185,7 +220,6 @@ export default function CRM() {
     if (draggedLead) {
       const lead = leads?.find(l => l.id === draggedLead);
       if (qualification === "fez_agendamento" && lead) {
-        // Open appointment dialog
         setAppointmentLeadId(lead.id);
         setAppointmentLeadName(lead.name);
         setIsAppointmentDialogOpen(true);
@@ -221,34 +255,32 @@ export default function CRM() {
       status: "pendente",
     });
 
-    // Update lead qualification
     updateLead.mutate({ id: appointmentLeadId, updates: { qualification: "fez_agendamento" } });
   };
 
   const professionalsForService = selectedServiceId ? professionals?.filter(p => p.service_ids?.includes(selectedServiceId)) || [] : [];
 
-  // Conversion rate: unique leads with appointments / total leads * 100
   const totalLeads = allLeads?.length || 0;
   const uniqueLeadsWithAppointments = new Set(appointments?.map(a => a.lead_id) || []).size;
-  const conversionRate = totalLeads > 0 ? ((uniqueLeadsWithAppointments / totalLeads) * 100).toFixed(1) : "0";
+  const conversionRate = totalLeads > 0 ? ((uniqueLeadsWithAppointments / totalLeads) * 100).toFixed(0) : "0";
 
   const leadsWithIA = leads?.filter(l => l.ia === "sim").length || 0;
 
-  // Get appointments for a specific lead
   const getLeadAppointments = (leadId: string) => appointments?.filter(a => a.lead_id === leadId) || [];
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="h-full flex flex-col gap-3">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">CRM / Kanban</h1>
-          <p className="text-sm text-muted-foreground">Gerencie seus leads em um pipeline visual</p>
+          <h1 className="text-lg font-semibold text-foreground">CRM</h1>
+          <p className="text-xs text-muted-foreground">Pipeline de leads</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           {dateFilters.map((f) => (
-            <Button key={f.value} variant={dateFilter === f.value ? "default" : "outline"} size="sm"
-              onClick={() => setDateFilter(f.value)} className={dateFilter === f.value ? "gradient-primary" : ""}>
+            <Button key={f.value} variant={dateFilter === f.value ? "default" : "ghost"} size="sm"
+              onClick={() => setDateFilter(f.value)} 
+              className={`h-7 px-2 text-xs ${dateFilter === f.value ? "bg-primary text-primary-foreground" : ""}`}>
               {f.label}
             </Button>
           ))}
@@ -256,73 +288,90 @@ export default function CRM() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-4 flex-shrink-0">
-        <Card className="shadow-card">
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Total de Leads</CardTitle></CardHeader>
-          <CardContent><p className="text-xl font-bold">{totalLeads}</p></CardContent>
+      <div className="grid grid-cols-3 gap-3 flex-shrink-0">
+        <Card className="shadow-card border">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-lg font-semibold">{totalLeads}</p>
+                <p className="text-2xs text-muted-foreground">Leads</p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Play className="h-4 w-4 text-primary" />Com IA Ativa</CardTitle></CardHeader>
-          <CardContent><p className="text-xl font-bold">{leadsWithIA}</p></CardContent>
+        <Card className="shadow-card border">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <Play className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-lg font-semibold">{leadsWithIA}</p>
+                <p className="text-2xs text-muted-foreground">IA Ativa</p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
-        <Card className="shadow-card">
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Taxa de Conversão</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold">{conversionRate}%</p>
-            <p className="text-xs text-muted-foreground">{uniqueLeadsWithAppointments} de {totalLeads} leads</p>
+        <Card className="shadow-card border">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-lg font-semibold">{conversionRate}%</p>
+                <p className="text-2xs text-muted-foreground">Conversão</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Kanban Board - Fill remaining space */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0">
+      {/* Kanban Board */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 min-h-0">
         {columns.map((column) => (
           <div key={column.id} className="flex flex-col min-h-0" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop(column.id)}>
             <div className="flex items-center justify-between mb-2 flex-shrink-0">
-              <h3 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">{column.title}</h3>
-              <Badge variant="secondary" className="text-xs">{getLeadsForColumn(column.id).length}</Badge>
+              <h3 className="font-medium text-xs text-muted-foreground">{column.title}</h3>
+              <Badge variant="secondary" className="text-2xs h-5">{getLeadsForColumn(column.id).length}</Badge>
             </div>
-            <div className="flex-1 space-y-2 p-2 rounded-xl bg-muted/30 border border-border overflow-y-auto">
+            <div className="flex-1 space-y-1.5 p-2 rounded-lg bg-muted/30 border border-border overflow-y-auto">
               {getLeadsForColumn(column.id).map((lead) => {
                 const leadAppointments = getLeadAppointments(lead.id);
                 return (
-                  <motion.div key={lead.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  <motion.div key={lead.id} layout initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                     draggable onDragStart={() => handleDragStart(lead.id)} onDragEnd={handleDragEnd}
                     className={`group cursor-grab active:cursor-grabbing ${draggedLead === lead.id ? "opacity-50" : ""}`}>
-                    <Card className="shadow-sm hover:shadow-md transition-all border-l-4 border-l-primary"
-                      onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); }}>
-                      <CardContent className="p-3 space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-3 w-3 text-primary" />
+                    <Card className="shadow-sm hover:shadow-card-hover transition-shadow border-l-2 border-l-primary"
+                      onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); setIsEditing(false); }}>
+                      <CardContent className="p-2 space-y-1.5">
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                              <User className="h-3 w-3 text-muted-foreground" />
                             </div>
-                            <div>
-                              <p className="font-medium text-xs">{lead.name}</p>
-                              <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Phone className="h-2.5 w-2.5" />{lead.phone}</p>
+                            <div className="min-w-0">
+                              <p className="font-medium text-xs truncate">{lead.name}</p>
+                              <p className="text-2xs text-muted-foreground truncate">{lead.phone}</p>
                             </div>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); toggleIA(lead.id, lead.ia); }}>
-                            {lead.ia === "sim" ? <Pause className="h-3 w-3 text-yellow-500" /> : <Play className="h-3 w-3 text-green-500" />}
+                          <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={(e) => { e.stopPropagation(); toggleIA(lead.id, lead.ia); }}>
+                            {lead.ia === "sim" ? <Pause className="h-3 w-3 text-warning" /> : <Play className="h-3 w-3 text-success" />}
                           </Button>
                         </div>
                         {lead.last_interaction && (
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <p className="text-2xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-2.5 w-2.5" />{format(new Date(lead.last_interaction), "dd/MM HH:mm", { locale: ptBR })}
                           </p>
                         )}
-                        {/* Show appointment info if exists */}
                         {leadAppointments.length > 0 && (
-                          <div className="pt-2 border-t border-border space-y-1">
-                            {leadAppointments.slice(0, 2).map(apt => apt.scheduled_at && (
-                              <div key={apt.id} className="flex items-center gap-2 text-[10px]">
+                          <div className="pt-1.5 border-t border-border space-y-1">
+                            {leadAppointments.slice(0, 1).map(apt => apt.scheduled_at && (
+                              <div key={apt.id} className="flex items-center gap-1.5 text-2xs">
                                 <StatusIndicator status={apt.status as AppointmentStatus} size="sm" />
                                 <span className="truncate">{apt.serviceName}</span>
                                 <span className="text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)}</span>
                               </div>
                             ))}
-                            {leadAppointments.length > 2 && (
-                              <p className="text-[10px] text-muted-foreground">+{leadAppointments.length - 2} mais</p>
+                            {leadAppointments.length > 1 && (
+                              <p className="text-2xs text-muted-foreground">+{leadAppointments.length - 1}</p>
                             )}
                           </div>
                         )}
@@ -331,51 +380,111 @@ export default function CRM() {
                   </motion.div>
                 );
               })}
-              {getLeadsForColumn(column.id).length === 0 && <div className="text-center py-6 text-muted-foreground text-xs">Nenhum lead</div>}
+              {getLeadsForColumn(column.id).length === 0 && <div className="text-center py-4 text-muted-foreground text-xs">Vazio</div>}
             </div>
           </div>
         ))}
       </div>
 
       {/* Lead Modal */}
-      <DetailModal isOpen={isLeadModalOpen} onClose={() => setIsLeadModalOpen(false)} title="Detalhes do Lead">
+      <DetailModal isOpen={isLeadModalOpen} onClose={() => { setIsLeadModalOpen(false); setIsEditing(false); }} title="Detalhes do Lead">
         {selectedLead && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Nome</Label><p className="font-medium">{selectedLead.name}</p></div>
-              <div><Label className="text-muted-foreground text-xs">ID</Label><p className="font-mono text-sm">{selectedLead.id.slice(0, 8)}</p></div>
+          <div className="space-y-3">
+            {/* Edit/Save buttons */}
+            <div className="flex justify-end gap-2">
+              {isEditing ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={cancelEditing} className="h-7 text-xs">
+                    <X className="h-3 w-3 mr-1" /> Cancelar
+                  </Button>
+                  <Button size="sm" onClick={saveEdits} className="h-7 text-xs bg-primary">
+                    <Save className="h-3 w-3 mr-1" /> Salvar
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" onClick={startEditing} className="h-7 text-xs">
+                  <Pencil className="h-3 w-3 mr-1" /> Editar
+                </Button>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Telefone</Label><p>{selectedLead.phone}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Email</Label><p>{selectedLead.email || "Não informado"}</p></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Qualificação</Label><p>{columns.find(c => c.id === selectedLead.qualification)?.title || selectedLead.qualification}</p></div>
-              <div><Label className="text-muted-foreground text-xs">IA</Label><p>{selectedLead.ia === "sim" ? "Ativa" : "Pausada"}</p></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Última Interação</Label><p>{selectedLead.last_interaction ? format(new Date(selectedLead.last_interaction), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "N/A"}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Tempo Economizado</Label><p>{selectedLead.tempo_economizado || 0} min</p></div>
-            </div>
-            {selectedLead.notes && <div><Label className="text-muted-foreground text-xs">Notas</Label><p className="text-sm">{selectedLead.notes}</p></div>}
-            {selectedLead.tags?.length > 0 && (
-              <div>
-                <Label className="text-muted-foreground text-xs">Tags</Label>
-                <div className="flex gap-1 flex-wrap mt-1">{selectedLead.tags.map((tag: string, i: number) => <Badge key={i} variant="secondary">{tag}</Badge>)}</div>
+
+            {isEditing ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Nome</Label>
+                    <Input 
+                      value={editForm.name} 
+                      onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Telefone</Label>
+                    <Input 
+                      value={editForm.phone} 
+                      onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Email</Label>
+                  <Input 
+                    value={editForm.email} 
+                    onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Notas</Label>
+                  <Textarea 
+                    value={editForm.notes} 
+                    onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                    className="text-xs min-h-[60px]"
+                  />
+                </div>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-2xs text-muted-foreground">Nome</Label><p className="text-sm font-medium">{selectedLead.name}</p></div>
+                  <div><Label className="text-2xs text-muted-foreground">ID</Label><p className="font-mono text-xs">{selectedLead.id.slice(0, 8)}</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-2xs text-muted-foreground">Telefone</Label><p className="text-xs">{selectedLead.phone}</p></div>
+                  <div><Label className="text-2xs text-muted-foreground">Email</Label><p className="text-xs">{selectedLead.email || "—"}</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-2xs text-muted-foreground">Qualificação</Label><p className="text-xs">{columns.find(c => c.id === selectedLead.qualification)?.title || selectedLead.qualification}</p></div>
+                  <div><Label className="text-2xs text-muted-foreground">IA</Label><p className="text-xs">{selectedLead.ia === "sim" ? "Ativa" : "Pausada"}</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-2xs text-muted-foreground">Última Interação</Label><p className="text-xs">{selectedLead.last_interaction ? format(new Date(selectedLead.last_interaction), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}</p></div>
+                  <div><Label className="text-2xs text-muted-foreground">Tempo Economizado</Label><p className="text-xs">{selectedLead.tempo_economizado || 0} min</p></div>
+                </div>
+                {selectedLead.notes && <div><Label className="text-2xs text-muted-foreground">Notas</Label><p className="text-xs">{selectedLead.notes}</p></div>}
+                {selectedLead.tags?.length > 0 && (
+                  <div>
+                    <Label className="text-2xs text-muted-foreground">Tags</Label>
+                    <div className="flex gap-1 flex-wrap mt-1">{selectedLead.tags.map((tag: string, i: number) => <Badge key={i} variant="secondary" className="text-2xs">{tag}</Badge>)}</div>
+                  </div>
+                )}
+              </>
             )}
-            {/* Appointments for this lead */}
+            
+            {/* Appointments */}
             {getLeadAppointments(selectedLead.id).length > 0 && (
-              <div className="border-t pt-4">
-                <Label className="text-muted-foreground text-xs">Agendamentos</Label>
-                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+              <div className="border-t pt-3">
+                <Label className="text-2xs text-muted-foreground">Agendamentos</Label>
+                <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
                   {getLeadAppointments(selectedLead.id).filter(apt => apt.scheduled_at).map(apt => (
-                    <div key={apt.id} className="p-3 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{apt.serviceName}</p>
-                          <p className="text-xs text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)} - {apt.professionalName}</p>
+                    <div key={apt.id} className="p-2 rounded border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <StatusIndicator status={apt.status as AppointmentStatus} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-xs truncate">{apt.serviceName}</p>
+                          <p className="text-2xs text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)} • {apt.professionalName}</p>
                         </div>
                         <StatusSelect 
                           value={apt.status as AppointmentStatus} 
@@ -394,48 +503,48 @@ export default function CRM() {
 
       {/* Appointment Creation Dialog */}
       <Dialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Criar Agendamento</DialogTitle>
+            <DialogTitle className="text-sm">Criar Agendamento</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-muted rounded-lg">
-              <Label className="text-xs text-muted-foreground">Lead</Label>
-              <p className="font-medium">{appointmentLeadName}</p>
+          <div className="space-y-3">
+            <div className="p-2 bg-muted rounded">
+              <Label className="text-2xs text-muted-foreground">Lead</Label>
+              <p className="text-xs font-medium">{appointmentLeadName}</p>
             </div>
-            <div className="space-y-2">
-              <Label>Serviço *</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Serviço</Label>
               <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o serviço" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {services?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} - R$ {s.price}</SelectItem>)}
+                  {services?.map((s) => <SelectItem key={s.id} value={s.id} className="text-xs">{s.name} - R$ {s.price}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Profissional *</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Profissional</Label>
               <Select value={selectedProfId} onValueChange={setSelectedProfId} disabled={!selectedServiceId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o profissional" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {professionalsForService.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  {professionalsForService.map((p) => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Data *</Label>
-                <Input type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Data</Label>
+                <Input type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} className="h-8 text-xs" />
               </div>
-              <div className="space-y-2">
-                <Label>Hora *</Label>
-                <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
+              <div className="space-y-1">
+                <Label className="text-xs">Hora</Label>
+                <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} className="h-8 text-xs" />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAppointmentDialogOpen(false); resetAppointmentForm(); }}>Cancelar</Button>
-            <Button className="gradient-primary" onClick={handleCreateAppointment} disabled={createAppointment.isPending}>
-              {createAppointment.isPending ? "Criando..." : "Criar Agendamento"}
+            <Button variant="outline" size="sm" onClick={() => { setIsAppointmentDialogOpen(false); resetAppointmentForm(); }} className="h-8 text-xs">Cancelar</Button>
+            <Button size="sm" onClick={handleCreateAppointment} disabled={createAppointment.isPending} className="h-8 text-xs bg-primary">
+              {createAppointment.isPending ? "..." : "Criar"}
             </Button>
           </DialogFooter>
         </DialogContent>
