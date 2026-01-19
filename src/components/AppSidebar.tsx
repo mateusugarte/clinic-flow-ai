@@ -14,14 +14,11 @@ import {
   LogOut,
   Sun,
   Moon,
-  ChevronLeft,
-  ChevronRight,
   Menu,
   X,
   Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GlassButton } from "@/components/ui/glass-button";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -38,7 +35,7 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -53,58 +50,49 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - Always collapsed, expands on hover */}
       <motion.aside
         initial={false}
-        animate={{ width: isCollapsed ? 80 : 280 }}
+        animate={{ width: isHovered ? 280 : 72 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          "hidden lg:flex fixed left-0 top-0 h-screen flex-col z-40",
-          "bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border"
+          "hidden lg:flex fixed left-0 top-0 h-screen flex-col z-50",
+          "bg-sidebar/95 backdrop-blur-xl border-r border-sidebar-border"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-6">
+        <div className="flex items-center px-4 py-6 h-20">
           <AnimatePresence mode="wait">
-            {!isCollapsed && (
+            {isHovered ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3"
               >
-                <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-primary">
+                <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-primary flex-shrink-0">
                   <span className="text-lg font-bold text-primary-foreground">G</span>
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold">
+                  <h1 className="text-lg font-semibold whitespace-nowrap">
                     <span className="text-foreground">GetMore</span>
                     <span className="text-primary"> AI</span>
                   </h1>
                 </div>
               </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-primary mx-auto"
+              >
+                <span className="text-lg font-bold text-primary-foreground">G</span>
+              </motion.div>
             )}
           </AnimatePresence>
-
-          {isCollapsed && (
-            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-primary mx-auto">
-              <span className="text-lg font-bold text-primary-foreground">G</span>
-            </div>
-          )}
-
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={cn(
-              "p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors",
-              isCollapsed && "mx-auto mt-4"
-            )}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
         </div>
 
         {/* Navigation */}
@@ -121,11 +109,10 @@ export function AppSidebar() {
                     ? "bg-primary text-primary-foreground shadow-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                 )}
-                title={isCollapsed ? item.label : undefined}
               >
-                <item.icon className={cn("h-5 w-5 flex-shrink-0", isCollapsed && "mx-auto")} />
+                <item.icon className="h-5 w-5 flex-shrink-0" />
                 <AnimatePresence mode="wait">
-                  {!isCollapsed && (
+                  {isHovered && (
                     <motion.span
                       initial={{ opacity: 0, width: 0 }}
                       animate={{ opacity: 1, width: "auto" }}
@@ -138,7 +125,7 @@ export function AppSidebar() {
                 </AnimatePresence>
 
                 {/* Tooltip for collapsed state */}
-                {isCollapsed && (
+                {!isHovered && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg z-50">
                     {item.label}
                   </div>
@@ -156,17 +143,16 @@ export function AppSidebar() {
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
               "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
             )}
-            title={isCollapsed ? (theme === "light" ? "Modo Escuro" : "Modo Claro") : undefined}
           >
             {theme === "light" ? (
               <>
-                <Moon className={cn("h-5 w-5", isCollapsed && "mx-auto")} />
-                {!isCollapsed && <span>Modo Escuro</span>}
+                <Moon className="h-5 w-5 flex-shrink-0" />
+                {isHovered && <span>Modo Escuro</span>}
               </>
             ) : (
               <>
-                <Sun className={cn("h-5 w-5", isCollapsed && "mx-auto")} />
-                {!isCollapsed && <span>Modo Claro</span>}
+                <Sun className="h-5 w-5 flex-shrink-0" />
+                {isHovered && <span>Modo Claro</span>}
               </>
             )}
           </button>
@@ -177,10 +163,9 @@ export function AppSidebar() {
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
               "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
             )}
-            title={isCollapsed ? "Configurações" : undefined}
           >
-            <Settings className={cn("h-5 w-5", isCollapsed && "mx-auto")} />
-            {!isCollapsed && <span>Configurações</span>}
+            <Settings className="h-5 w-5 flex-shrink-0" />
+            {isHovered && <span>Configurações</span>}
           </button>
 
           <button
@@ -189,13 +174,24 @@ export function AppSidebar() {
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium",
               "text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             )}
-            title={isCollapsed ? "Sair" : undefined}
           >
-            <LogOut className={cn("h-5 w-5", isCollapsed && "mx-auto")} />
-            {!isCollapsed && <span>Sair</span>}
+            <LogOut className="h-5 w-5 flex-shrink-0" />
+            {isHovered && <span>Sair</span>}
           </button>
         </div>
       </motion.aside>
+
+      {/* Overlay when sidebar is expanded */}
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="hidden lg:block fixed inset-0 bg-black/30 z-40 pointer-events-none"
+          />
+        )}
+      </AnimatePresence>
 
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 z-40">

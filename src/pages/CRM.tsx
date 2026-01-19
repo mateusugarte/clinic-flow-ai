@@ -3,16 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import {
-  User,
-  Phone,
-  Clock,
-  Play,
-  Pause,
-  TrendingUp,
-  Users,
-  Calendar,
-} from "lucide-react";
+import { User, Phone, Clock, Play, Pause, TrendingUp, Users, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +49,7 @@ export default function CRM() {
     }
   };
 
-  const { data: leads, isLoading } = useQuery({
+  const { data: leads } = useQuery({
     queryKey: ["leads", user?.id, dateFilter],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -73,7 +64,6 @@ export default function CRM() {
     enabled: !!user,
   });
 
-  // Fetch appointments to calculate real conversion rate
   const { data: appointments } = useQuery({
     queryKey: ["appointments-for-conversion", user?.id, dateFilter],
     queryFn: async () => {
@@ -104,7 +94,6 @@ export default function CRM() {
   };
 
   const getLeadsForColumn = (q: LeadQualification) => leads?.filter((l) => l.qualification === q) || [];
-
   const handleDragStart = (leadId: string) => setDraggedLead(leadId);
   const handleDragEnd = () => setDraggedLead(null);
   const handleDrop = (qualification: LeadQualification) => {
@@ -114,20 +103,18 @@ export default function CRM() {
     }
   };
 
-  // Metrics calculation - CORRECTED conversion rate
   const totalLeads = leads?.length || 0;
   const leadsWithIA = leads?.filter(l => l.ia === "sim").length || 0;
-  
-  // Conversion = unique leads that have at least one appointment / total leads
   const uniqueLeadsWithAppointments = new Set(appointments?.map(a => a.lead_id) || []).size;
   const conversionRate = totalLeads > 0 ? ((uniqueLeadsWithAppointments / totalLeads) * 100).toFixed(1) : "0";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="h-full flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">CRM / Kanban</h1>
-          <p className="text-muted-foreground">Gerencie seus leads em um pipeline visual</p>
+          <h1 className="text-2xl font-bold text-foreground">CRM / Kanban</h1>
+          <p className="text-sm text-muted-foreground">Gerencie seus leads em um pipeline visual</p>
         </div>
         <div className="flex gap-2">
           {dateFilters.map((f) => (
@@ -139,76 +126,72 @@ export default function CRM() {
         </div>
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Metrics Row */}
+      <div className="grid grid-cols-3 gap-4 flex-shrink-0">
         <Card className="shadow-card">
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Total de Leads</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{totalLeads}</p></CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Total de Leads</CardTitle></CardHeader>
+          <CardContent><p className="text-xl font-bold">{totalLeads}</p></CardContent>
         </Card>
         <Card className="shadow-card">
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Play className="h-4 w-4 text-primary" />Com IA Ativa</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{leadsWithIA}</p></CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Play className="h-4 w-4 text-primary" />Com IA Ativa</CardTitle></CardHeader>
+          <CardContent><p className="text-xl font-bold">{leadsWithIA}</p></CardContent>
         </Card>
         <Card className="shadow-card">
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Taxa de Conversão</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Taxa de Conversão</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{conversionRate}%</p>
-            <p className="text-xs text-muted-foreground">{uniqueLeadsWithAppointments} de {totalLeads} agendaram</p>
+            <p className="text-xl font-bold">{conversionRate}%</p>
+            <p className="text-xs text-muted-foreground">{uniqueLeadsWithAppointments} de {totalLeads}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Kanban Board - Fill remaining space */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0">
         {columns.map((column) => (
-          <div key={column.id} className="space-y-3" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop(column.id)}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">{column.title}</h3>
+          <div key={column.id} className="flex flex-col min-h-0" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop(column.id)}>
+            <div className="flex items-center justify-between mb-2 flex-shrink-0">
+              <h3 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">{column.title}</h3>
               <Badge variant="secondary" className="text-xs">{getLeadsForColumn(column.id).length}</Badge>
             </div>
-            <div className="space-y-3 min-h-96 p-3 rounded-xl bg-muted/30 border border-border">
+            <div className="flex-1 space-y-2 p-2 rounded-xl bg-muted/30 border border-border overflow-y-auto">
               {getLeadsForColumn(column.id).map((lead) => (
                 <motion.div key={lead.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   draggable onDragStart={() => handleDragStart(lead.id)} onDragEnd={handleDragEnd}
                   className={`group cursor-grab active:cursor-grabbing ${draggedLead === lead.id ? "opacity-50" : ""}`}>
                   <Card className="shadow-sm hover:shadow-md transition-all border-l-4 border-l-primary"
                     onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); }}>
-                    <CardContent className="p-4 space-y-3">
+                    <CardContent className="p-3 space-y-2">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="h-4 w-4 text-primary" />
+                          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-3 w-3 text-primary" />
                           </div>
                           <div>
-                            <p className="font-medium text-sm">{lead.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</p>
+                            <p className="font-medium text-xs">{lead.name}</p>
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Phone className="h-2.5 w-2.5" />{lead.phone}</p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); toggleIA(lead.id, lead.ia); }}>
-                          {lead.ia === "sim" ? <Pause className="h-4 w-4 text-yellow-500" /> : <Play className="h-4 w-4 text-green-500" />}
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); toggleIA(lead.id, lead.ia); }}>
+                          {lead.ia === "sim" ? <Pause className="h-3 w-3 text-yellow-500" /> : <Play className="h-3 w-3 text-green-500" />}
                         </Button>
                       </div>
                       {lead.last_interaction && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />{format(new Date(lead.last_interaction), "dd/MM HH:mm", { locale: ptBR })}
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />{format(new Date(lead.last_interaction), "dd/MM HH:mm", { locale: ptBR })}
                         </p>
                       )}
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
-              {getLeadsForColumn(column.id).length === 0 && <div className="text-center py-8 text-muted-foreground text-sm">Nenhum lead</div>}
+              {getLeadsForColumn(column.id).length === 0 && <div className="text-center py-6 text-muted-foreground text-xs">Nenhum lead</div>}
             </div>
           </div>
         ))}
       </div>
 
       {/* Lead Modal */}
-      <DetailModal
-        isOpen={isLeadModalOpen}
-        onClose={() => setIsLeadModalOpen(false)}
-        title="Detalhes do Lead"
-      >
+      <DetailModal isOpen={isLeadModalOpen} onClose={() => setIsLeadModalOpen(false)} title="Detalhes do Lead">
         {selectedLead && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

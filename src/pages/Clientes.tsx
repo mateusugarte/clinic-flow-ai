@@ -65,8 +65,7 @@ export default function Clientes() {
   const { data: stats } = useQuery({
     queryKey: ["client-stats", user?.id],
     queryFn: async () => {
-      const { data: appointments, error } = await supabase.from("appointments").select("service_id, serviceName, scheduled_at").eq("user_id", user!.id);
-      if (error) throw error;
+      const { data: appointments } = await supabase.from("appointments").select("service_id, serviceName, scheduled_at").eq("user_id", user!.id);
       const serviceCounts: Record<string, { name: string; count: number }> = {};
       appointments?.forEach((apt) => { const key = apt.service_id; if (!serviceCounts[key]) serviceCounts[key] = { name: apt.serviceName || "Serviço", count: 0 }; serviceCounts[key].count++; });
       const topService = Object.values(serviceCounts).sort((a, b) => b.count - a.count)[0];
@@ -80,9 +79,10 @@ export default function Clientes() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div><h1 className="text-3xl font-bold text-foreground">Clientes</h1><p className="text-muted-foreground">Leads que já realizaram agendamentos</p></div>
+    <div className="h-full flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+        <div><h1 className="text-2xl font-bold text-foreground">Clientes</h1><p className="text-sm text-muted-foreground">Leads que já realizaram agendamentos</p></div>
         <div className="flex gap-2">
           {dateFilters.map((f) => (
             <Button key={f.value} variant={dateFilter === f.value ? "default" : "outline"} size="sm" onClick={() => setDateFilter(f.value)} className={dateFilter === f.value ? "gradient-primary" : ""}>{f.label}</Button>
@@ -90,42 +90,41 @@ export default function Clientes() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Serviço Mais Agendado</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats?.topService || "N/A"}</p></CardContent></Card>
-        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />Dia com Mais Agendamentos</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats?.topDay || "N/A"}</p></CardContent></Card>
-        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Star className="h-4 w-4 text-primary" />Total de Clientes</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{clients?.length || 0}</p></CardContent></Card>
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4 flex-shrink-0">
+        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Serviço Mais Agendado</CardTitle></CardHeader><CardContent><p className="text-lg font-bold truncate">{stats?.topService || "N/A"}</p></CardContent></Card>
+        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />Dia Mais Popular</CardTitle></CardHeader><CardContent><p className="text-lg font-bold">{stats?.topDay || "N/A"}</p></CardContent></Card>
+        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Star className="h-4 w-4 text-primary" />Total de Clientes</CardTitle></CardHeader><CardContent><p className="text-lg font-bold">{clients?.length || 0}</p></CardContent></Card>
       </div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Clients Grid - Fill remaining space */}
+      <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start overflow-y-auto">
         {clients?.map((client) => (
           <motion.div key={client.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer" onClick={() => { setSelectedClient(client); setIsClientModalOpen(true); }}>
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><User className="h-6 w-6 text-primary" /></div>
+            <Card className="shadow-card hover:shadow-lg transition-shadow cursor-pointer h-full" onClick={() => { setSelectedClient(client); setIsClientModalOpen(true); }}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{client.name}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{client.phone}</p>
-                    {client.email && <p className="text-sm text-muted-foreground flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{client.email}</p>}
+                    <h3 className="font-semibold text-sm text-foreground truncate">{client.name}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{client.phone}</p>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                  <Badge variant="secondary" className="flex items-center gap-1"><Calendar className="h-3 w-3" />{client.appointmentCount} agendamentos</Badge>
-                  {client.lastAppointment && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{format(new Date(client.lastAppointment.scheduled_at), "dd/MM/yy", { locale: ptBR })}</span>}
+                <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                  <Badge variant="secondary" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" />{client.appointmentCount}</Badge>
+                  {client.lastAppointment && <span className="text-[10px] text-muted-foreground">{format(new Date(client.lastAppointment.scheduled_at), "dd/MM", { locale: ptBR })}</span>}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
         {clients?.length === 0 && <div className="col-span-full text-center py-12 text-muted-foreground">Nenhum cliente encontrado.</div>}
-      </motion.div>
+      </div>
 
       {/* Client Detail Modal */}
-      <DetailModal
-        isOpen={isClientModalOpen}
-        onClose={() => setIsClientModalOpen(false)}
-        title="Detalhes do Cliente"
-      >
+      <DetailModal isOpen={isClientModalOpen} onClose={() => setIsClientModalOpen(false)} title="Detalhes do Cliente">
         {selectedClient && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
@@ -136,16 +135,11 @@ export default function Clientes() {
               <div><Label className="text-muted-foreground text-xs">Telefone</Label><p>{selectedClient.phone}</p></div>
               <div><Label className="text-muted-foreground text-xs">Email</Label><p>{selectedClient.email || "Não informado"}</p></div>
             </div>
-            
             <div className="border-t pt-4">
               <Label className="text-muted-foreground text-xs">Histórico de Agendamentos</Label>
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
                 {selectedClient.appointments?.map((apt: any) => (
-                  <div 
-                    key={apt.id} 
-                    onClick={() => { setSelectedAppointment(apt); setIsAppointmentModalOpen(true); }} 
-                    className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                  >
+                  <div key={apt.id} onClick={() => { setSelectedAppointment(apt); setIsAppointmentModalOpen(true); }} className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
                     <div className="flex items-center gap-3">
                       <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                       <div className="flex-1">
@@ -163,11 +157,7 @@ export default function Clientes() {
       </DetailModal>
 
       {/* Appointment Detail Modal */}
-      <DetailModal
-        isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
-        title="Detalhes do Agendamento"
-      >
+      <DetailModal isOpen={isAppointmentModalOpen} onClose={() => setIsAppointmentModalOpen(false)} title="Detalhes do Agendamento">
         {selectedAppointment && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
@@ -183,7 +173,6 @@ export default function Clientes() {
               <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
             </div>
             <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
-            {selectedAppointment.notes && <div><Label className="text-muted-foreground text-xs">Observações</Label><p className="text-sm">{selectedAppointment.notes}</p></div>}
           </div>
         )}
       </DetailModal>

@@ -106,7 +106,6 @@ export default function Servicos() {
   });
 
   const formatPrice = (price: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
-
   const getProfessionalsForService = (serviceId: string) => professionals?.filter(p => p.service_ids?.includes(serviceId)) || [];
 
   const handleServiceClick = (service: any) => {
@@ -124,9 +123,10 @@ export default function Servicos() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div><h1 className="text-3xl font-bold text-foreground">Serviços</h1><p className="text-muted-foreground">Gerencie os serviços da sua clínica</p></div>
+    <div className="h-full flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+        <div><h1 className="text-2xl font-bold text-foreground">Serviços</h1><p className="text-sm text-muted-foreground">Gerencie os serviços da sua clínica</p></div>
         <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
           <DialogTrigger asChild><Button className="gradient-primary"><Plus className="h-4 w-4 mr-2" />Novo Serviço</Button></DialogTrigger>
           <DialogContent className="max-w-md">
@@ -148,45 +148,35 @@ export default function Servicos() {
         </Dialog>
       </div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Services Grid - Fill remaining space */}
+      <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start overflow-y-auto">
         {services?.map((service) => (
           <motion.div key={service.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className={`shadow-card hover:shadow-lg transition-shadow group cursor-pointer ${!service.is_available ? 'opacity-60' : ''}`} onClick={() => handleServiceClick(service)}>
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
+            <Card className={`shadow-card hover:shadow-lg transition-shadow cursor-pointer h-full ${!service.is_available ? 'opacity-60' : ''}`} onClick={() => handleServiceClick(service)}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className={`font-semibold text-lg ${!service.is_available ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{service.name}</h3>
-                      {!service.is_available && <Badge variant="outline" className="text-xs">Inativo</Badge>}
+                      <h3 className={`font-semibold text-sm truncate ${!service.is_available ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{service.name}</h3>
                     </div>
-                    {service.category && <Badge variant="secondary" className="mt-1"><Tag className="h-3 w-3 mr-1" />{service.category}</Badge>}
+                    {service.category && <Badge variant="secondary" className="mt-1 text-[10px]"><Tag className="h-2.5 w-2.5 mr-1" />{service.category}</Badge>}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{service.is_available ? 'Ativo' : 'Inativo'}</span>
-                    <Switch checked={service.is_available ?? true} onCheckedChange={(checked) => { toggleAvailability.mutate({ id: service.id, is_available: checked }); }} onClick={(e) => e.stopPropagation()} />
-                  </div>
+                  <Switch checked={service.is_available ?? true} onCheckedChange={(checked) => { toggleAvailability.mutate({ id: service.id, is_available: checked }); }} onClick={(e) => e.stopPropagation()} />
                 </div>
-                {service.description && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{service.description}</p>}
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock className="h-4 w-4" />{service.duration} min</span>
-                    <span className="font-semibold text-primary flex items-center gap-1"><DollarSign className="h-4 w-4" />{formatPrice(service.price)}</span>
-                  </div>
-                  <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); deleteService.mutate(service.id); }}><Trash2 className="h-4 w-4" /></Button>
+                {service.description && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{service.description}</p>}
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{service.duration}min</span>
+                  <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
         {services?.length === 0 && <div className="col-span-full text-center py-12 text-muted-foreground">Nenhum serviço cadastrado.</div>}
-      </motion.div>
+      </div>
 
       {/* Service Detail Modal */}
-      <DetailModal
-        isOpen={isServiceModalOpen}
-        onClose={() => { setIsServiceModalOpen(false); setIsEditMode(false); }}
-        title={isEditMode ? "Editar Serviço" : "Detalhes do Serviço"}
-      >
+      <DetailModal isOpen={isServiceModalOpen} onClose={() => { setIsServiceModalOpen(false); setIsEditMode(false); }} title={isEditMode ? "Editar Serviço" : "Detalhes do Serviço"}>
         {selectedService && editData && (
           <div className="space-y-6">
             {isEditMode ? (
@@ -217,7 +207,7 @@ export default function Servicos() {
                   <Label className="text-muted-foreground text-xs">Profissionais que realizam</Label>
                   <div className="mt-2 space-y-2">
                     {getProfessionalsForService(selectedService.id).map((prof) => (
-                      <div key={prof.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg"><User className="h-4 w-4 text-primary" /><span>{prof.name}</span></div>
+                      <div key={prof.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg"><User className="h-4 w-4 text-primary" /><span className="text-sm">{prof.name}</span></div>
                     ))}
                     {getProfessionalsForService(selectedService.id).length === 0 && <p className="text-sm text-muted-foreground">Nenhum profissional</p>}
                   </div>
@@ -225,7 +215,7 @@ export default function Servicos() {
 
                 <div className="border-t pt-4">
                   <Label className="text-muted-foreground text-xs">Adicionar/Remover Profissionais</Label>
-                  <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                  <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
                     {professionals?.map((prof) => (
                       <div key={prof.id} className="flex items-center space-x-2">
                         <Checkbox id={`prof-${prof.id}`} checked={prof.service_ids?.includes(selectedService.id)} onCheckedChange={(checked) => handleAddProfessionalToService(prof.id, selectedService.id, !!checked)} />

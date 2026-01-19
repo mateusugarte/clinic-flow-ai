@@ -34,8 +34,9 @@ export function AppLayout() {
       </div>
       
       <AppSidebar />
-      <main className="lg:ml-72 pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen relative z-10">
-        <div className="p-6 lg:p-8">
+      {/* Sidebar is always 72px collapsed */}
+      <main className="lg:ml-[72px] pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen relative z-10">
+        <div className="p-4 lg:p-6 h-[calc(100vh-4rem)] lg:h-screen overflow-y-auto">
           <Outlet />
         </div>
       </main>
