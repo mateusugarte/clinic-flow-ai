@@ -1,10 +1,25 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
-import { AuroraBackground } from "@/components/ui/aurora-background";
+import { PageLoading } from "@/components/ui/page-loading";
 
 export function AppLayout() {
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
   return (
     <div className="min-h-screen bg-background relative">
+      <PageLoading isLoading={isLoading} />
+      
       {/* Aurora background effect - subtle */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
