@@ -34,6 +34,7 @@ export type Database = {
           support_phone: string | null
           updated_at: string | null
           user_id: string | null
+          whatsapp_connected: boolean | null
         }
         Insert: {
           addresses?: Json | null
@@ -54,6 +55,7 @@ export type Database = {
           support_phone?: string | null
           updated_at?: string | null
           user_id?: string | null
+          whatsapp_connected?: boolean | null
         }
         Update: {
           addresses?: Json | null
@@ -74,6 +76,7 @@ export type Database = {
           support_phone?: string | null
           updated_at?: string | null
           user_id?: string | null
+          whatsapp_connected?: boolean | null
         }
         Relationships: []
       }

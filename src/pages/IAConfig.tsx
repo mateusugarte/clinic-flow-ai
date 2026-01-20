@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import WhatsAppConnection from "@/components/WhatsAppConnection";
 
 export default function IAConfig() {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ export default function IAConfig() {
     queryFn: async () => {
       const { data, error } = await supabase.from("ai_configs").select("*").eq("user_id", user!.id).maybeSingle();
       if (error) throw error;
-      return data;
+      return data as typeof data & { whatsapp_connected?: boolean };
     },
     enabled: !!user,
   });
@@ -105,6 +106,13 @@ export default function IAConfig() {
 
       {/* Grid Layout - Fill Screen */}
       <div className="flex-1 grid grid-cols-12 gap-4 auto-rows-min overflow-y-auto">
+        {/* WhatsApp Connection Card */}
+        <WhatsAppConnection 
+          configId={config?.id} 
+          isConnected={config?.whatsapp_connected || false}
+          connectedPhone={formData.connected_phone ? `55${formData.connected_phone}` : ""}
+        />
+
         {/* Identity Card */}
         <Card className="col-span-12 lg:col-span-6 shadow-card">
           <CardHeader className="pb-2">
