@@ -12,9 +12,10 @@ import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, startOfDay, parseISO } from "date-fns";
+import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatISOToDisplay, extractTimeFromISO } from "@/lib/dateUtils";
+import { compareScheduledAt, dateKeyToLocalDate, formatDateKeyBR, getScheduledDateKey } from "@/lib/scheduledAt";
 
 type DateFilter = "7days" | "15days" | "30days" | "all";
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
@@ -60,9 +61,9 @@ export default function Clientes() {
       if (leadError) throw leadError;
       return leads?.map((lead) => ({
         ...lead,
-        appointments: appointments?.filter((a) => a.lead_id === lead.id).sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()) || [],
+        appointments: appointments?.filter((a) => a.lead_id === lead.id).sort((a, b) => compareScheduledAt(b.scheduled_at, a.scheduled_at)) || [],
         appointmentCount: appointments?.filter((a) => a.lead_id === lead.id).length || 0,
-        lastAppointment: appointments?.filter((a) => a.lead_id === lead.id).sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())[0],
+        lastAppointment: appointments?.filter((a) => a.lead_id === lead.id).sort((a, b) => compareScheduledAt(b.scheduled_at, a.scheduled_at))[0],
       })) || [];
     },
     enabled: !!user,
@@ -76,7 +77,11 @@ export default function Clientes() {
       appointments?.forEach((apt) => { const key = apt.service_id; if (!serviceCounts[key]) serviceCounts[key] = { name: apt.serviceName || "Serviço", count: 0 }; serviceCounts[key].count++; });
       const topService = Object.values(serviceCounts).sort((a, b) => b.count - a.count)[0];
       const dayCounts: Record<number, number> = {};
-      appointments?.forEach((apt) => { const day = new Date(apt.scheduled_at).getDay(); dayCounts[day] = (dayCounts[day] || 0) + 1; });
+      appointments?.forEach((apt) => {
+        const dateKey = getScheduledDateKey(apt.scheduled_at);
+        const day = dateKeyToLocalDate(dateKey).getDay();
+        dayCounts[day] = (dayCounts[day] || 0) + 1;
+      });
       const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
       const topDay = Object.entries(dayCounts).sort(([, a], [, b]) => b - a)[0];
       return { topService: topService?.name || "N/A", topDay: topDay ? days[parseInt(topDay[0])] : "N/A", totalClients: clients?.length || 0 };
@@ -131,7 +136,7 @@ export default function Clientes() {
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
                   <Badge variant="secondary" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" />{client.appointmentCount}</Badge>
-                  {client.lastAppointment && <span className="text-[10px] text-muted-foreground">{format(parseISO(client.lastAppointment.scheduled_at), "dd/MM", { locale: ptBR })}</span>}
+                  {client.lastAppointment && <span className="text-[10px] text-muted-foreground">{formatDateKeyBR(getScheduledDateKey(client.lastAppointment.scheduled_at))}</span>}
                 </div>
               </CardContent>
             </Card>

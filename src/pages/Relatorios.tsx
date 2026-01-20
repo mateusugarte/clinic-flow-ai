@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GitHubCalendar } from "@/components/ui/github-calendar";
 import { format, subDays, startOfDay, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getScheduledDateKey, formatDateKeyBR } from "@/lib/scheduledAt";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--primary) / 0.7)", "hsl(var(--primary) / 0.5)", "hsl(var(--primary) / 0.3)"];
 
@@ -67,7 +68,7 @@ export default function Relatorios() {
 
       const dailyData: Record<string, number> = {};
       appointments?.forEach((apt) => {
-        const day = format(new Date(apt.scheduled_at), "dd/MM");
+        const day = formatDateKeyBR(getScheduledDateKey(apt.scheduled_at));
         dailyData[day] = (dailyData[day] || 0) + 1;
       });
       const chartData = Object.entries(dailyData).map(([day, count]) => ({ day, count })).slice(-14);
@@ -93,7 +94,7 @@ export default function Relatorios() {
       if (error) throw error;
       const groupedByDate: Record<string, number> = {};
       data?.forEach((apt) => {
-        const dateKey = format(new Date(apt.scheduled_at), "yyyy-MM-dd");
+        const dateKey = getScheduledDateKey(apt.scheduled_at);
         groupedByDate[dateKey] = (groupedByDate[dateKey] || 0) + 1;
       });
       return Object.entries(groupedByDate).map(([date, count]) => ({ date, count }));

@@ -2,17 +2,17 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isToday, isSameMonth, isSameDay, addMinutes } from "date-fns";
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, addMinutes, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { extractTimeFromISO, extractDateTimeFromISO } from "@/lib/dateUtils";
+import { getScheduledDateKey, toStoredScheduledAt } from "@/lib/scheduledAt";
 
-/**
- * Creates a timestamp string without UTC conversion.
- * This ensures the time entered is saved exactly as the user selected.
- */
-function createLocalTimestamp(date: string, time: string): string {
-  // Format: "2026-01-20T09:00:00" - no timezone suffix, treated as local time by Postgres
-  return `${date}T${time}:00`;
+function dayStartTs(dateKey: string) {
+  return `${dateKey} 00:00:00+00`;
+}
+
+function dayEndTs(dateKey: string) {
+  return `${dateKey} 23:59:59+00`;
 }
 import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,7 +108,16 @@ export default function Agendas() {
     queryFn: async () => {
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
-      let query = supabase.from("appointments").select("*, leads(name, phone)").eq("user_id", user!.id).gte("scheduled_at", monthStart.toISOString()).lte("scheduled_at", monthEnd.toISOString());
+
+      // Build month bounds without JS UTC conversion.
+      const monthStartKey = format(monthStart, "yyyy-MM-dd");
+      const monthEndKey = format(monthEnd, "yyyy-MM-dd");
+      let query = supabase
+        .from("appointments")
+        .select("*, leads(name, phone)")
+        .eq("user_id", user!.id)
+        .gte("scheduled_at", dayStartTs(monthStartKey))
+        .lte("scheduled_at", dayEndTs(monthEndKey));
       if (selectedProfessional && selectedProfessional !== "all") query = query.eq("professional_id", selectedProfessional);
       const { data, error } = await query;
       if (error) throw error;
@@ -238,8 +247,7 @@ export default function Agendas() {
     if (!editingAppointment) return;
     const service = allServices?.find(s => s.id === editingAppointment.service_id);
     const professional = allProfessionals?.find(p => p.id === editingAppointment.professional_id);
-    // Use local timestamp without UTC conversion
-    const scheduledAt = createLocalTimestamp(editingAppointment.date, editingAppointment.time);
+    const scheduledAt = toStoredScheduledAt(editingAppointment.date, editingAppointment.time);
     updateAppointment.mutate({
       id: editingAppointment.id,
       service_id: editingAppointment.service_id,
@@ -255,10 +263,8 @@ export default function Agendas() {
 
   const getAppointmentsForDay = (date: Date) => {
     if (!appointments) return [];
-    return appointments.filter((apt) => {
-      const aptDate = parseISO(apt.scheduled_at);
-      return aptDate.getDate() === date.getDate() && aptDate.getMonth() === date.getMonth() && aptDate.getFullYear() === date.getFullYear();
-    });
+    const targetKey = format(date, "yyyy-MM-dd");
+    return appointments.filter((apt) => getScheduledDateKey(apt.scheduled_at) === targetKey);
   };
 
   const handleDayClick = (date: Date) => {
@@ -277,8 +283,7 @@ export default function Agendas() {
     const service = services?.find(s => s.id === selectedServiceId);
     const professional = professionals?.find(p => p.id === selectedProfId);
     const lead = appointmentTab === "existing" ? selectedLead : { name: newLeadName, phone: newLeadPhone };
-    // Use local timestamp without UTC conversion
-    const scheduledAt = createLocalTimestamp(appointmentDate, appointmentTime);
+    const scheduledAt = toStoredScheduledAt(appointmentDate, appointmentTime);
     createAppointment.mutate({
       user_id: user!.id, lead_id: leadId, service_id: selectedServiceId, professional_id: selectedProfId,
       scheduled_at: scheduledAt, serviceName: service?.name, professionalName: professional?.name,
@@ -380,12 +385,13 @@ export default function Agendas() {
   }
 
   const appointmentsByDate = appointments?.reduce((acc, apt) => {
-    const dateKey = format(parseISO(apt.scheduled_at), "yyyy-MM-dd");
-    acc[dateKey] = (acc[dateKey] || 0) + 1;
+    const dateKey = getScheduledDateKey(apt.scheduled_at);
+    if (dateKey) acc[dateKey] = (acc[dateKey] || 0) + 1;
     return acc;
   }, {} as Record<string, number>) || {};
 
-  const todaysAppointments = appointments?.filter(apt => isToday(parseISO(apt.scheduled_at))) || [];
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const todaysAppointments = appointments?.filter((apt: any) => getScheduledDateKey(apt.scheduled_at) === todayKey) || [];
 
   return (
     <PageTransition className="h-full flex flex-col gap-4">

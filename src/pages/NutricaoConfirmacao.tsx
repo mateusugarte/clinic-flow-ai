@@ -10,9 +10,9 @@ import { Calendar, CheckCircle, XCircle, Send, ChevronLeft, ChevronRight, Clock,
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, startOfWeek, endOfWeek, addDays, isSameDay, isToday, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import { format, startOfWeek, endOfWeek, addDays, isToday, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatISOToDisplay } from "@/lib/dateUtils";
+import { formatISOToDisplay, extractDateTimeFromISO } from "@/lib/dateUtils";
 import { StatusSelect } from "@/components/ui/status-select";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -127,61 +127,66 @@ export default function NutricaoConfirmacao() {
   const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
   const weekEnd = useMemo(() => endOfWeek(today, { weekStartsOn: 1 }), [today]);
 
-  // Filter appointments - using selectedDate for daily view
-  const selectedDayConfirmed = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, selectedDate) && apt.status === "confirmado";
-    }), [appointments, selectedDate]);
+  const selectedKey = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
+  const weekStartKey = useMemo(() => format(weekStart, "yyyy-MM-dd"), [weekStart]);
+  const weekEndKey = useMemo(() => format(weekEnd, "yyyy-MM-dd"), [weekEnd]);
 
-  const weekConfirmed = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "confirmado";
-    }), [appointments, weekStart, weekEnd]);
+  const inWeek = (dateKey: string) => dateKey >= weekStartKey && dateKey <= weekEndKey;
 
-  const selectedDayCancelled = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, selectedDate) && apt.status === "cancelado";
-    }), [appointments, selectedDate]);
+  // Filter appointments using string extraction (no timezone conversion)
+  const selectedDayConfirmed = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === selectedKey && apt.status === "confirmado";
+    }), [appointments, selectedKey]);
 
-  const weekCancelled = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "cancelado";
-    }), [appointments, weekStart, weekEnd]);
+  const weekConfirmed = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return inWeek(date) && apt.status === "confirmado";
+    }), [appointments, weekStartKey, weekEndKey]);
 
-  const selectedDayPending = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, selectedDate) && apt.status === "pendente";
-    }), [appointments, selectedDate]);
+  const selectedDayCancelled = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === selectedKey && apt.status === "cancelado";
+    }), [appointments, selectedKey]);
 
-  const weekPending = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "pendente";
-    }), [appointments, weekStart, weekEnd]);
+  const weekCancelled = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return inWeek(date) && apt.status === "cancelado";
+    }), [appointments, weekStartKey, weekEndKey]);
 
-  const selectedDayRisk = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, selectedDate) && apt.status === "risco";
-    }), [appointments, selectedDate]);
+  const selectedDayPending = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === selectedKey && apt.status === "pendente";
+    }), [appointments, selectedKey]);
 
-  const weekRisk = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return aptDate >= weekStart && aptDate <= weekEnd && apt.status === "risco";
-    }), [appointments, weekStart, weekEnd]);
+  const weekPending = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return inWeek(date) && apt.status === "pendente";
+    }), [appointments, weekStartKey, weekEndKey]);
+
+  const selectedDayRisk = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === selectedKey && apt.status === "risco";
+    }), [appointments, selectedKey]);
+
+  const weekRisk = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return inWeek(date) && apt.status === "risco";
+    }), [appointments, weekStartKey, weekEndKey]);
 
   // Get all appointments for selected date in calendar
-  const selectedDateAppointments = useMemo(() => 
-    appointments.filter(apt => {
-      const aptDate = new Date(apt.scheduled_at);
-      return isSameDay(aptDate, selectedDate);
-    }), [appointments, selectedDate]);
+  const selectedDateAppointments = useMemo(() =>
+    appointments.filter((apt) => extractDateTimeFromISO(apt.scheduled_at).date === selectedKey),
+    [appointments, selectedKey]
+  );
 
   // Only appointments that haven't been sent confirmation yet
   const pendingConfirmationAppointments = useMemo(() => 
@@ -201,7 +206,7 @@ export default function NutricaoConfirmacao() {
   const appointmentsByDay = useMemo(() => {
     const byDay: Record<string, { total: number; confirmed: number; pending: number }> = {};
     appointments.forEach(apt => {
-      const dateKey = format(new Date(apt.scheduled_at), "yyyy-MM-dd");
+      const dateKey = extractDateTimeFromISO(apt.scheduled_at).date;
       if (!byDay[dateKey]) {
         byDay[dateKey] = { total: 0, confirmed: 0, pending: 0 };
       }
