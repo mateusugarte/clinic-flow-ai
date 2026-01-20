@@ -200,7 +200,7 @@ export default function Clientes() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{formatISOToDisplay(selectedAppointment.scheduled_at)}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || 0} min</p></div>
+              <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao ? `${Number(selectedAppointment.duracao)} min` : "N/A"}</p></div>
             </div>
             <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
           </div>
