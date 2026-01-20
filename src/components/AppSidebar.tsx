@@ -66,7 +66,7 @@ export function AppSidebar() {
         )}
       >
         {/* Header with Logo */}
-        <div className="flex items-center px-3 py-4 h-14 border-b border-sidebar-border">
+        <div className="flex items-center justify-center px-2 py-4 h-20 border-b border-sidebar-border">
           <AnimatePresence mode="wait">
             {isHovered ? (
               <motion.div
@@ -74,9 +74,9 @@ export function AppSidebar() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="flex items-center gap-2.5"
+                className="flex items-center gap-3"
               >
-                <img src={logoIcon} alt="stickIA" className="h-12 w-12 object-contain flex-shrink-0" />
+                <img src={logoIcon} alt="stickIA" className="h-14 w-14 object-contain flex-shrink-0" />
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -92,7 +92,7 @@ export function AppSidebar() {
                   <img 
                     src={logoWordmark} 
                     alt="stickIA" 
-                    className="h-8 object-contain"
+                    className="h-12 object-contain"
                   />
                 </motion.div>
               </motion.div>
@@ -103,7 +103,7 @@ export function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="mx-auto"
               >
-                <img src={logoIcon} alt="stickIA" className="h-12 w-12 object-contain" />
+                <img src={logoIcon} alt="stickIA" className="h-14 w-14 object-contain" />
               </motion.div>
             )}
           </AnimatePresence>
