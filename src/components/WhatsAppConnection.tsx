@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const WEBHOOK_URL = "https://aula-n8n.riftvt.easypanel.host/webhook/6aee2506-5133-4c03-bf32-54600c2dc988";
+const EDGE_FUNCTION_URL = "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/whatsapp-proxy";
 
 interface WhatsAppConnectionProps {
   configId: string | undefined;
@@ -60,12 +60,15 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Create instance and generate QR code
   const createInstance = useMutation({
     mutationFn: async () => {
-      const response = await fetch(WEBHOOK_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({
           acao: "criar instancia e gerar qr code",
-          user_id: user?.id,
         }),
       });
       const data = await response.json();
@@ -92,12 +95,15 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Generate QR code with phone number
   const generateQR = useMutation({
     mutationFn: async () => {
-      const response = await fetch(WEBHOOK_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({
           acao: "gerar qr code",
-          user_id: user?.id,
           phone: connectedPhone,
         }),
       });
@@ -124,16 +130,19 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Verify connection
   const verifyConnection = useMutation({
     mutationFn: async () => {
-      const response = await fetch(WEBHOOK_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({
           acao: "verificar conexao",
-          user_id: user?.id,
         }),
       });
-      const text = await response.text();
-      return text;
+      const data = await response.json();
+      return typeof data === "string" ? data : JSON.stringify(data);
     },
     onSuccess: async (data) => {
       const isConnectedResult = data.toLowerCase().includes("conectado") || data.toLowerCase().includes("connected") || data.toLowerCase().includes("true");
@@ -156,16 +165,19 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Disconnect
   const disconnect = useMutation({
     mutationFn: async () => {
-      const response = await fetch(WEBHOOK_URL, {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({
           acao: "desconectar",
-          user_id: user?.id,
         }),
       });
-      const text = await response.text();
-      return text;
+      const data = await response.json();
+      return data;
     },
     onSuccess: async () => {
       await updateConnectionStatus(false);

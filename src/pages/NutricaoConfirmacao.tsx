@@ -334,6 +334,9 @@ export default function NutricaoConfirmacao() {
     let errorCount = 0;
 
     try {
+      // Get session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      
       // Process each appointment one by one
       for (const apt of appointmentsToSend) {
         const phone = apt.phoneNumber?.toString() || apt.lead?.phone || "N/A";
@@ -345,20 +348,22 @@ export default function NutricaoConfirmacao() {
         } : null);
 
         try {
+          // Send minimal payload to edge function
           const payload = {
-            user_id: user?.id,
-            agendamento: {
-              ...apt,
-              lead: apt.lead || null,
-            },
+            appointmentId: apt.id,
+            phone,
+            patientName: apt.patientName || apt.lead?.name || "Paciente",
+            scheduledAt: apt.scheduled_at,
+            serviceName: apt.serviceName || "Consulta",
           };
 
           const response = await fetch(
-            "https://aula-n8n.riftvt.easypanel.host/webhook/3563be98-d85f-47b1-9eec-895f2a507258",
+            "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/confirmation-proxy",
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
+                "Authorization": `Bearer ${session?.access_token}`,
               },
               body: JSON.stringify(payload),
             }
