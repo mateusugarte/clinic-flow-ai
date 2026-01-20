@@ -69,7 +69,7 @@ function formatMinutesToHours(minutes: number) {
 }
 
 // Import from dateUtils for consistent timezone handling
-import { extractTimeFromISO, extractHourFromISO } from "@/lib/dateUtils";
+import { extractTimeFromISO, extractHourFromISO, formatISOToDisplay } from "@/lib/dateUtils";
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange>("7days");
@@ -600,10 +600,10 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-muted-foreground text-xs">Profissional</Label><p>{selectedAppointment.professionalName || "Não informado"}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{format(new Date(selectedAppointment.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Data e Hora</Label><p>{formatISOToDisplay(selectedAppointment.scheduled_at)}</p></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || 0} minutos</p></div>
+              <div><Label className="text-muted-foreground text-xs">Duração</Label><p>{selectedAppointment.duracao || "N/A"} minutos</p></div>
               <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">R$ {selectedAppointment.price?.toFixed(2) || "0.00"}</p></div>
             </div>
           </div>

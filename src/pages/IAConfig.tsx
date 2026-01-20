@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Bot, Building2, Phone, MapPin, Plus, Trash2, Save, Loader2 } from "lucide-react";
+import { Bot, Building2, Phone, MapPin, Plus, Trash2, Save, Loader2, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +20,47 @@ export default function IAConfig() {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    clinic_name: "", agent_name: "", owner_name: "", support_phone: "", connected_phone: "", opening_hours: "",
+    clinic_name: "", agent_name: "", owner_name: "", support_phone: "", connected_phone: "",
+    opening_hours_start_day: "seg",
+    opening_hours_end_day: "sex",
+    opening_hours_start_time: "08:00",
+    opening_hours_end_time: "18:00",
     addresses: [] as string[], negative_constraints: "", delay_policy: "", allow_upsell: false, Aut1: "", Aut2: "", Aut3: "",
   });
   const [newAddress, setNewAddress] = useState("");
+
+  // Days of week options
+  const daysOfWeek = [
+    { value: "seg", label: "Segunda" },
+    { value: "ter", label: "Terça" },
+    { value: "qua", label: "Quarta" },
+    { value: "qui", label: "Quinta" },
+    { value: "sex", label: "Sexta" },
+    { value: "sab", label: "Sábado" },
+    { value: "dom", label: "Domingo" },
+  ];
+
+  // Parse opening_hours string to structured format
+  const parseOpeningHours = (hours: string | null): { startDay: string; endDay: string; startTime: string; endTime: string } => {
+    if (!hours) return { startDay: "seg", endDay: "sex", startTime: "08:00", endTime: "18:00" };
+    
+    // Match format like "seg a sex das 08:00 às 18:00"
+    const match = hours.match(/(\w+)\s*a\s*(\w+)\s*das?\s*(\d{2}:\d{2})\s*[àa]s?\s*(\d{2}:\d{2})/i);
+    if (match) {
+      return {
+        startDay: match[1].toLowerCase(),
+        endDay: match[2].toLowerCase(),
+        startTime: match[3],
+        endTime: match[4],
+      };
+    }
+    return { startDay: "seg", endDay: "sex", startTime: "08:00", endTime: "18:00" };
+  };
+
+  // Format structured data to opening_hours string
+  const formatOpeningHours = (startDay: string, endDay: string, startTime: string, endTime: string): string => {
+    return `${startDay} a ${endDay} das ${startTime} às ${endTime}`;
+  };
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["ai-config", user?.id],
@@ -40,10 +78,15 @@ export default function IAConfig() {
         if (!phone) return "";
         return phone.startsWith("55") ? phone.slice(2) : phone;
       };
+      const parsedHours = parseOpeningHours(config.opening_hours);
       setFormData({
         clinic_name: config.clinic_name || "", agent_name: config.agent_name || "", owner_name: config.owner_name || "",
         support_phone: config.support_phone || "", connected_phone: removePrefix(config.connected_phone),
-        opening_hours: config.opening_hours || "", addresses: Array.isArray(config.addresses) ? config.addresses as string[] : [],
+        opening_hours_start_day: parsedHours.startDay,
+        opening_hours_end_day: parsedHours.endDay,
+        opening_hours_start_time: parsedHours.startTime,
+        opening_hours_end_time: parsedHours.endTime,
+        addresses: Array.isArray(config.addresses) ? config.addresses as string[] : [],
         negative_constraints: config.negative_constraints || "", delay_policy: config.delay_policy || "",
         allow_upsell: config.allow_upsell || false,
         Aut1: removePrefix(config.Aut1?.toString() || ""),
@@ -61,8 +104,24 @@ export default function IAConfig() {
         return cleaned ? `55${cleaned}` : null;
       };
 
+      // Build opening_hours string from structured fields
+      const opening_hours = formatOpeningHours(
+        formData.opening_hours_start_day,
+        formData.opening_hours_end_day,
+        formData.opening_hours_start_time,
+        formData.opening_hours_end_time
+      );
+
       const payload = {
-        ...formData,
+        clinic_name: formData.clinic_name,
+        agent_name: formData.agent_name,
+        owner_name: formData.owner_name,
+        support_phone: formData.support_phone,
+        addresses: formData.addresses,
+        negative_constraints: formData.negative_constraints,
+        delay_policy: formData.delay_policy,
+        allow_upsell: formData.allow_upsell,
+        opening_hours,
         user_id: user!.id,
         connected_phone: addPrefix(formData.connected_phone),
         Aut1: formData.Aut1 ? parseFloat(`55${formData.Aut1.replace(/\D/g, "")}`) : null,
@@ -127,12 +186,34 @@ export default function IAConfig() {
               <div className="space-y-2"><Label className="text-xs">Proprietário</Label><Input value={formData.owner_name} onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })} placeholder="Dr. João Silva" /></div>
               <div className="space-y-2"><Label className="text-xs">Telefone de Suporte</Label><Input value={formData.support_phone} onChange={(e) => setFormData({ ...formData, support_phone: e.target.value })} placeholder="(11) 99999-9999" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label className="text-xs">Horário de Funcionamento</Label><Input value={formData.opening_hours} onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })} placeholder="Seg a Sex 08:00-18:00" /></div>
-              <div className="space-y-2">
-                <Label className="text-xs">Número WhatsApp</Label>
-                <div className="flex gap-2"><span className="flex items-center px-3 bg-muted rounded-lg text-xs font-medium">+55</span><Input value={formData.connected_phone} onChange={(e) => setFormData({ ...formData, connected_phone: e.target.value.replace(/\D/g, "") })} placeholder="11999999999" /></div>
+            {/* Opening Hours - Fixed Format */}
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Horário de Funcionamento</Label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select value={formData.opening_hours_start_day} onValueChange={(v) => setFormData({ ...formData, opening_hours_start_day: v })}>
+                  <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {daysOfWeek.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">a</span>
+                <Select value={formData.opening_hours_end_day} onValueChange={(v) => setFormData({ ...formData, opening_hours_end_day: v })}>
+                  <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {daysOfWeek.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">das</span>
+                <Input type="time" className="w-24" value={formData.opening_hours_start_time} onChange={(e) => setFormData({ ...formData, opening_hours_start_time: e.target.value })} />
+                <span className="text-sm text-muted-foreground">às</span>
+                <Input type="time" className="w-24" value={formData.opening_hours_end_time} onChange={(e) => setFormData({ ...formData, opening_hours_end_time: e.target.value })} />
               </div>
+              <p className="text-xs text-muted-foreground">Formato: {formData.opening_hours_start_day} a {formData.opening_hours_end_day} das {formData.opening_hours_start_time} às {formData.opening_hours_end_time}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs">Número WhatsApp</Label>
+              <div className="flex gap-2"><span className="flex items-center px-3 bg-muted rounded-lg text-xs font-medium">+55</span><Input value={formData.connected_phone} onChange={(e) => setFormData({ ...formData, connected_phone: e.target.value.replace(/\D/g, "") })} placeholder="11999999999" /></div>
             </div>
           </CardContent>
         </Card>
