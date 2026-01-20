@@ -19,12 +19,11 @@ import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { extractTimeFromISO, formatISOToShortDisplay, extractDateTimeFromISO } from "@/lib/dateUtils";
+import { toStoredScheduledAt, getScheduledDateKey } from "@/lib/scheduledAt";
 
-/**
- * Creates a timestamp string without UTC conversion.
- */
-function createLocalTimestamp(date: string, time: string): string {
-  return `${date}T${time}:00`;
+function filterStartTs(date: Date) {
+  const key = format(date, "yyyy-MM-dd");
+  return `${key} 00:00:00+00`;
 }
 
 type LeadQualification = "entrou_em_contato" | "respondendo_duvidas" | "repassando_disponibilidade" | "fez_agendamento" | "repassado_atendimento";
@@ -109,9 +108,9 @@ export default function CRM() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("lead_id, id, scheduled_at, serviceName, professionalName, status, price")
+        .select("lead_id, id, scheduled_at, professional_id, duracao, service_id, serviceName, professionalName, status, price")
         .eq("user_id", user!.id)
-        .gte("scheduled_at", getFilterDate().toISOString());
+        .gte("scheduled_at", filterStartTs(getFilterDate()));
       if (error) throw error;
       return data;
     },
@@ -246,8 +245,7 @@ export default function CRM() {
     const service = services?.find(s => s.id === selectedServiceId);
     const professional = professionals?.find(p => p.id === selectedProfId);
     const lead = leads?.find(l => l.id === appointmentLeadId);
-    // Use local timestamp without UTC conversion
-    const scheduledAt = createLocalTimestamp(appointmentDate, appointmentTime);
+    const scheduledAt = toStoredScheduledAt(appointmentDate, appointmentTime);
 
     createAppointment.mutate({
       user_id: user!.id,
@@ -287,9 +285,8 @@ export default function CRM() {
     const [endHour, endMinute] = endTime.split(":").map(Number);
 
     // Get existing appointments for this professional on this date
-    const existingAppointments = appointments?.filter(apt => {
-      const { date: aptDate } = extractDateTimeFromISO(apt.scheduled_at);
-      return aptDate === date;
+    const existingAppointments = appointments?.filter((apt: any) => {
+      return apt.professional_id === professionalId && getScheduledDateKey(apt.scheduled_at) === date;
     }) || [];
 
     // Generate all possible slots
@@ -302,9 +299,9 @@ export default function CRM() {
       const slotEnd = addMinutes(currentTime, serviceDuration);
       
       if (slotEnd <= endDateTime) {
-        const hasConflict = existingAppointments.some(apt => {
+        const hasConflict = existingAppointments.some((apt: any) => {
           const aptTime = extractTimeFromISO(apt.scheduled_at);
-          const aptDuration = 30; // Default duration for conflict check
+          const aptDuration = Number(apt.duracao) || intervalMin;
           
           const aptStart = new Date(2000, 0, 1, parseInt(aptTime.split(":")[0]), parseInt(aptTime.split(":")[1]));
           const aptEnd = addMinutes(aptStart, aptDuration);

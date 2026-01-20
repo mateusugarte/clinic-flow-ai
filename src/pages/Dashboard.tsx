@@ -69,7 +69,7 @@ function formatMinutesToHours(minutes: number) {
 }
 
 // Import from dateUtils for consistent timezone handling
-import { extractTimeFromISO, extractHourFromISO, formatISOToDisplay } from "@/lib/dateUtils";
+import { extractTimeFromISO, extractHourFromISO, formatISOToDisplay, extractDateTimeFromISO } from "@/lib/dateUtils";
 
 export default function Dashboard() {
   const [dateRange, setDateRange] = useState<DateRange>("7days");
@@ -212,7 +212,7 @@ export default function Dashboard() {
       if (error) throw error;
       const grouped: Record<string, number> = {};
       data?.forEach((apt) => {
-        const day = format(parseISO(apt.scheduled_at), "yyyy-MM-dd");
+        const day = extractDateTimeFromISO(apt.scheduled_at).date;
         grouped[day] = (grouped[day] || 0) + 1;
       });
       const days: { date: string; label: string; count: number }[] = [];
