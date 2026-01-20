@@ -2,9 +2,18 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isToday, isSameMonth } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isToday, isSameMonth, isSameDay, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { extractTimeFromISO, extractDateTimeFromISO } from "@/lib/dateUtils";
+
+/**
+ * Creates a timestamp string without UTC conversion.
+ * This ensures the time entered is saved exactly as the user selected.
+ */
+function createLocalTimestamp(date: string, time: string): string {
+  // Format: "2026-01-20T09:00:00" - no timezone suffix, treated as local time by Postgres
+  return `${date}T${time}:00`;
+}
 import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -229,12 +238,13 @@ export default function Agendas() {
     if (!editingAppointment) return;
     const service = allServices?.find(s => s.id === editingAppointment.service_id);
     const professional = allProfessionals?.find(p => p.id === editingAppointment.professional_id);
-    const scheduledAt = new Date(`${editingAppointment.date}T${editingAppointment.time}`);
+    // Use local timestamp without UTC conversion
+    const scheduledAt = createLocalTimestamp(editingAppointment.date, editingAppointment.time);
     updateAppointment.mutate({
       id: editingAppointment.id,
       service_id: editingAppointment.service_id,
       professional_id: editingAppointment.professional_id,
-      scheduled_at: scheduledAt.toISOString(),
+      scheduled_at: scheduledAt,
       notes: editingAppointment.notes || "",
       serviceName: service?.name || "",
       professionalName: professional?.name || "",
@@ -267,10 +277,11 @@ export default function Agendas() {
     const service = services?.find(s => s.id === selectedServiceId);
     const professional = professionals?.find(p => p.id === selectedProfId);
     const lead = appointmentTab === "existing" ? selectedLead : { name: newLeadName, phone: newLeadPhone };
-    const scheduledAt = new Date(`${appointmentDate}T${appointmentTime}`);
+    // Use local timestamp without UTC conversion
+    const scheduledAt = createLocalTimestamp(appointmentDate, appointmentTime);
     createAppointment.mutate({
       user_id: user!.id, lead_id: leadId, service_id: selectedServiceId, professional_id: selectedProfId,
-      scheduled_at: scheduledAt.toISOString(), serviceName: service?.name, professionalName: professional?.name,
+      scheduled_at: scheduledAt, serviceName: service?.name, professionalName: professional?.name,
       patientName: lead?.name, phoneNumber: parseInt(lead?.phone?.replace(/\D/g, "") || "0"),
       duracao: service?.duration, price: service?.price, notes: appointmentNotes, status: "pendente",
     });
@@ -284,6 +295,76 @@ export default function Agendas() {
 
   const filteredLeads = leads?.filter(lead => lead.name.toLowerCase().includes(leadSearch.toLowerCase()) || lead.phone.includes(leadSearch)) || [];
   const professionalsForService = selectedServiceId ? professionals?.filter(p => p.service_ids?.includes(selectedServiceId)) || [] : [];
+
+  // Generate available time slots for a professional on a given date
+  const getAvailableTimeSlots = (professionalId: string, date: string): string[] => {
+    const professional = allProfessionals?.find(p => p.id === professionalId);
+    if (!professional) return [];
+
+    const startTime = professional.start_time || "08:00";
+    const endTime = professional.end_time || "18:00";
+    const intervalMin = professional.interval_min || 30;
+
+    // Get the selected service duration
+    const selectedService = allServices?.find(s => s.id === selectedServiceId);
+    const serviceDuration = selectedService?.duration || intervalMin;
+
+    // Parse start and end times
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    const [endHour, endMinute] = endTime.split(":").map(Number);
+
+    // Get existing appointments for this professional on this date
+    const existingAppointments = appointments?.filter(apt => {
+      const { date: aptDate } = extractDateTimeFromISO(apt.scheduled_at);
+      return apt.professional_id === professionalId && aptDate === date;
+    }) || [];
+
+    // Generate all possible slots
+    const slots: string[] = [];
+    let currentTime = new Date(2000, 0, 1, startHour, startMinute);
+    const endDateTime = new Date(2000, 0, 1, endHour, endMinute);
+
+    while (currentTime < endDateTime) {
+      const timeStr = format(currentTime, "HH:mm");
+      const slotEnd = addMinutes(currentTime, serviceDuration);
+      
+      // Check if slot is before end time
+      if (slotEnd <= endDateTime) {
+        // Check for conflicts with existing appointments
+        const hasConflict = existingAppointments.some(apt => {
+          const aptTime = extractTimeFromISO(apt.scheduled_at);
+          const aptDuration = Number(apt.duracao) || intervalMin;
+          
+          const aptStart = new Date(2000, 0, 1, parseInt(aptTime.split(":")[0]), parseInt(aptTime.split(":")[1]));
+          const aptEnd = addMinutes(aptStart, aptDuration);
+          
+          // Check if new slot overlaps with existing appointment
+          return (currentTime < aptEnd && slotEnd > aptStart);
+        });
+
+        if (!hasConflict) {
+          slots.push(timeStr);
+        }
+      }
+
+      currentTime = addMinutes(currentTime, intervalMin);
+    }
+
+    return slots;
+  };
+
+  // Available slots for new appointment
+  const availableSlots = selectedProfId && appointmentDate 
+    ? getAvailableTimeSlots(selectedProfId, appointmentDate) 
+    : [];
+
+  // Available slots for editing appointment (exclude current appointment from conflict check)
+  const editAvailableSlots = editingAppointment?.professional_id && editingAppointment?.date
+    ? getAvailableTimeSlots(editingAppointment.professional_id, editingAppointment.date).concat(
+        // Always include current time as available
+        [editingAppointment.time].filter(Boolean)
+      ).filter((v, i, a) => a.indexOf(v) === i).sort()
+    : [];
 
   // Calendar helpers
   const monthStart = startOfMonth(currentDate);
@@ -591,8 +672,25 @@ export default function Agendas() {
             <div className="space-y-2"><Label>Serviço *</Label><Select value={selectedServiceId} onValueChange={setSelectedServiceId}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{services?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Profissional *</Label><Select value={selectedProfId} onValueChange={setSelectedProfId} disabled={!selectedServiceId}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{professionalsForService.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Data *</Label><Input type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} /></div>
-              <div className="space-y-2"><Label>Hora *</Label><Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} /></div>
+              <div className="space-y-2">
+                <Label>Data *</Label>
+                <Input type="date" value={appointmentDate} onChange={(e) => { setAppointmentDate(e.target.value); setAppointmentTime(""); }} />
+              </div>
+              <div className="space-y-2">
+                <Label>Hora * {availableSlots.length > 0 && <span className="text-muted-foreground font-normal">({availableSlots.length} disponíveis)</span>}</Label>
+                <Select value={appointmentTime} onValueChange={setAppointmentTime} disabled={!selectedProfId || !appointmentDate}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.length > 0 ? (
+                      availableSlots.map((slot) => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        {!selectedProfId ? "Selecione um profissional" : !appointmentDate ? "Selecione uma data" : "Sem horários disponíveis"}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2"><Label>Observações</Label><Textarea value={appointmentNotes} onChange={(e) => setAppointmentNotes(e.target.value)} /></div>
             <Button onClick={handleCreateAppointment} className="w-full gradient-primary" disabled={createAppointment.isPending}>
@@ -643,11 +741,20 @@ export default function Agendas() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Data</Label>
-                  <Input type="date" value={editingAppointment.date} onChange={(e) => setEditingAppointment({ ...editingAppointment, date: e.target.value })} />
+                  <Input type="date" value={editingAppointment.date} onChange={(e) => setEditingAppointment({ ...editingAppointment, date: e.target.value, time: "" })} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Hora</Label>
-                  <Input type="time" value={editingAppointment.time} onChange={(e) => setEditingAppointment({ ...editingAppointment, time: e.target.value })} />
+                  <Label>Hora {editAvailableSlots.length > 0 && <span className="text-muted-foreground font-normal">({editAvailableSlots.length} disponíveis)</span>}</Label>
+                  <Select value={editingAppointment.time} onValueChange={(v) => setEditingAppointment({ ...editingAppointment, time: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {editAvailableSlots.length > 0 ? (
+                        editAvailableSlots.map((slot) => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">Sem horários disponíveis</div>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-2">
