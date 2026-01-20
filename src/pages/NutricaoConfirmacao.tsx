@@ -446,21 +446,21 @@ export default function NutricaoConfirmacao() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+      className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2">
         {showCheckbox && !appointment.confirmacaoEnviada && (
           <Checkbox
             checked={selectedAppointments.includes(appointment.id)}
             onCheckedChange={() => toggleAppointmentSelection(appointment.id)}
-            className="mt-1"
+            className="mt-1 flex-shrink-0"
           />
         )}
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{appointment.patientName || appointment.lead?.name || "Sem nome"}</span>
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="font-medium truncate text-sm">{appointment.patientName || appointment.lead?.name || "Sem nome"}</span>
             </div>
             <StatusSelect
               value={appointment.status || "pendente"}
@@ -469,42 +469,42 @@ export default function NutricaoConfirmacao() {
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5" />
-              <span>{formatISOToDisplay(appointment.scheduled_at)}</span>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{formatISOToDisplay(appointment.scheduled_at)}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-3.5 w-3.5" />
-              <span>{appointment.phoneNumber || appointment.lead?.phone || "N/A"}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Phone className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{appointment.phoneNumber || appointment.lead?.phone || "N/A"}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-3.5 w-3.5" />
-              <span>{appointment.serviceName || "Serviço não especificado"}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Briefcase className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{appointment.serviceName || "Serviço não especificado"}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-3.5 w-3.5" />
-              <span>R$ {appointment.price?.toFixed(2) || "0,00"}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <DollarSign className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">R$ {appointment.price?.toFixed(2) || "0,00"}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Profissional:</span>
-              <Badge variant="outline" className="text-xs">
+          <div className="flex items-center justify-between gap-2 pt-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-2xs text-muted-foreground flex-shrink-0">Profissional:</span>
+              <Badge variant="outline" className="text-2xs truncate max-w-[150px]">
                 {appointment.professionalName || "Não atribuído"}
               </Badge>
             </div>
             {appointment.confirmacaoEnviada && (
-              <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                <CheckCircle className="h-3 w-3 mr-1" />
+              <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-2xs flex-shrink-0">
+                <CheckCircle className="h-2.5 w-2.5 mr-1" />
                 Confirmação enviada
               </Badge>
             )}
           </div>
 
           {appointment.notes && (
-            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded mt-2">
+            <p className="text-2xs text-muted-foreground bg-muted/50 p-1.5 rounded mt-1.5 truncate">
               {appointment.notes}
             </p>
           )}
@@ -676,7 +676,7 @@ export default function NutricaoConfirmacao() {
                         
                         <Progress 
                           value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} 
-                          className="h-3"
+                          invisible
                         />
                         
                         <div className="flex items-center justify-between text-xs">
@@ -935,7 +935,7 @@ export default function NutricaoConfirmacao() {
                     
                     <Progress 
                       value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} 
-                      className="h-3"
+                      invisible
                     />
                     
                     <div className="flex items-center justify-between text-xs">

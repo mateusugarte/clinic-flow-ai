@@ -257,17 +257,17 @@ export default function Auth() {
               className="w-full"
             >
               <div className="bg-[#0f0808]/80 backdrop-blur-xl border border-white/5 rounded-xl p-8 shadow-2xl">
-                {/* Loading Progress Bar */}
+                {/* Loading Progress - Invisible but functional */}
                 <AnimatePresence>
                   {loadingProgress > 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
+                      animate={{ opacity: 0 }}
                       exit={{ opacity: 0 }}
-                      className="absolute top-0 left-0 right-0 h-0.5 bg-white/5 overflow-hidden rounded-t-xl"
+                      className="absolute top-0 left-0 right-0 h-0 overflow-hidden"
                     >
                       <motion.div
-                        className="h-full bg-[#a01010]"
+                        className="h-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${loadingProgress}%` }}
                         transition={{ duration: 0.2 }}
