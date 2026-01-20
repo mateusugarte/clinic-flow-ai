@@ -446,9 +446,9 @@ export default function NutricaoConfirmacao() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+      className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors overflow-hidden"
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2 min-w-0">
         {showCheckbox && !appointment.confirmacaoEnviada && (
           <Checkbox
             checked={selectedAppointments.includes(appointment.id)}
@@ -457,26 +457,32 @@ export default function NutricaoConfirmacao() {
           />
         )}
         <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium truncate text-sm">{appointment.patientName || appointment.lead?.name || "Sem nome"}</span>
+              <span className="font-medium truncate text-sm">
+                {appointment.patientName || appointment.lead?.name || "Sem nome"}
+              </span>
             </div>
-            <StatusSelect
-              value={appointment.status || "pendente"}
-              onValueChange={(status) => updateStatusMutation.mutate({ id: appointment.id, status })}
-              size="sm"
-            />
+            <div className="flex-shrink-0">
+              <StatusSelect
+                value={appointment.status || "pendente"}
+                onValueChange={(status) => updateStatusMutation.mutate({ id: appointment.id, status })}
+                size="sm"
+              />
+            </div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-muted-foreground min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <Clock className="h-3 w-3 flex-shrink-0" />
               <span className="truncate">{formatISOToDisplay(appointment.scheduled_at)}</span>
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
               <Phone className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{appointment.phoneNumber || appointment.lead?.phone || "N/A"}</span>
+              <span className="truncate">
+                {appointment.phoneNumber || appointment.lead?.phone || "N/A"}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
               <Briefcase className="h-3 w-3 flex-shrink-0" />
@@ -488,23 +494,24 @@ export default function NutricaoConfirmacao() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 pt-1.5 flex-wrap">
+          <div className="pt-1.5 grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-2 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-2xs text-muted-foreground flex-shrink-0">Profissional:</span>
-              <Badge variant="outline" className="text-2xs truncate max-w-[150px]">
+              <Badge variant="outline" className="text-2xs min-w-0 max-w-full truncate">
                 {appointment.professionalName || "Não atribuído"}
               </Badge>
             </div>
+
             {appointment.confirmacaoEnviada && (
-              <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-2xs flex-shrink-0">
-                <CheckCircle className="h-2.5 w-2.5 mr-1" />
-                Confirmação enviada
+              <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-2xs min-w-0 truncate sm:justify-self-end">
+                <CheckCircle className="h-2.5 w-2.5 mr-1 flex-shrink-0" />
+                <span className="truncate">Confirmação enviada</span>
               </Badge>
             )}
           </div>
 
           {appointment.notes && (
-            <p className="text-2xs text-muted-foreground bg-muted/50 p-1.5 rounded mt-1.5 truncate">
+            <p className="text-2xs text-muted-foreground bg-muted/50 p-1.5 rounded mt-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
               {appointment.notes}
             </p>
           )}
