@@ -158,22 +158,24 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch after-hours appointments
+  // Fetch after-hours appointments (created outside business hours 08:00-18:00)
   const { data: afterHoursData } = useQuery({
-    queryKey: ["after-hours", user?.id, dateRange, aiConfig?.opening_hours],
+    queryKey: ["after-hours", user?.id, dateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("scheduled_at")
+        .select("created_at")
         .eq("user_id", user!.id)
-        .gte("scheduled_at", start.toISOString())
-        .lte("scheduled_at", end.toISOString());
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString());
       if (error) throw error;
-      const { startHour, endHour } = parseOpeningHours(aiConfig?.opening_hours);
+      // Fixed business hours: 08:00 - 18:00
+      const BUSINESS_START_HOUR = 8;
+      const BUSINESS_END_HOUR = 18;
       const afterHours = data?.filter((apt) => {
         // Extract hour directly from ISO string to avoid timezone issues
-        const scheduledHour = extractHourFromISO(apt.scheduled_at);
-        return scheduledHour < startHour || scheduledHour >= endHour;
+        const createdHour = extractHourFromISO(apt.created_at);
+        return createdHour < BUSINESS_START_HOUR || createdHour >= BUSINESS_END_HOUR;
       }).length || 0;
       return afterHours;
     },
