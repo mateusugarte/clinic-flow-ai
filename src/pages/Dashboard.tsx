@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Users, Calendar, Clock, Moon, TrendingUp, UserCheck, Briefcase, User, Phone, ChevronRight, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GlassButton } from "@/components/ui/glass-button";
-import { BlurFade } from "@/components/ui/blur-fade";
+import { PageTransition, FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/page-transition";
 import { WelcomeMessage } from "@/components/WelcomeMessage";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -305,16 +305,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <PageTransition className="h-full flex flex-col gap-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
         <div className="space-y-1">
           <WelcomeMessage />
-          <BlurFade delay={0.2} duration={0.5}>
+          <FadeIn delay={0.2} direction="up">
             <p className="text-muted-foreground text-sm">Visão geral da sua clínica</p>
-          </BlurFade>
+          </FadeIn>
         </div>
-        <BlurFade delay={0.3} duration={0.5}>
+        <FadeIn delay={0.3} direction="right">
           <div className="flex gap-2 flex-wrap">
             {dateRanges.map((range) => (
               <GlassButton
@@ -327,7 +327,7 @@ export default function Dashboard() {
               </GlassButton>
             ))}
           </div>
-        </BlurFade>
+        </FadeIn>
       </div>
 
       {/* Grid Layout - Fill Screen */}
@@ -609,6 +609,6 @@ export default function Dashboard() {
           </div>
         )}
       </DetailModal>
-    </div>
+    </PageTransition>
   );
 }

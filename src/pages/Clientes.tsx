@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
+import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -95,16 +96,16 @@ export default function Clientes() {
   });
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <PageTransition className="h-full flex flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+      <FadeIn direction="down" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
         <div><h1 className="text-2xl font-bold text-foreground">Clientes</h1><p className="text-sm text-muted-foreground">Leads que já realizaram agendamentos</p></div>
         <div className="flex gap-2">
           {dateFilters.map((f) => (
             <Button key={f.value} variant={dateFilter === f.value ? "default" : "outline"} size="sm" onClick={() => setDateFilter(f.value)} className={dateFilter === f.value ? "gradient-primary" : ""}>{f.label}</Button>
           ))}
         </div>
-      </div>
+      </FadeIn>
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4 flex-shrink-0">
@@ -205,6 +206,6 @@ export default function Clientes() {
           </div>
         )}
       </DetailModal>
-    </div>
+    </PageTransition>
   );
 }
