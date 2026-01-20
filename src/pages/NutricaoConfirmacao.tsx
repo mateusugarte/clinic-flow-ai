@@ -612,9 +612,9 @@ export default function NutricaoConfirmacao() {
               Agendamentos - {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <Tabs defaultValue="pendentes" className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
+          <CardContent className="flex-1 min-h-0 flex flex-col">
+            <Tabs defaultValue="pendentes" className="flex-1 flex flex-col min-h-0">
+              <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
                 <TabsTrigger value="pendentes" className="text-xs sm:text-sm px-1 sm:px-2">
                   <span className="truncate">Pendentes</span>
                   <span className="ml-1">({selectedDayPending.length})</span>
@@ -632,7 +632,7 @@ export default function NutricaoConfirmacao() {
                   <span className="ml-1">({selectedDayCancelled.length})</span>
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="pendentes" className="flex-1 min-h-0 mt-0 flex flex-col">
+              <TabsContent value="pendentes" className="flex-1 min-h-0 mt-4 flex flex-col data-[state=inactive]:hidden">
                 {/* Pending appointments with send confirmation button */}
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <p className="text-sm text-muted-foreground">
@@ -755,8 +755,8 @@ export default function NutricaoConfirmacao() {
                   </div>
                 )}
               </TabsContent>
-              <TabsContent value="confirmados" className="flex-1 min-h-0 mt-0">
-                <ScrollArea className="h-[400px]">
+              <TabsContent value="confirmados" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
+                <ScrollArea className="h-full max-h-[400px]">
                   <div className="space-y-3 pr-4">
                     {selectedDayConfirmed.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
@@ -770,8 +770,8 @@ export default function NutricaoConfirmacao() {
                   </div>
                 </ScrollArea>
               </TabsContent>
-              <TabsContent value="risco" className="flex-1 min-h-0 mt-0">
-                <ScrollArea className="h-[400px]">
+              <TabsContent value="risco" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
+                <ScrollArea className="h-full max-h-[400px]">
                   <div className="space-y-3 pr-4">
                     {selectedDayRisk.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
@@ -785,8 +785,8 @@ export default function NutricaoConfirmacao() {
                   </div>
                 </ScrollArea>
               </TabsContent>
-              <TabsContent value="cancelados" className="flex-1 min-h-0 mt-0">
-                <ScrollArea className="h-[400px]">
+              <TabsContent value="cancelados" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
+                <ScrollArea className="h-full max-h-[400px]">
                   <div className="space-y-3 pr-4">
                     {selectedDayCancelled.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
