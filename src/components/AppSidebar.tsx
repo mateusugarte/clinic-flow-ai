@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agendas", label: "Agendas", icon: Calendar },
-  { to: "/crm", label: "CRM", icon: Users },
+  { to: "/crm", label: "Kanban", icon: Users },
   { to: "/clientes", label: "Clientes", icon: UserCheck },
   { to: "/servicos", label: "Serviços", icon: Briefcase },
   { to: "/ia-config", label: "IA Config", icon: Bot },
