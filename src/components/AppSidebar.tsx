@@ -3,7 +3,8 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/logo.png";
+import logoIcon from "@/assets/logo-icon.png";
+import logoWordmark from "@/assets/logo-wordmark.png";
 import {
   LayoutDashboard,
   Calendar,
@@ -75,8 +76,8 @@ export function AppSidebar() {
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2.5"
               >
-                <img src={logo} alt="GetMore" className="h-10 w-10 object-contain flex-shrink-0" />
-                <motion.span
+                <img src={logoIcon} alt="stickIA" className="h-12 w-12 object-contain flex-shrink-0" />
+                <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
@@ -86,11 +87,14 @@ export function AppSidebar() {
                     damping: 25,
                     delay: 0.05 
                   }}
-                  className="text-base font-bold text-foreground whitespace-nowrap tracking-tight"
-                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  className="overflow-hidden"
                 >
-                  GetMore<span className="text-primary">.</span>
-                </motion.span>
+                  <img 
+                    src={logoWordmark} 
+                    alt="stickIA" 
+                    className="h-8 object-contain"
+                  />
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div
@@ -99,7 +103,7 @@ export function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="mx-auto"
               >
-                <img src={logo} alt="GetMore" className="h-10 w-10 object-contain" />
+                <img src={logoIcon} alt="stickIA" className="h-12 w-12 object-contain" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -201,8 +205,8 @@ export function AppSidebar() {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-card border-b border-border flex items-center justify-between px-3 z-40">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="GetMore" className="h-7 w-7 object-contain" />
-          <span className="text-sm font-semibold text-foreground">GetMore</span>
+          <img src={logoIcon} alt="stickIA" className="h-8 w-8 object-contain" />
+          <img src={logoWordmark} alt="stickIA" className="h-5 object-contain" />
         </div>
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
