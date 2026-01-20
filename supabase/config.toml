@@ -1,1 +1,7 @@
 project_id = "qdsvbhtaldyjtfmujmyt"
+
+[functions.whatsapp-proxy]
+verify_jwt = false
+
+[functions.confirmation-proxy]
+verify_jwt = false
