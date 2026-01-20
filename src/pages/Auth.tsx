@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { z } from "zod";
-import logo from "@/assets/logo.png";
+import logoIcon from "@/assets/logo-icon.png";
+import logoLetreiro from "@/assets/logo-letreiro.png";
 
 const authSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -194,39 +195,59 @@ export default function Auth() {
               transition={{ duration: 0.4 }}
               className="text-center space-y-8"
             >
-              {/* Logo */}
+              {/* Logo Letreiro with cool animation */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.8, 
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: 0.1 
+                }}
                 className="flex justify-center"
               >
                 <div className="relative">
-                  <div className="absolute inset-0 bg-[#a01010]/20 blur-3xl rounded-full scale-150" />
-                  <img src={logo} alt="GetMore" className="h-24 w-24 object-contain relative z-10" />
+                  {/* Glow effect behind logo */}
+                  <motion.div 
+                    className="absolute inset-0 bg-[#a01010]/30 blur-3xl rounded-full"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: 1 }}
+                    transition={{ 
+                      duration: 1.2, 
+                      ease: "easeOut",
+                      delay: 0.3
+                    }}
+                  />
+                  <motion.img 
+                    src={logoLetreiro} 
+                    alt="stickIA" 
+                    className="h-32 md:h-40 object-contain relative z-10"
+                    initial={{ filter: "brightness(0)" }}
+                    animate={{ filter: "brightness(1)" }}
+                    transition={{ 
+                      duration: 1.5, 
+                      ease: "easeOut",
+                      delay: 0.2 
+                    }}
+                  />
                 </div>
               </motion.div>
 
-              {/* Brand Name */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="space-y-2"
-              >
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white" style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, letterSpacing: '-0.02em' }}>
-                  GetMore<span className="text-[#a01010]">.</span>
-                </h1>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/40 font-medium">
-                  Inteligência Artificial
-                </p>
-              </motion.div>
-              
               {/* Tagline */}
               <motion.p
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.5 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                className="text-xs uppercase tracking-[0.3em] text-white/40 font-medium"
+              >
+                Inteligência Artificial para Clínicas
+              </motion.p>
+              
+              {/* Description */}
+              <motion.p
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.75, duration: 0.5 }}
                 className="text-sm text-white/50 max-w-xs mx-auto leading-relaxed"
               >
                 Automatize sua clínica e aumente suas conversões com inteligência artificial
@@ -236,7 +257,7 @@ export default function Auth() {
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
+                transition={{ delay: 0.9, duration: 0.5 }}
               >
                 <button
                   onClick={() => setShowLogin(true)}
@@ -278,7 +299,7 @@ export default function Auth() {
 
                 {/* Logo in login form */}
                 <div className="flex justify-center mb-6">
-                  <img src={logo} alt="GetMore" className="h-14 w-14 object-contain" />
+                  <img src={logoIcon} alt="stickIA" className="h-16 w-16 object-contain" />
                 </div>
 
                 <div className="text-center mb-8">
