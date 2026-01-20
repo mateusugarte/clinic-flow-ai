@@ -16,9 +16,16 @@ import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays, startOfDay, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { extractTimeFromISO, formatISOToShortDisplay } from "@/lib/dateUtils";
+import { extractTimeFromISO, formatISOToShortDisplay, extractDateTimeFromISO } from "@/lib/dateUtils";
+
+/**
+ * Creates a timestamp string without UTC conversion.
+ */
+function createLocalTimestamp(date: string, time: string): string {
+  return `${date}T${time}:00`;
+}
 
 type LeadQualification = "entrou_em_contato" | "respondendo_duvidas" | "repassando_disponibilidade" | "fez_agendamento" | "repassado_atendimento";
 type DateFilter = "today" | "7days" | "15days" | "30days";
@@ -239,14 +246,15 @@ export default function CRM() {
     const service = services?.find(s => s.id === selectedServiceId);
     const professional = professionals?.find(p => p.id === selectedProfId);
     const lead = leads?.find(l => l.id === appointmentLeadId);
-    const scheduledAt = new Date(`${appointmentDate}T${appointmentTime}`);
+    // Use local timestamp without UTC conversion
+    const scheduledAt = createLocalTimestamp(appointmentDate, appointmentTime);
 
     createAppointment.mutate({
       user_id: user!.id,
       lead_id: appointmentLeadId,
       service_id: selectedServiceId,
       professional_id: selectedProfId,
-      scheduled_at: scheduledAt.toISOString(),
+      scheduled_at: scheduledAt,
       serviceName: service?.name,
       professionalName: professional?.name,
       patientName: lead?.name,
@@ -260,6 +268,64 @@ export default function CRM() {
   };
 
   const professionalsForService = selectedServiceId ? professionals?.filter(p => p.service_ids?.includes(selectedServiceId)) || [] : [];
+
+  // Generate available time slots for a professional on a given date
+  const getAvailableTimeSlots = (professionalId: string, date: string): string[] => {
+    const professional = professionals?.find(p => p.id === professionalId);
+    if (!professional) return [];
+
+    const startTime = professional.start_time || "08:00";
+    const endTime = professional.end_time || "18:00";
+    const intervalMin = professional.interval_min || 30;
+
+    // Get the selected service duration
+    const selectedService = services?.find(s => s.id === selectedServiceId);
+    const serviceDuration = selectedService?.duration || intervalMin;
+
+    // Parse start and end times
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    const [endHour, endMinute] = endTime.split(":").map(Number);
+
+    // Get existing appointments for this professional on this date
+    const existingAppointments = appointments?.filter(apt => {
+      const { date: aptDate } = extractDateTimeFromISO(apt.scheduled_at);
+      return aptDate === date;
+    }) || [];
+
+    // Generate all possible slots
+    const slots: string[] = [];
+    let currentTime = new Date(2000, 0, 1, startHour, startMinute);
+    const endDateTime = new Date(2000, 0, 1, endHour, endMinute);
+
+    while (currentTime < endDateTime) {
+      const timeStr = format(currentTime, "HH:mm");
+      const slotEnd = addMinutes(currentTime, serviceDuration);
+      
+      if (slotEnd <= endDateTime) {
+        const hasConflict = existingAppointments.some(apt => {
+          const aptTime = extractTimeFromISO(apt.scheduled_at);
+          const aptDuration = 30; // Default duration for conflict check
+          
+          const aptStart = new Date(2000, 0, 1, parseInt(aptTime.split(":")[0]), parseInt(aptTime.split(":")[1]));
+          const aptEnd = addMinutes(aptStart, aptDuration);
+          
+          return (currentTime < aptEnd && slotEnd > aptStart);
+        });
+
+        if (!hasConflict) {
+          slots.push(timeStr);
+        }
+      }
+
+      currentTime = addMinutes(currentTime, intervalMin);
+    }
+
+    return slots;
+  };
+
+  const availableSlots = selectedProfId && appointmentDate 
+    ? getAvailableTimeSlots(selectedProfId, appointmentDate) 
+    : [];
 
   const totalLeads = allLeads?.length || 0;
   const uniqueLeadsWithAppointments = new Set(appointments?.map(a => a.lead_id) || []).size;
@@ -534,11 +600,22 @@ export default function CRM() {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs">Data</Label>
-                <Input type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} className="h-8 text-xs" />
+                <Input type="date" value={appointmentDate} onChange={(e) => { setAppointmentDate(e.target.value); setAppointmentTime(""); }} className="h-8 text-xs" />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Hora</Label>
-                <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} className="h-8 text-xs" />
+                <Label className="text-xs">Hora {availableSlots.length > 0 && <span className="text-muted-foreground">({availableSlots.length})</span>}</Label>
+                <Select value={appointmentTime} onValueChange={setAppointmentTime} disabled={!selectedProfId || !appointmentDate}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.length > 0 ? (
+                      availableSlots.map((slot) => <SelectItem key={slot} value={slot} className="text-xs">{slot}</SelectItem>)
+                    ) : (
+                      <div className="p-2 text-xs text-muted-foreground text-center">
+                        {!selectedProfId ? "Selecione profissional" : !appointmentDate ? "Selecione data" : "Sem horários"}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
