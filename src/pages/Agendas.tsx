@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import ProfessionalsTable from "@/components/ui/professionals-table";
+import { PageTransition, StaggerContainer, StaggerItem, FadeIn } from "@/components/ui/page-transition";
 import { cn } from "@/lib/utils";
 
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
@@ -306,9 +307,9 @@ export default function Agendas() {
   const todaysAppointments = appointments?.filter(apt => isToday(parseISO(apt.scheduled_at))) || [];
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <PageTransition className="h-full flex flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+      <FadeIn direction="down" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Agendas</h1>
           <p className="text-sm text-muted-foreground">Visualize e gerencie agendamentos</p>
@@ -344,7 +345,7 @@ export default function Agendas() {
           </Dialog>
           <Button onClick={() => setIsNewAppointmentOpen(true)} className="gradient-primary" size="sm"><Plus className="h-4 w-4 mr-1" />Agendamento</Button>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Grid Layout */}
       <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
@@ -663,6 +664,6 @@ export default function Agendas() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageTransition>
   );
 }

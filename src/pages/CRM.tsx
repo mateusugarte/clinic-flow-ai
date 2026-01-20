@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
+import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -269,9 +270,9 @@ export default function CRM() {
   const getLeadAppointments = (leadId: string) => appointments?.filter(a => a.lead_id === leadId) || [];
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <PageTransition className="h-full flex flex-col gap-3">
       {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
+      <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-lg font-semibold text-foreground">CRM</h1>
           <p className="text-xs text-muted-foreground">Pipeline de leads</p>
@@ -285,7 +286,7 @@ export default function CRM() {
             </Button>
           ))}
         </div>
-      </div>
+      </FadeIn>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-3 gap-3 flex-shrink-0">
@@ -549,6 +550,6 @@ export default function CRM() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageTransition>
   );
 }

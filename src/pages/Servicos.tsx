@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DetailModal } from "@/components/ui/detail-modal";
+import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { useToast } from "@/hooks/use-toast";
 
 const categories = ["Preventivo", "Restaurador", "Estético", "Cirúrgico"] as const;
@@ -123,9 +124,9 @@ export default function Servicos() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <PageTransition className="h-full flex flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+      <FadeIn direction="down" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
         <div><h1 className="text-2xl font-bold text-foreground">Serviços</h1><p className="text-sm text-muted-foreground">Gerencie os serviços da sua clínica</p></div>
         <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
           <DialogTrigger asChild><Button className="gradient-primary"><Plus className="h-4 w-4 mr-2" />Novo Serviço</Button></DialogTrigger>
@@ -146,7 +147,7 @@ export default function Servicos() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </FadeIn>
 
       {/* Services Grid - Fill remaining space */}
       <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start overflow-y-auto">
@@ -233,6 +234,6 @@ export default function Servicos() {
           </div>
         )}
       </DetailModal>
-    </div>
+    </PageTransition>
   );
 }
