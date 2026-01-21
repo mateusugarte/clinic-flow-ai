@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -15,17 +17,57 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate JWT authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      console.error("Missing or invalid Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Missing authentication token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create Supabase client with the user's auth token
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify the JWT and get user claims
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error("JWT verification failed:", claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid authentication token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const authenticatedUserId = claimsData.claims.sub;
+    console.log("Authenticated user ID:", authenticatedUserId);
+
     // Parse request body
     const body = await req.json();
     const { userID, user_id, acao } = body;
 
-    // We do NOT authenticate with Supabase here.
-    // The client must send the user id explicitly.
+    // Resolve the user ID from the request
     const resolvedUserId = typeof userID === "string" ? userID : typeof user_id === "string" ? user_id : null;
 
-    // Build payload - include acao from client
+    // Verify the authenticated user matches the requested user_id
+    if (resolvedUserId && resolvedUserId !== authenticatedUserId) {
+      console.error("User ID mismatch - authenticated:", authenticatedUserId, "requested:", resolvedUserId);
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Cannot perform operations for other users" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Build payload - use authenticated user ID
     const payload = {
-      user_id: resolvedUserId,
+      user_id: authenticatedUserId,
       acao: acao || null,
     };
 
