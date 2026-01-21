@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { User, Phone, Clock, Play, Pause, TrendingUp, Users, Calendar, Pencil, Save, X } from "lucide-react";
+import { User, Phone, Clock, Play, Pause, TrendingUp, Users, Calendar, Pencil, Save, X, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import { PageTransition, FadeIn } from "@/components/ui/page-transition";
@@ -173,6 +174,34 @@ export default function CRM() {
       queryClient.invalidateQueries({ queryKey: ["appointments-for-conversion"] });
       toast({ title: "Status atualizado!" });
     },
+  });
+
+  const deleteAppointment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("appointments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments-for-conversion"] });
+      toast({ title: "Agendamento excluído!" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Erro ao excluir" }),
+  });
+
+  const deleteLead = useMutation({
+    mutationFn: async (leadId: string) => {
+      await supabase.from("appointments").delete().eq("lead_id", leadId);
+      const { error } = await supabase.from("leads").delete().eq("id", leadId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments-for-conversion"] });
+      setIsLeadModalOpen(false);
+      setSelectedLead(null);
+      toast({ title: "Lead excluído!" });
+    },
+    onError: () => toast({ variant: "destructive", title: "Erro ao excluir" }),
   });
 
   const resetAppointmentForm = () => {
