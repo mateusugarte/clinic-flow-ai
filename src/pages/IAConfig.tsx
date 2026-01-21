@@ -151,15 +151,15 @@ export default function IAConfig() {
   if (isLoading) return <div className="h-full flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="h-full flex flex-col gap-4">
-      {/* Header */}
+    <div className="h-full flex flex-col gap-3">
+      {/* Header - Compact */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Agente de IA</h1>
-          <p className="text-sm text-muted-foreground">Configure o comportamento do seu agente</p>
+          <h1 className="text-lg font-bold text-foreground">Agente de IA</h1>
+          <p className="text-xs text-muted-foreground">Configure o comportamento do seu agente</p>
         </div>
-        <Button onClick={() => saveConfig.mutate()} disabled={saveConfig.isPending} className="gradient-primary">
-          {saveConfig.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}Salvar
+        <Button size="sm" onClick={() => saveConfig.mutate()} disabled={saveConfig.isPending} className="h-8 gradient-primary">
+          {saveConfig.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}Salvar
         </Button>
       </div>
 

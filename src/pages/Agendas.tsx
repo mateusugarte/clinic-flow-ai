@@ -394,16 +394,16 @@ export default function Agendas() {
   const todaysAppointments = appointments?.filter((apt: any) => getScheduledDateKey(apt.scheduled_at) === todayKey) || [];
 
   return (
-    <PageTransition className="h-full flex flex-col gap-4">
-      {/* Header */}
-      <FadeIn direction="down" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+    <PageTransition className="h-full flex flex-col gap-3">
+      {/* Header - Compact */}
+      <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Agendas</h1>
-          <p className="text-sm text-muted-foreground">Visualize e gerencie agendamentos</p>
+          <h1 className="text-lg font-bold text-foreground">Agendas</h1>
+          <p className="text-xs text-muted-foreground">Visualize e gerencie agendamentos</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2">
           <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectTrigger className="w-36 h-8 text-xs"><SelectValue placeholder="Todos" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {professionals?.map((prof) => <SelectItem key={prof.id} value={prof.id}>{prof.name}</SelectItem>)}

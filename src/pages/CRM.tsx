@@ -362,71 +362,65 @@ export default function CRM() {
   const getLeadAppointments = (leadId: string) => appointments?.filter(a => a.lead_id === leadId) || [];
 
   return (
-    <PageTransition className="h-full flex flex-col gap-4">
-      {/* Header */}
+    <PageTransition className="h-full flex flex-col gap-3">
+      {/* Header - Compact */}
       <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">Pipeline de Leads</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Gerencie seus contatos e conversões</p>
+          <h1 className="text-lg font-bold text-foreground">Pipeline de Leads</h1>
+          <p className="text-xs text-muted-foreground">Gerencie seus contatos e conversões</p>
         </div>
-        <div className="flex gap-1 p-1 rounded-lg bg-muted/50 border border-border">
+        <div className="flex gap-0.5 p-0.5 rounded-lg bg-muted/50">
           {dateFilters.map((f) => (
             <Button key={f.value} variant={dateFilter === f.value ? "default" : "ghost"} size="sm"
               onClick={() => setDateFilter(f.value)} 
-              className={`h-7 px-3 text-xs font-medium transition-all ${dateFilter === f.value ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"}`}>
+              className={`h-6 px-2.5 text-xs font-medium ${dateFilter === f.value ? "bg-primary text-primary-foreground" : ""}`}>
               {f.label}
             </Button>
           ))}
         </div>
       </FadeIn>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-4 flex-shrink-0">
-        <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="shadow-card hover:shadow-card-hover transition-shadow border overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold tracking-tight">{totalLeads}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Total de Leads</p>
-                </div>
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
+      {/* Metrics Row - Compact */}
+      <div className="grid grid-cols-3 gap-3 flex-shrink-0">
+        <Card className="shadow-card border-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-primary" />
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="shadow-card hover:shadow-card-hover transition-shadow border overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold tracking-tight">{leadsWithIA}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">IA Ativa</p>
-                </div>
-                <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <Play className="h-5 w-5 text-success" />
-                </div>
+              <div>
+                <p className="text-xl font-bold">{totalLeads}</p>
+                <p className="text-xs text-muted-foreground">Leads</p>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-          <Card className="shadow-card hover:shadow-card-hover transition-shadow border overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold tracking-tight">{conversionRate}%</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Taxa de Conversão</p>
-                </div>
-                <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-info" />
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card border-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <Play className="h-4 w-4 text-emerald-500" />
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              <div>
+                <p className="text-xl font-bold">{leadsWithIA}</p>
+                <p className="text-xs text-muted-foreground">IA Ativa</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-card border-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{conversionRate}%</p>
+                <p className="text-xs text-muted-foreground">Conversão</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Kanban Board */}

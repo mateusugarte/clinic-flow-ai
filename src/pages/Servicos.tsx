@@ -124,12 +124,15 @@ export default function Servicos() {
   };
 
   return (
-    <PageTransition className="h-full flex flex-col gap-4">
-      {/* Header */}
-      <FadeIn direction="down" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
-        <div><h1 className="text-2xl font-bold text-foreground">Serviços</h1><p className="text-sm text-muted-foreground">Gerencie os serviços da sua clínica</p></div>
+    <PageTransition className="h-full flex flex-col gap-3">
+      {/* Header - Compact */}
+      <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-lg font-bold text-foreground">Serviços</h1>
+          <p className="text-xs text-muted-foreground">Gerencie os serviços da sua clínica</p>
+        </div>
         <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
-          <DialogTrigger asChild><Button className="gradient-primary"><Plus className="h-4 w-4 mr-2" />Novo Serviço</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm" className="h-8 gradient-primary"><Plus className="h-4 w-4 mr-1.5" />Novo</Button></DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Novo Serviço</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">

@@ -305,135 +305,138 @@ export default function Dashboard() {
   };
 
   return (
-    <PageTransition className="h-full flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
-        <div className="space-y-1">
+    <PageTransition className="h-full flex flex-col gap-3">
+      {/* Header - Compact */}
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div>
           <WelcomeMessage />
-          <FadeIn delay={0.2} direction="up">
-            <p className="text-muted-foreground text-sm">Visão geral da sua clínica</p>
-          </FadeIn>
+          <p className="text-muted-foreground text-xs mt-0.5">Visão geral da sua clínica</p>
         </div>
-        <FadeIn delay={0.3} direction="right">
-          <div className="flex gap-2 flex-wrap">
-            {dateRanges.map((range) => (
-              <GlassButton
-                key={range.value}
-                variant={dateRange === range.value ? "primary" : "default"}
-                size="sm"
-                onClick={() => setDateRange(range.value)}
-              >
-                {range.label}
-              </GlassButton>
-            ))}
-          </div>
-        </FadeIn>
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+          {dateRanges.map((range) => (
+            <GlassButton
+              key={range.value}
+              variant={dateRange === range.value ? "primary" : "default"}
+              size="sm"
+              onClick={() => setDateRange(range.value)}
+              className="h-7 px-3 text-xs"
+            >
+              {range.label}
+            </GlassButton>
+          ))}
+        </div>
       </div>
 
-      {/* Grid Layout - Fill Screen */}
-      <div className="flex-1 grid grid-cols-12 gap-4 auto-rows-min">
-        {/* Row 1: KPIs */}
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />Leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leadsData ?? 0}</div>
-            <p className="text-xs text-muted-foreground">novos no período</p>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />Agendamentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{appointmentsData ?? 0}</div>
-            <p className="text-xs text-muted-foreground">no período</p>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-6 lg:col-span-3 shadow-card gradient-primary text-primary-foreground">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-primary-foreground/80 flex items-center gap-2">
-              <Clock className="h-4 w-4" />Tempo Economizado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatMinutesToHours(timeSavedData ?? 0)}</div>
-            <p className="text-xs text-primary-foreground/80">pela IA</p>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Moon className="h-4 w-4 text-primary" />Pós-horário
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{afterHoursData ?? 0}</div>
-            <p className="text-xs text-muted-foreground">fora do expediente</p>
-          </CardContent>
-        </Card>
-
-        {/* Row 2: Secondary KPIs */}
-        <Card className="col-span-4 lg:col-span-2 shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <UserCheck className="h-4 w-4 text-primary" />Profissionais
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{extraStats?.professionals ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-4 lg:col-span-2 shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-primary" />Serviços
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{extraStats?.services ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-4 lg:col-span-2 shadow-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />Conversão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">
-              {extraStats?.totalLeads ? ((extraStats.uniqueClients / extraStats.totalLeads) * 100).toFixed(0) : 0}%
+      {/* Grid Layout - Compact */}
+      <div className="flex-1 grid grid-cols-12 gap-3 auto-rows-min">
+        {/* Row 1: Main KPIs - Compact */}
+        <Card className="col-span-6 lg:col-span-3 shadow-card border-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xl font-bold">{leadsData ?? 0}</div>
+                <p className="text-xs text-muted-foreground">Leads</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* No-Show Risk Card */}
-        <Card className="col-span-12 lg:col-span-6 shadow-card border-orange-500/30 bg-orange-500/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-orange-500 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />Risco de No-Show
-              <Badge variant="outline" className="ml-auto text-orange-500 border-orange-500/50">
+        <Card className="col-span-6 lg:col-span-3 shadow-card border-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xl font-bold">{appointmentsData ?? 0}</div>
+                <p className="text-xs text-muted-foreground">Agendamentos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-6 lg:col-span-3 shadow-card border-0 gradient-primary text-primary-foreground">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-xl font-bold">{formatMinutesToHours(timeSavedData ?? 0)}</div>
+                <p className="text-xs text-primary-foreground/80">Tempo economizado</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-6 lg:col-span-3 shadow-card border-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Moon className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xl font-bold">{afterHoursData ?? 0}</div>
+                <p className="text-xs text-muted-foreground">Pós-horário</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Row 2: Secondary Stats - More compact */}
+        <Card className="col-span-4 lg:col-span-2 shadow-card border-0">
+          <CardContent className="p-3 flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-primary" />
+            <div>
+              <div className="text-lg font-bold">{extraStats?.professionals ?? 0}</div>
+              <p className="text-[10px] text-muted-foreground">Profissionais</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-4 lg:col-span-2 shadow-card border-0">
+          <CardContent className="p-3 flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-primary" />
+            <div>
+              <div className="text-lg font-bold">{extraStats?.services ?? 0}</div>
+              <p className="text-[10px] text-muted-foreground">Serviços</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-4 lg:col-span-2 shadow-card border-0">
+          <CardContent className="p-3 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <div>
+              <div className="text-lg font-bold">
+                {extraStats?.totalLeads ? ((extraStats.uniqueClients / extraStats.totalLeads) * 100).toFixed(0) : 0}%
+              </div>
+              <p className="text-[10px] text-muted-foreground">Conversão</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* No-Show Risk Card - Compact */}
+        <Card className="col-span-12 lg:col-span-6 shadow-card border-0 border-l-4 border-l-orange-500/50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-orange-500 flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Risco de No-Show
+              </span>
+              <Badge variant="outline" className="text-orange-500 border-orange-500/50 text-xs h-5">
                 {noShowRiskData?.length || 0}
               </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </div>
             {noShowRiskData && noShowRiskData.length > 0 ? (
-              <div className="space-y-2 max-h-24 overflow-y-auto">
+              <div className="space-y-1.5 max-h-20 overflow-y-auto">
                 {noShowRiskData.slice(0, 3).map((apt) => (
-                  <div key={apt.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+                  <div key={apt.id} className="flex items-center justify-between p-1.5 rounded bg-muted/50 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{apt.patientName || "Paciente"}</span>
+                      <span className="font-medium truncate max-w-[120px]">{apt.patientName || "Paciente"}</span>
                       <span className="text-xs text-muted-foreground">{extractTimeFromISO(apt.scheduled_at)}</span>
                     </div>
                     <StatusSelect
@@ -445,7 +448,7 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Nenhum risco identificado</p>
+              <p className="text-xs text-muted-foreground">Nenhum risco identificado</p>
             )}
           </CardContent>
         </Card>
