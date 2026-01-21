@@ -164,6 +164,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          agendamentoFeito: boolean | null
           created_at: string | null
           email: string | null
           ia: string | null
@@ -180,6 +181,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agendamentoFeito?: boolean | null
           created_at?: string | null
           email?: string | null
           ia?: string | null
@@ -196,6 +198,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agendamentoFeito?: boolean | null
           created_at?: string | null
           email?: string | null
           ia?: string | null
