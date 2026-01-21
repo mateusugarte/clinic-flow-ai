@@ -660,8 +660,8 @@ export default function NutricaoConfirmacao() {
                     </Button>
                   </div>
                 </div>
-                <ScrollArea className="flex-1 max-h-[280px]">
-                  <div className="space-y-3 pr-4">
+                <div className="flex-1 overflow-y-auto max-h-[calc(100vh-520px)] min-h-[200px]">
+                  <div className="space-y-3 pr-2">
                     {selectedDayPending.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhum agendamento pendente nesta data
@@ -672,7 +672,7 @@ export default function NutricaoConfirmacao() {
                       ))
                     )}
                   </div>
-                </ScrollArea>
+                </div>
                 
                 {/* Send button only in pendentes tab */}
                 {selectedDayPending.length > 0 && (
@@ -761,8 +761,8 @@ export default function NutricaoConfirmacao() {
                 )}
               </TabsContent>
               <TabsContent value="confirmados" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
-                <ScrollArea className="h-full max-h-[400px]">
-                  <div className="space-y-3 pr-4">
+                <div className="overflow-y-auto max-h-[calc(100vh-420px)] min-h-[200px]">
+                  <div className="space-y-3 pr-2">
                     {selectedDayConfirmed.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhum agendamento confirmado nesta data
@@ -773,11 +773,11 @@ export default function NutricaoConfirmacao() {
                       ))
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
               <TabsContent value="risco" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
-                <ScrollArea className="h-full max-h-[400px]">
-                  <div className="space-y-3 pr-4">
+                <div className="overflow-y-auto max-h-[calc(100vh-420px)] min-h-[200px]">
+                  <div className="space-y-3 pr-2">
                     {selectedDayRisk.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhum agendamento com risco nesta data
@@ -788,11 +788,11 @@ export default function NutricaoConfirmacao() {
                       ))
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
               <TabsContent value="cancelados" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
-                <ScrollArea className="h-full max-h-[400px]">
-                  <div className="space-y-3 pr-4">
+                <div className="overflow-y-auto max-h-[calc(100vh-420px)] min-h-[200px]">
+                  <div className="space-y-3 pr-2">
                     {selectedDayCancelled.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhum agendamento cancelado nesta data
@@ -803,7 +803,7 @@ export default function NutricaoConfirmacao() {
                       ))
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
