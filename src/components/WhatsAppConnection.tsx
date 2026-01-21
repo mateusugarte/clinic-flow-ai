@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const EDGE_FUNCTION_URL = "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/whatsapp-proxy";
+
 
 interface WhatsAppConnectionProps {
   configId: string | undefined;
@@ -60,24 +60,16 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Create instance and generate QR code
   const createInstance = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
-        },
-        body: JSON.stringify({
-          acao: "criar instancia e gerar qr code",
-        }),
+      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
+        body: { acao: "criar instancia e gerar qr code" },
       });
-      const data = await response.json();
+      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      // Extract base64 QR code from response
-      const base64 = data?.qrcode || data?.base64 || data?.qr || data;
+      console.log("WhatsApp response:", data);
+      // Extract base64 QR code from response - it comes as data.base64 with full data URL
+      const base64 = data?.base64 || data?.qrcode || data?.qr || data;
       if (base64) {
         setQrCode(typeof base64 === "string" ? base64 : JSON.stringify(base64));
         setTimer(59);
@@ -88,7 +80,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         toast({ variant: "destructive", title: "Erro ao gerar QR Code" });
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("WhatsApp error:", error);
       toast({ variant: "destructive", title: "Erro ao conectar com webhook" });
     },
   });
@@ -96,24 +89,15 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Generate QR code with phone number
   const generateQR = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
-        },
-        body: JSON.stringify({
-          acao: "gerar qr code",
-          phone: connectedPhone,
-        }),
+      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
+        body: { acao: "gerar qr code", phone: connectedPhone },
       });
-      const data = await response.json();
+      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      const base64 = data?.qrcode || data?.base64 || data?.qr || data;
+      console.log("WhatsApp QR response:", data);
+      const base64 = data?.base64 || data?.qrcode || data?.qr || data;
       if (base64) {
         setQrCode(typeof base64 === "string" ? base64 : JSON.stringify(base64));
         setTimer(59);
@@ -124,7 +108,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         toast({ variant: "destructive", title: "Erro ao gerar QR Code" });
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("WhatsApp QR error:", error);
       toast({ variant: "destructive", title: "Erro ao gerar QR Code" });
     },
   });
@@ -132,19 +117,10 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Verify connection
   const verifyConnection = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
-        },
-        body: JSON.stringify({
-          acao: "verificar conexao",
-        }),
+      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
+        body: { acao: "verificar conexao" },
       });
-      const data = await response.json();
+      if (error) throw error;
       return typeof data === "string" ? data : JSON.stringify(data);
     },
     onSuccess: async (data) => {
@@ -160,7 +136,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         toast({ variant: "destructive", title: "Não conectado", description: data });
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("WhatsApp verify error:", error);
       toast({ variant: "destructive", title: "Erro ao verificar conexão" });
     },
   });
@@ -168,19 +145,10 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Disconnect
   const disconnect = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
-        },
-        body: JSON.stringify({
-          acao: "desconectar",
-        }),
+      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
+        body: { acao: "desconectar" },
       });
-      const data = await response.json();
+      if (error) throw error;
       return data;
     },
     onSuccess: async () => {
@@ -189,7 +157,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
       setQrCode(null);
       toast({ title: "WhatsApp desconectado" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("WhatsApp disconnect error:", error);
       toast({ variant: "destructive", title: "Erro ao desconectar" });
     },
   });
