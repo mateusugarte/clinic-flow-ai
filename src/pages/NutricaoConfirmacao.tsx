@@ -245,12 +245,21 @@ export default function NutricaoConfirmacao() {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [riskCalendarMonth]);
 
-  // Get appointments eligible for risk calculation (ONLY tomorrow's appointments)
+  // Get appointments eligible for risk calculation (ONLY tomorrow's appointments with status = pendente)
   const riskEligibleAppointments = useMemo(() => {
     return appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      // Only appointments for tomorrow
-      return date === tomorrowKey;
+      // Only appointments for tomorrow that haven't been calculated yet (status = pendente)
+      return date === tomorrowKey && apt.status === "pendente";
+    });
+  }, [appointments, tomorrowKey]);
+
+  // Get appointments that already had risk calculated (status !== pendente for tomorrow)
+  const riskCalculatedAppointments = useMemo(() => {
+    return appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      // Tomorrow's appointments with status different from pendente
+      return date === tomorrowKey && apt.status !== "pendente";
     });
   }, [appointments, tomorrowKey]);
 
@@ -299,9 +308,9 @@ export default function NutricaoConfirmacao() {
     );
   };
 
-  // Select all risk-eligible appointments
+  // Select all risk-eligible appointments (only pendente ones)
   const selectAllRiskAppointments = () => {
-    setSelectedRiskAppointments(riskEligibleAppointments.map(apt => apt.id));
+    setSelectedRiskAppointments(riskEligibleAppointments.filter(apt => apt.status === "pendente").map(apt => apt.id));
   };
 
   // Clear risk selection
@@ -1173,11 +1182,11 @@ export default function NutricaoConfirmacao() {
                       Agendamentos de amanhã
                     </h4>
                     <p className="text-xs text-muted-foreground">
-                      {riskEligibleAppointments.length} agendamento(s) | {selectedRiskAppointments.length} selecionado(s)
+                      {riskEligibleAppointments.length} pendente(s) | {riskCalculatedAppointments.length} calculado(s) | {selectedRiskAppointments.length} selecionado(s)
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={selectAllRiskAppointments} className="text-xs h-7">
+                    <Button variant="outline" size="sm" onClick={selectAllRiskAppointments} className="text-xs h-7" disabled={riskEligibleAppointments.length === 0}>
                       Todos
                     </Button>
                     <Button variant="ghost" size="sm" onClick={clearRiskSelection} className="text-xs h-7">
@@ -1188,50 +1197,103 @@ export default function NutricaoConfirmacao() {
 
                 <ScrollArea className="h-[320px] flex-1 border rounded-lg">
                   <div className="space-y-2 p-2">
-                    {riskEligibleAppointments.length === 0 ? (
+                    {riskEligibleAppointments.length === 0 && riskCalculatedAppointments.length === 0 ? (
                       <div className="text-center py-10">
                         <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">Nenhum agendamento para amanhã</p>
                       </div>
                     ) : (
-                      riskEligibleAppointments.map(apt => (
-                        <div
-                          key={apt.id}
-                          className={cn(
-                            "p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer",
-                            selectedRiskAppointments.includes(apt.id) && "ring-2 ring-orange-500 bg-orange-500/5"
-                          )}
-                          onClick={() => toggleRiskAppointmentSelection(apt.id)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox
-                              checked={selectedRiskAppointments.includes(apt.id)}
-                              onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
-                              className="flex-shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium text-sm truncate">
-                                  {apt.patientName || apt.lead?.name || "Sem nome"}
-                                </span>
-                                <Badge variant="outline" className="text-xs flex-shrink-0">
-                                  {formatISOToDisplay(apt.scheduled_at)}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {apt.phoneNumber || apt.lead?.phone || "N/A"}
-                                </span>
-                                <span className="flex items-center gap-1 truncate">
-                                  <Briefcase className="h-3 w-3" />
-                                  {apt.serviceName || "Serviço"}
-                                </span>
-                              </div>
+                      <>
+                        {/* Pendente - Elegíveis para cálculo */}
+                        {riskEligibleAppointments.length > 0 && (
+                          <>
+                            <div className="text-xs font-medium text-muted-foreground px-1 pt-1">
+                              Pendentes ({riskEligibleAppointments.length})
                             </div>
-                          </div>
-                        </div>
-                      ))
+                            {riskEligibleAppointments.map(apt => (
+                              <div
+                                key={apt.id}
+                                className={cn(
+                                  "p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer",
+                                  selectedRiskAppointments.includes(apt.id) && "ring-2 ring-orange-500 bg-orange-500/5"
+                                )}
+                                onClick={() => toggleRiskAppointmentSelection(apt.id)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Checkbox
+                                    checked={selectedRiskAppointments.includes(apt.id)}
+                                    onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
+                                    className="flex-shrink-0"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="font-medium text-sm truncate">
+                                        {apt.patientName || apt.lead?.name || "Sem nome"}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs flex-shrink-0">
+                                        {formatISOToDisplay(apt.scheduled_at)}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                      <span className="flex items-center gap-1">
+                                        <Phone className="h-3 w-3" />
+                                        {apt.phoneNumber || apt.lead?.phone || "N/A"}
+                                      </span>
+                                      <span className="flex items-center gap-1 truncate">
+                                        <Briefcase className="h-3 w-3" />
+                                        {apt.serviceName || "Serviço"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Já calculados - status diferente de pendente */}
+                        {riskCalculatedAppointments.length > 0 && (
+                          <>
+                            <div className="text-xs font-medium text-muted-foreground px-1 pt-3">
+                              Já Calculados ({riskCalculatedAppointments.length})
+                            </div>
+                            {riskCalculatedAppointments.map(apt => (
+                              <div
+                                key={apt.id}
+                                className="p-2.5 rounded-lg border bg-muted/30"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="font-medium text-sm truncate">
+                                        {apt.patientName || apt.lead?.name || "Sem nome"}
+                                      </span>
+                                      <StatusSelect
+                                        value={apt.status || "pendente"}
+                                        onValueChange={(status) => updateStatusMutation.mutate({ id: apt.id, status })}
+                                        size="sm"
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                      <span className="flex items-center gap-1">
+                                        <Phone className="h-3 w-3" />
+                                        {apt.phoneNumber || apt.lead?.phone || "N/A"}
+                                      </span>
+                                      <span className="flex items-center gap-1 truncate">
+                                        <Briefcase className="h-3 w-3" />
+                                        {apt.serviceName || "Serviço"}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs flex-shrink-0">
+                                        {formatISOToDisplay(apt.scheduled_at)}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </>
                     )}
                   </div>
                 </ScrollArea>
