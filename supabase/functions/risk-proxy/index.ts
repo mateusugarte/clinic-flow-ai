@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const WEBHOOK_URL = "https://aula-n8n.riftvt.easypanel.host/webhook/3563be98-d85f-47b1-9eec-895f2a507258";
+const WEBHOOK_URL = "https://aula-n8n.riftvt.easypanel.host/webhook/ff742695-f2f7-4e98-ada8-85b68edf3cee";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -41,16 +41,22 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body = await req.json();
-    const { appointmentId, phone, patientName, scheduledAt, serviceName } = body;
+    const { appointmentId, patientName, phone, scheduledAt, serviceName, professionalName, leadId, notes, tags, qualification, lastInteraction } = body;
 
-    // Build minimal payload - only essential data
+    // Build payload
     const payload = {
       user_id: userId,
       appointment_id: appointmentId,
-      phone,
       patient_name: patientName,
+      phone,
       scheduled_at: scheduledAt,
       service_name: serviceName,
+      professional_name: professionalName,
+      lead_id: leadId,
+      notes,
+      tags,
+      qualification,
+      last_interaction: lastInteraction,
     };
 
     // Get webhook credentials from environment (same as whatsapp-proxy)
@@ -79,7 +85,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Confirmation proxy error:", error);
+    console.error("Risk proxy error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
