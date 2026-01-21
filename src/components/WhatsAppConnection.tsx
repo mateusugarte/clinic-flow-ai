@@ -21,6 +21,10 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const SUPABASE_FUNCTIONS_URL = "https://qdsvbhtaldyjtfmujmyt.functions.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik";
+
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [timer, setTimer] = useState<number>(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -40,16 +44,30 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   };
 
   const invokeWhatsAppProxy = async (body: Record<string, unknown>) => {
-    // Force an explicit Authorization header (some gateways are picky about header casing).
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData.session?.access_token;
-
-    const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
-      body,
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    // This function should be callable without Supabase Auth.
+    // Supabase gateway still requires anon key headers.
+    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/whatsapp-proxy`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify(body),
     });
 
-    if (error) throw error;
+    const text = await res.text();
+    let data: unknown = text;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // keep as text
+    }
+
+    if (!res.ok) {
+      throw new Error(`Edge Function ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
+    }
+
     return data;
   };
 
@@ -85,7 +103,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Create instance and generate QR code
   const createInstance = useMutation({
     mutationFn: async () => {
-      return invokeWhatsAppProxy({ acao: "criar instancia e gerar qr code" });
+      if (!user?.id) throw new Error("Usuário não autenticado");
+      return invokeWhatsAppProxy({ acao: "criar instancia e gerar qr code", userID: user.id });
     },
     onSuccess: (data) => {
       console.log("WhatsApp response:", data);
@@ -110,7 +129,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Generate QR code with phone number
   const generateQR = useMutation({
     mutationFn: async () => {
-      return invokeWhatsAppProxy({ acao: "gerar qr code", phone: connectedPhone });
+      if (!user?.id) throw new Error("Usuário não autenticado");
+      return invokeWhatsAppProxy({ acao: "gerar qr code", phone: connectedPhone, userID: user.id });
     },
     onSuccess: (data) => {
       console.log("WhatsApp QR response:", data);
@@ -134,7 +154,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Verify connection
   const verifyConnection = useMutation({
     mutationFn: async () => {
-      const data = await invokeWhatsAppProxy({ acao: "verificar conexao" });
+      if (!user?.id) throw new Error("Usuário não autenticado");
+      const data = await invokeWhatsAppProxy({ acao: "verificar conexao", userID: user.id });
       return typeof data === "string" ? data : JSON.stringify(data);
     },
     onSuccess: async (data) => {
@@ -159,7 +180,8 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Disconnect
   const disconnect = useMutation({
     mutationFn: async () => {
-      return invokeWhatsAppProxy({ acao: "desconectar" });
+      if (!user?.id) throw new Error("Usuário não autenticado");
+      return invokeWhatsAppProxy({ acao: "desconectar", userID: user.id });
     },
     onSuccess: async () => {
       await updateConnectionStatus(false);
