@@ -149,16 +149,14 @@ export default function Auth() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div>
-            <motion.img 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              src={logoIcon} 
-              alt="stickIA" 
-              className="h-16 w-16 object-contain"
-            />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center justify-center w-24 h-24 rounded-full bg-[#F8F5F1] shadow-xl"
+          >
+            <img src={logoIcon} alt="stickIA" className="h-16 w-16 object-contain" />
+          </motion.div>
           
           <div className="space-y-6">
             <motion.h1
@@ -220,14 +218,14 @@ export default function Auth() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <motion.img 
+            <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              src={logoIcon} 
-              alt="stickIA" 
-              className="h-16 w-16 object-contain"
-            />
+              className="flex items-center justify-center w-24 h-24 rounded-full bg-white shadow-xl"
+            >
+              <img src={logoIcon} alt="stickIA" className="h-16 w-16 object-contain" />
+            </motion.div>
           </div>
 
           <div className="text-center mb-10">
