@@ -1093,110 +1093,189 @@ export default function NutricaoConfirmacao() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between mb-3 gap-2">
-              <p className="text-xs text-muted-foreground">
-                {riskEligibleAppointments.length} elegível(is)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={selectAllRiskAppointments} className="text-xs h-7">
-                  Selecionar
-                </Button>
-                <Button variant="ghost" size="sm" onClick={clearRiskSelection} className="text-xs h-7">
-                  Limpar
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Left - Risk Calendar */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm font-medium">
+                    {format(calendarMonth, "MMMM yyyy", { locale: ptBR })}
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1">
+                  {["S", "T", "Q", "Q", "S", "S", "D"].map((day, i) => (
+                    <div key={i} className="text-muted-foreground font-medium py-1">{day}</div>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map(day => {
+                    const dateKey = format(day, "yyyy-MM-dd");
+                    const dayData = appointmentsByDay[dateKey];
+                    const isSelected = isSameDay(day, selectedDate);
+                    const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    const tomorrow = addDays(today, 1);
+                    const isEligibleForRisk = day >= tomorrow;
+                    
+                    return (
+                      <button
+                        key={dateKey}
+                        onClick={() => setSelectedDate(day)}
+                        className={cn(
+                          "p-1.5 text-xs rounded transition-colors aspect-square flex flex-col items-center justify-center",
+                          isSelected && "bg-primary text-primary-foreground",
+                          !isSelected && isToday(day) && "bg-accent",
+                          !isSelected && !isToday(day) && "hover:bg-accent",
+                          !isCurrentMonth && "text-muted-foreground/40",
+                          !isSelected && isEligibleForRisk && dayData?.total > 0 && "ring-1 ring-orange-400"
+                        )}
+                      >
+                        <span>{format(day, "d")}</span>
+                        {dayData && dayData.total > 0 && (
+                          <div className="flex gap-0.5 mt-0.5">
+                            <div className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              isEligibleForRisk ? "bg-orange-500" : "bg-muted-foreground/40"
+                            )} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span>Elegível para cálculo</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right - Leads list with scroll */}
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-medium truncate">
+                      Agendamentos elegíveis
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {riskEligibleAppointments.length} agendamento(s) | {selectedRiskAppointments.length} selecionado(s)
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={selectAllRiskAppointments} className="text-xs h-7">
+                      Todos
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={clearRiskSelection} className="text-xs h-7">
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+
+                <ScrollArea className="h-[280px] border rounded-lg">
+                  <div className="space-y-2 p-2">
+                    {riskEligibleAppointments.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-6 text-sm">
+                        Nenhum agendamento disponível
+                      </p>
+                    ) : (
+                      riskEligibleAppointments.map(apt => (
+                        <div
+                          key={apt.id}
+                          className={cn(
+                            "p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer",
+                            selectedRiskAppointments.includes(apt.id) && "ring-2 ring-orange-500 bg-orange-500/5"
+                          )}
+                          onClick={() => toggleRiskAppointmentSelection(apt.id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedRiskAppointments.includes(apt.id)}
+                              onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
+                              className="flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium text-sm truncate">
+                                  {apt.patientName || apt.lead?.name || "Sem nome"}
+                                </span>
+                                <Badge variant="outline" className="text-xs flex-shrink-0">
+                                  {formatISOToDisplay(apt.scheduled_at)}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {apt.phoneNumber || apt.lead?.phone || "N/A"}
+                                </span>
+                                <span className="flex items-center gap-1 truncate">
+                                  <Briefcase className="h-3 w-3" />
+                                  {apt.serviceName || "Serviço"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+
+                {riskProgress && (
+                  <div className="mt-3 p-3 rounded-lg bg-muted/50 border space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium">Progresso do cálculo</span>
+                      <span>{riskProgress.calculated + riskProgress.errors} / {riskProgress.total}</span>
+                    </div>
+                    <Progress value={((riskProgress.calculated + riskProgress.errors) / riskProgress.total) * 100} />
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-emerald-500">{riskProgress.calculated} calculado(s)</span>
+                      {riskProgress.errors > 0 && <span className="text-red-500">{riskProgress.errors} erro(s)</span>}
+                    </div>
+                    {riskProgress.results.length > 0 && (
+                      <ScrollArea className="h-24 mt-2">
+                        <div className="space-y-1">
+                          {riskProgress.results.map((res, idx) => (
+                            <div 
+                              key={idx} 
+                              className={cn(
+                                "text-xs p-2 rounded",
+                                res.success ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                {res.success ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                                <span className="font-medium truncate">{res.name}</span>
+                              </div>
+                              <p className="text-xs pl-5 mt-1 whitespace-pre-wrap">{res.result}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
+                )}
+
+                <Button 
+                  onClick={calculateNoShowRisk}
+                  disabled={calculatingRisk || selectedRiskAppointments.length === 0}
+                  className="w-full gap-2 h-10 bg-orange-500 hover:bg-orange-600 text-white mt-3"
+                >
+                  {calculatingRisk ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Calculando...</>
+                  ) : (
+                    <><Activity className="h-4 w-4" /> Calcular Risco ({selectedRiskAppointments.length})</>
+                  )}
                 </Button>
               </div>
             </div>
-
-            <ScrollArea className="h-[200px] mb-4">
-              <div className="space-y-2 pr-2">
-                {riskEligibleAppointments.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-6 text-sm">
-                    Nenhum agendamento disponível
-                  </p>
-                ) : (
-                  riskEligibleAppointments.map(apt => (
-                    <div
-                      key={apt.id}
-                      className="p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={selectedRiskAppointments.includes(apt.id)}
-                          onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium text-sm truncate">
-                              {apt.patientName || apt.lead?.name || "Sem nome"}
-                            </span>
-                            <Badge variant="outline" className="text-xs flex-shrink-0">
-                              {formatISOToDisplay(apt.scheduled_at)}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {apt.phoneNumber || apt.lead?.phone || "N/A"}
-                            </span>
-                            <span className="flex items-center gap-1 truncate">
-                              <Briefcase className="h-3 w-3" />
-                              {apt.serviceName || "Serviço"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-
-            {riskProgress && (
-              <div className="mb-4 p-3 rounded-lg bg-muted/50 border space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium">Progresso do cálculo</span>
-                  <span>{riskProgress.calculated + riskProgress.errors} / {riskProgress.total}</span>
-                </div>
-                <Progress value={((riskProgress.calculated + riskProgress.errors) / riskProgress.total) * 100} />
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="text-emerald-500">{riskProgress.calculated} calculado(s)</span>
-                  {riskProgress.errors > 0 && <span className="text-red-500">{riskProgress.errors} erro(s)</span>}
-                </div>
-                {riskProgress.results.length > 0 && (
-                  <ScrollArea className="h-24 mt-2">
-                    <div className="space-y-1">
-                      {riskProgress.results.map((res, idx) => (
-                        <div 
-                          key={idx} 
-                          className={cn(
-                            "text-xs p-2 rounded",
-                            res.success ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            {res.success ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                            <span className="font-medium truncate">{res.name}</span>
-                          </div>
-                          <p className="text-xs pl-5 mt-1 whitespace-pre-wrap">{res.result}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </div>
-            )}
-
-            <Button 
-              onClick={calculateNoShowRisk}
-              disabled={calculatingRisk || selectedRiskAppointments.length === 0}
-              className="w-full gap-2 h-10 bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              {calculatingRisk ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Calculando...</>
-              ) : (
-                <><Activity className="h-4 w-4" /> Calcular Risco ({selectedRiskAppointments.length})</>
-              )}
-            </Button>
           </CardContent>
         </Card>
       </div>

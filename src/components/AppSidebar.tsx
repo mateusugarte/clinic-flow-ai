@@ -20,6 +20,7 @@ import {
   X,
   Settings,
   MessageSquareMore,
+  RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,6 +33,7 @@ const navItems = [
   { to: "/ia-config", label: "IA Config", icon: Bot },
   { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { to: "/nutricao-confirmacao", label: "Confirmação", icon: MessageSquareMore },
+  { to: "/follow-up", label: "Follow-Up", icon: RefreshCw },
 ];
 
 export function AppSidebar() {
