@@ -18,7 +18,7 @@ import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { extractTimeFromISO, formatISOToShortDisplay, extractDateTimeFromISO } from "@/lib/dateUtils";
+import { extractTimeFromISO, formatISOToShortDisplay, formatISOToDisplay } from "@/lib/dateUtils";
 import { toStoredScheduledAt, getScheduledDateKey } from "@/lib/scheduledAt";
 
 function filterStartTs(date: Date) {
@@ -333,18 +333,18 @@ export default function CRM() {
   const getLeadAppointments = (leadId: string) => appointments?.filter(a => a.lead_id === leadId) || [];
 
   return (
-    <PageTransition className="h-full flex flex-col gap-3">
+    <PageTransition className="h-full flex flex-col gap-4">
       {/* Header */}
       <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-lg font-semibold text-foreground">CRM</h1>
-          <p className="text-xs text-muted-foreground">Pipeline de leads</p>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">Pipeline de Leads</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Gerencie seus contatos e conversões</p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 p-1 rounded-lg bg-muted/50 border border-border">
           {dateFilters.map((f) => (
             <Button key={f.value} variant={dateFilter === f.value ? "default" : "ghost"} size="sm"
               onClick={() => setDateFilter(f.value)} 
-              className={`h-7 px-2 text-xs ${dateFilter === f.value ? "bg-primary text-primary-foreground" : ""}`}>
+              className={`h-7 px-3 text-xs font-medium transition-all ${dateFilter === f.value ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"}`}>
               {f.label}
             </Button>
           ))}
@@ -352,90 +352,132 @@ export default function CRM() {
       </FadeIn>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-3 flex-shrink-0">
-        <Card className="shadow-card border">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-lg font-semibold">{totalLeads}</p>
-                <p className="text-2xs text-muted-foreground">Leads</p>
+      <div className="grid grid-cols-3 gap-4 flex-shrink-0">
+        <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+          <Card className="shadow-card hover:shadow-card-hover transition-shadow border overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold tracking-tight">{totalLeads}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Total de Leads</p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card border">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Play className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-lg font-semibold">{leadsWithIA}</p>
-                <p className="text-2xs text-muted-foreground">IA Ativa</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+          <Card className="shadow-card hover:shadow-card-hover transition-shadow border overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold tracking-tight">{leadsWithIA}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">IA Ativa</p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
+                  <Play className="h-5 w-5 text-success" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card border">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-lg font-semibold">{conversionRate}%</p>
-                <p className="text-2xs text-muted-foreground">Conversão</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+          <Card className="shadow-card hover:shadow-card-hover transition-shadow border overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold tracking-tight">{conversionRate}%</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Taxa de Conversão</p>
+                </div>
+                <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-info" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 min-h-0">
-        {columns.map((column) => (
-          <div key={column.id} className="flex flex-col min-h-0" onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop(column.id)}>
-            <div className="flex items-center justify-between mb-2 flex-shrink-0">
-              <h3 className="font-medium text-xs text-muted-foreground">{column.title}</h3>
-              <Badge variant="secondary" className="text-2xs h-5">{getLeadsForColumn(column.id).length}</Badge>
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0">
+        {columns.map((column, colIndex) => (
+          <motion.div 
+            key={column.id} 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: colIndex * 0.05 }}
+            className="flex flex-col min-h-0" 
+            onDragOver={(e) => e.preventDefault()} 
+            onDrop={() => handleDrop(column.id)}
+          >
+            <div className="flex items-center justify-between mb-3 px-1 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${column.id === 'fez_agendamento' ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                <h3 className="font-semibold text-sm text-foreground">{column.title}</h3>
+              </div>
+              <Badge variant="outline" className="text-2xs h-5 px-2 font-medium">{getLeadsForColumn(column.id).length}</Badge>
             </div>
-            <div className="flex-1 space-y-1.5 p-2 rounded-lg bg-muted/30 border border-border overflow-y-auto">
-              {getLeadsForColumn(column.id).map((lead) => {
+            <div className="flex-1 space-y-2 p-3 rounded-xl bg-muted/40 border border-border/50 overflow-y-auto">
+              {getLeadsForColumn(column.id).map((lead, index) => {
                 const leadAppointments = getLeadAppointments(lead.id);
                 return (
-                  <motion.div key={lead.id} layout initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                    draggable onDragStart={() => handleDragStart(lead.id)} onDragEnd={handleDragEnd}
-                    className={`group cursor-grab active:cursor-grabbing ${draggedLead === lead.id ? "opacity-50" : ""}`}>
-                    <Card className="shadow-sm hover:shadow-card-hover transition-shadow border-l-2 border-l-primary"
-                      onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); setIsEditing(false); }}>
-                      <CardContent className="p-2 space-y-1.5">
-                        <div className="flex items-start justify-between gap-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                              <User className="h-3 w-3 text-muted-foreground" />
+                  <motion.div 
+                    key={lead.id} 
+                    layout 
+                    initial={{ opacity: 0, scale: 0.95 }} 
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.02 }}
+                    whileHover={{ scale: 1.02 }}
+                    draggable 
+                    onDragStart={() => handleDragStart(lead.id)} 
+                    onDragEnd={handleDragEnd}
+                    className={`group cursor-grab active:cursor-grabbing ${draggedLead === lead.id ? "opacity-50" : ""}`}
+                  >
+                    <Card 
+                      className="shadow-sm hover:shadow-card-hover transition-all border bg-card cursor-pointer"
+                      onClick={() => { setSelectedLead(lead); setIsLeadModalOpen(true); setIsEditing(false); }}
+                    >
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 border border-primary/10">
+                              <User className="h-4 w-4 text-primary" />
                             </div>
                             <div className="min-w-0">
-                              <p className="font-medium text-xs truncate">{lead.name}</p>
-                              <p className="text-2xs text-muted-foreground truncate">{lead.phone}</p>
+                              <p className="font-medium text-sm truncate">{lead.name}</p>
+                              <p className="text-2xs text-muted-foreground truncate flex items-center gap-1">
+                                <Phone className="h-2.5 w-2.5" />
+                                {lead.phone}
+                              </p>
                             </div>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={(e) => { e.stopPropagation(); toggleIA(lead.id, lead.ia); }}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={`h-6 w-6 flex-shrink-0 rounded-full transition-colors ${lead.ia === "sim" ? "bg-warning/10 hover:bg-warning/20" : "bg-success/10 hover:bg-success/20"}`}
+                            onClick={(e) => { e.stopPropagation(); toggleIA(lead.id, lead.ia); }}
+                          >
                             {lead.ia === "sim" ? <Pause className="h-3 w-3 text-warning" /> : <Play className="h-3 w-3 text-success" />}
                           </Button>
                         </div>
                         {lead.last_interaction && (
-                          <p className="text-2xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-2.5 w-2.5" />{format(new Date(lead.last_interaction), "dd/MM HH:mm", { locale: ptBR })}
+                          <p className="text-2xs text-muted-foreground flex items-center gap-1.5 pt-1 border-t border-border/50">
+                            <Clock className="h-2.5 w-2.5" />{formatISOToShortDisplay(lead.last_interaction)}
                           </p>
                         )}
                         {leadAppointments.length > 0 && (
-                          <div className="pt-1.5 border-t border-border space-y-1">
+                          <div className="pt-2 border-t border-border/50 space-y-1.5">
                             {leadAppointments.slice(0, 1).map(apt => apt.scheduled_at && (
-                              <div key={apt.id} className="flex items-center gap-1.5 text-2xs">
+                              <div key={apt.id} className="flex items-center gap-2 text-2xs p-1.5 rounded-lg bg-muted/50">
                                 <StatusIndicator status={apt.status as AppointmentStatus} size="sm" />
-                                <span className="truncate">{apt.serviceName}</span>
-                                <span className="text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)}</span>
+                                <span className="truncate font-medium">{apt.serviceName}</span>
+                                <span className="text-muted-foreground ml-auto">{formatISOToShortDisplay(apt.scheduled_at)}</span>
                               </div>
                             ))}
                             {leadAppointments.length > 1 && (
-                              <p className="text-2xs text-muted-foreground">+{leadAppointments.length - 1}</p>
+                              <p className="text-2xs text-muted-foreground text-center">+{leadAppointments.length - 1} agendamento(s)</p>
                             )}
                           </div>
                         )}
@@ -444,111 +486,163 @@ export default function CRM() {
                   </motion.div>
                 );
               })}
-              {getLeadsForColumn(column.id).length === 0 && <div className="text-center py-4 text-muted-foreground text-xs">Vazio</div>}
+              {getLeadsForColumn(column.id).length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-xs">Nenhum lead</p>
+                </div>
+              )}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {/* Lead Modal */}
       <DetailModal isOpen={isLeadModalOpen} onClose={() => { setIsLeadModalOpen(false); setIsEditing(false); }} title="Detalhes do Lead">
         {selectedLead && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {/* Edit/Save buttons */}
             <div className="flex justify-end gap-2">
               {isEditing ? (
                 <>
-                  <Button variant="ghost" size="sm" onClick={cancelEditing} className="h-7 text-xs">
-                    <X className="h-3 w-3 mr-1" /> Cancelar
+                  <Button variant="ghost" size="sm" onClick={cancelEditing} className="h-8 text-xs">
+                    <X className="h-3 w-3 mr-1.5" /> Cancelar
                   </Button>
-                  <Button size="sm" onClick={saveEdits} className="h-7 text-xs bg-primary">
-                    <Save className="h-3 w-3 mr-1" /> Salvar
+                  <Button size="sm" onClick={saveEdits} className="h-8 text-xs bg-primary">
+                    <Save className="h-3 w-3 mr-1.5" /> Salvar
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={startEditing} className="h-7 text-xs">
-                  <Pencil className="h-3 w-3 mr-1" /> Editar
+                <Button variant="outline" size="sm" onClick={startEditing} className="h-8 text-xs">
+                  <Pencil className="h-3 w-3 mr-1.5" /> Editar
                 </Button>
               )}
             </div>
 
             {isEditing ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Nome</Label>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Nome</Label>
                     <Input 
                       value={editForm.name} 
                       onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                      className="h-8 text-xs"
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Telefone</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Telefone</Label>
                     <Input 
                       value={editForm.phone} 
                       onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                      className="h-8 text-xs"
+                      className="h-9"
                     />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Email</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Email</Label>
                   <Input 
                     value={editForm.email} 
                     onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                    className="h-8 text-xs"
+                    className="h-9"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Notas</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">Notas</Label>
                   <Textarea 
                     value={editForm.notes} 
                     onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                    className="text-xs min-h-[60px]"
+                    className="min-h-[80px] resize-none"
                   />
                 </div>
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-2xs text-muted-foreground">Nome</Label><p className="text-sm font-medium">{selectedLead.name}</p></div>
-                  <div><Label className="text-2xs text-muted-foreground">ID</Label><p className="font-mono text-xs">{selectedLead.id.slice(0, 8)}</p></div>
+              <div className="space-y-4">
+                {/* Lead Info Card */}
+                <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10">
+                      <User className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-base truncate">{selectedLead.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{selectedLead.id.slice(0, 8)}</p>
+                    </div>
+                    <Badge variant={selectedLead.ia === "sim" ? "default" : "secondary"} className="text-2xs">
+                      {selectedLead.ia === "sim" ? "IA Ativa" : "IA Pausada"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                      <p className="text-2xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                        <Phone className="h-3 w-3" /> Telefone
+                      </p>
+                      <p className="text-sm font-medium">{selectedLead.phone}</p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                      <p className="text-2xs text-muted-foreground mb-1">Email</p>
+                      <p className="text-sm font-medium truncate">{selectedLead.email || "—"}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                      <p className="text-2xs text-muted-foreground mb-1">Qualificação</p>
+                      <p className="text-sm font-medium">{columns.find(c => c.id === selectedLead.qualification)?.title || selectedLead.qualification}</p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                      <p className="text-2xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                        <Clock className="h-3 w-3" /> Última Interação
+                      </p>
+                      <p className="text-sm font-medium">{selectedLead.last_interaction ? formatISOToDisplay(selectedLead.last_interaction) : "—"}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                    <p className="text-2xs text-muted-foreground mb-1">Tempo Economizado pela IA</p>
+                    <p className="text-sm font-medium">{selectedLead.tempo_economizado || 0} minutos</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-2xs text-muted-foreground">Telefone</Label><p className="text-xs">{selectedLead.phone}</p></div>
-                  <div><Label className="text-2xs text-muted-foreground">Email</Label><p className="text-xs">{selectedLead.email || "—"}</p></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-2xs text-muted-foreground">Qualificação</Label><p className="text-xs">{columns.find(c => c.id === selectedLead.qualification)?.title || selectedLead.qualification}</p></div>
-                  <div><Label className="text-2xs text-muted-foreground">IA</Label><p className="text-xs">{selectedLead.ia === "sim" ? "Ativa" : "Pausada"}</p></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-2xs text-muted-foreground">Última Interação</Label><p className="text-xs">{selectedLead.last_interaction ? format(new Date(selectedLead.last_interaction), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}</p></div>
-                  <div><Label className="text-2xs text-muted-foreground">Tempo Economizado</Label><p className="text-xs">{selectedLead.tempo_economizado || 0} min</p></div>
-                </div>
-                {selectedLead.notes && <div><Label className="text-2xs text-muted-foreground">Notas</Label><p className="text-xs">{selectedLead.notes}</p></div>}
+
+                {selectedLead.notes && (
+                  <div className="p-3 rounded-lg bg-muted/20 border border-border/30">
+                    <Label className="text-2xs text-muted-foreground">Notas</Label>
+                    <p className="text-sm mt-1">{selectedLead.notes}</p>
+                  </div>
+                )}
+
                 {selectedLead.tags?.length > 0 && (
                   <div>
                     <Label className="text-2xs text-muted-foreground">Tags</Label>
-                    <div className="flex gap-1 flex-wrap mt-1">{selectedLead.tags.map((tag: string, i: number) => <Badge key={i} variant="secondary" className="text-2xs">{tag}</Badge>)}</div>
+                    <div className="flex gap-1.5 flex-wrap mt-1.5">
+                      {selectedLead.tags.map((tag: string, i: number) => (
+                        <Badge key={i} variant="secondary" className="text-2xs px-2 py-0.5">{tag}</Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
             
             {/* Appointments */}
             {getLeadAppointments(selectedLead.id).length > 0 && (
-              <div className="border-t pt-3">
-                <Label className="text-2xs text-muted-foreground">Agendamentos</Label>
-                <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-xs font-medium">Agendamentos ({getLeadAppointments(selectedLead.id).length})</Label>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
                   {getLeadAppointments(selectedLead.id).filter(apt => apt.scheduled_at).map(apt => (
-                    <div key={apt.id} className="p-2 rounded border bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <StatusIndicator status={apt.status as AppointmentStatus} size="sm" />
+                    <div key={apt.id} className="p-3 rounded-xl border bg-card hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-xs truncate">{apt.serviceName}</p>
-                          <p className="text-2xs text-muted-foreground">{formatISOToShortDisplay(apt.scheduled_at)} • {apt.professionalName}</p>
+                          <p className="font-medium text-sm truncate">{apt.serviceName}</p>
+                          <p className="text-2xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                            <Clock className="h-2.5 w-2.5" />
+                            {formatISOToShortDisplay(apt.scheduled_at)} • {apt.professionalName}
+                          </p>
                         </div>
                         <StatusSelect 
                           value={apt.status as AppointmentStatus} 
