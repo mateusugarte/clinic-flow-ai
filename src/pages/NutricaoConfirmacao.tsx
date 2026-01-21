@@ -736,670 +736,470 @@ export default function NutricaoConfirmacao() {
 
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4 overflow-auto">
-      {/* Confirmation Alert Card */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          "p-4 rounded-lg border-2 flex items-center justify-between gap-4",
-          allConfirmationsSent 
-            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400" 
-            : "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400"
-        )}
-      >
-        <div className="flex items-center gap-3">
-          {allConfirmationsSent ? (
-            <CheckCircle className="h-6 w-6 flex-shrink-0" />
-          ) : (
-            <AlertTriangle className="h-6 w-6 flex-shrink-0" />
+    <div className="h-full flex flex-col p-4 overflow-hidden">
+      {/* Top Section - Alert + Stats */}
+      <div className="flex-shrink-0 space-y-4 mb-4">
+        {/* Confirmation Alert Card */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "p-3 rounded-lg border-2 flex items-center justify-between gap-4",
+            allConfirmationsSent 
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400" 
+              : "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400"
           )}
-          <div>
-            <p className="font-semibold text-sm">
-              {allConfirmationsSent 
-                ? "Todas as confirmações foram enviadas!" 
-                : `${targetDateNotSent.length} confirmação(ões) pendente(s)`}
-            </p>
-            <p className="text-xs opacity-80">
-              {allConfirmationsSent 
-                ? `Agendamentos de ${format(confirmationTargetDate, "dd/MM", { locale: ptBR })} estão confirmados`
-                : `Envie as confirmações para ${format(confirmationTargetDate, "dd/MM", { locale: ptBR })} (daqui 2 dias)`}
-            </p>
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {allConfirmationsSent ? (
+              <CheckCircle className="h-5 w-5 flex-shrink-0" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="font-semibold text-sm truncate">
+                {allConfirmationsSent 
+                  ? "Todas as confirmações foram enviadas!" 
+                  : `${targetDateNotSent.length} confirmação(ões) pendente(s)`}
+              </p>
+              <p className="text-xs opacity-80 truncate">
+                {allConfirmationsSent 
+                  ? `Agendamentos de ${format(confirmationTargetDate, "dd/MM", { locale: ptBR })} estão confirmados`
+                  : `Envie as confirmações para ${format(confirmationTargetDate, "dd/MM", { locale: ptBR })} (daqui 2 dias)`}
+              </p>
+            </div>
           </div>
-        </div>
-        {!allConfirmationsSent && targetDateNotSent.length > 0 && (
-          <Button 
-            size="sm" 
-            variant="outline"
-            className="border-red-500/50 text-red-600 hover:bg-red-500/10 flex-shrink-0"
-            onClick={() => {
-              setSelectedDate(confirmationTargetDate);
-              setSelectedAppointments(targetDateNotSent.map(apt => apt.id));
-            }}
-          >
-            <Send className="h-3.5 w-3.5 mr-1.5" />
-            Enviar agora
-          </Button>
-        )}
-      </motion.div>
+          {!allConfirmationsSent && targetDateNotSent.length > 0 && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="border-red-500/50 text-red-600 hover:bg-red-500/10 flex-shrink-0"
+              onClick={() => {
+                setSelectedDate(confirmationTargetDate);
+                setSelectedAppointments(targetDateNotSent.map(apt => apt.id));
+              }}
+            >
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              Enviar agora
+            </Button>
+          )}
+        </motion.div>
 
-      {/* Today's Stats - Compact row */}
-      <div className="grid grid-cols-4 gap-3">
-        <StatCard 
-          title="Pendentes Hoje"
-          count={todayPending.length} 
-          icon={HourglassIcon} 
-          color="bg-yellow-500/10 text-yellow-500" 
-        />
-        <StatCard 
-          title="Confirmados Hoje"
-          count={todayConfirmed.length} 
-          icon={CheckCircle} 
-          color="bg-emerald-500/10 text-emerald-500" 
-        />
-        <StatCard 
-          title="Risco Hoje"
-          count={todayRisk.length} 
-          icon={AlertTriangle} 
-          color="bg-orange-500/10 text-orange-500" 
-        />
-        <StatCard 
-          title="Cancelados Hoje"
-          count={todayCancelled.length} 
-          icon={XCircle} 
-          color="bg-red-500/10 text-red-500" 
-        />
+        {/* Today's Stats - Compact row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard 
+            title="Pendentes Hoje"
+            count={todayPending.length} 
+            icon={HourglassIcon} 
+            color="bg-yellow-500/10 text-yellow-500" 
+          />
+          <StatCard 
+            title="Confirmados Hoje"
+            count={todayConfirmed.length} 
+            icon={CheckCircle} 
+            color="bg-emerald-500/10 text-emerald-500" 
+          />
+          <StatCard 
+            title="Risco Hoje"
+            count={todayRisk.length} 
+            icon={AlertTriangle} 
+            color="bg-orange-500/10 text-orange-500" 
+          />
+          <StatCard 
+            title="Cancelados Hoje"
+            count={todayCancelled.length} 
+            icon={XCircle} 
+            color="bg-red-500/10 text-red-500" 
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
-        {/* Left Panel - Selected Day Appointments */}
-        <Card className="shadow-card flex flex-col min-h-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Agendamentos - {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0 flex flex-col">
-            <Tabs defaultValue="pendentes" className="flex-1 flex flex-col min-h-0">
-              <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
-                <TabsTrigger value="pendentes" className="text-xs sm:text-sm px-1 sm:px-2">
-                  <span className="truncate">Pendentes</span>
-                  <span className="ml-1">({selectedDayPending.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="confirmados" className="text-xs sm:text-sm px-1 sm:px-2">
-                  <span className="truncate">Confirmados</span>
-                  <span className="ml-1">({selectedDayConfirmed.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="risco" className="text-xs sm:text-sm px-1 sm:px-2">
-                  <span className="truncate">Risco</span>
-                  <span className="ml-1">({selectedDayRisk.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="cancelados" className="text-xs sm:text-sm px-1 sm:px-2">
-                  <span className="truncate">Cancelados</span>
-                  <span className="ml-1">({selectedDayCancelled.length})</span>
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="pendentes" className="flex-1 min-h-0 mt-4 flex flex-col data-[state=inactive]:hidden">
-                {/* Pending appointments with send confirmation button */}
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    {selectedDayPending.filter(apt => !apt.confirmacaoEnviada).length} pendente(s) sem confirmação enviada
-                  </p>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        const pendingNotSent = selectedDayPending.filter(apt => !apt.confirmacaoEnviada);
-                        setSelectedAppointments(pendingNotSent.map(apt => apt.id));
-                      }}
-                      className="text-xs"
-                    >
-                      Selecionar todos
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto space-y-4">
+        {/* Two Column Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Left Panel - Selected Day Appointments */}
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Agendamentos - {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="pendentes" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 mb-4">
+                  <TabsTrigger value="pendentes" className="text-xs px-1">
+                    Pend. ({selectedDayPending.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="confirmados" className="text-xs px-1">
+                    Conf. ({selectedDayConfirmed.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="risco" className="text-xs px-1">
+                    Risco ({selectedDayRisk.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="cancelados" className="text-xs px-1">
+                    Canc. ({selectedDayCancelled.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="pendentes" className="mt-0">
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {selectedDayPending.filter(apt => !apt.confirmacaoEnviada).length} sem confirmação
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          const pendingNotSent = selectedDayPending.filter(apt => !apt.confirmacaoEnviada);
+                          setSelectedAppointments(pendingNotSent.map(apt => apt.id));
+                        }}
+                        className="text-xs h-7"
+                      >
+                        Selecionar
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={clearSelection} className="text-xs h-7">
+                        Limpar
+                      </Button>
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[280px]">
+                    <div className="space-y-2 pr-2">
+                      {selectedDayPending.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-6 text-sm">
+                          Nenhum agendamento pendente
+                        </p>
+                      ) : (
+                        selectedDayPending.map(apt => (
+                          <AppointmentCard key={apt.id} appointment={apt} showCheckbox={!apt.confirmacaoEnviada} />
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                  
+                  {selectedDayPending.length > 0 && (
+                    <div className="pt-3 border-t mt-3">
+                      {sendProgress && (
+                        <div className="mb-3 p-3 rounded-lg bg-muted/50 border space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium">Progresso</span>
+                            <span>{sendProgress.sent + sendProgress.errors} / {sendProgress.total}</span>
+                          </div>
+                          <Progress value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} />
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-emerald-500">{sendProgress.sent} ok</span>
+                            {sendProgress.errors > 0 && <span className="text-red-500">{sendProgress.errors} erro(s)</span>}
+                          </div>
+                        </div>
+                      )}
+                      <Button 
+                        onClick={sendConfirmation}
+                        disabled={sendingConfirmation || selectedAppointments.length === 0}
+                        className="w-full gap-2 h-10"
+                      >
+                        {sendingConfirmation ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                        ) : (
+                          <><Send className="h-4 w-4" /> Enviar ({selectedAppointments.length})</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="confirmados" className="mt-0">
+                  <ScrollArea className="h-[320px]">
+                    <div className="space-y-2 pr-2">
+                      {selectedDayConfirmed.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-6 text-sm">Nenhum confirmado</p>
+                      ) : (
+                        selectedDayConfirmed.map(apt => <AppointmentCard key={apt.id} appointment={apt} />)
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="risco" className="mt-0">
+                  <ScrollArea className="h-[320px]">
+                    <div className="space-y-2 pr-2">
+                      {selectedDayRisk.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-6 text-sm">Nenhum com risco</p>
+                      ) : (
+                        selectedDayRisk.map(apt => <AppointmentCard key={apt.id} appointment={apt} />)
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="cancelados" className="mt-0">
+                  <ScrollArea className="h-[320px]">
+                    <div className="space-y-2 pr-2">
+                      {selectedDayCancelled.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-6 text-sm">Nenhum cancelado</p>
+                      ) : (
+                        selectedDayCancelled.map(apt => <AppointmentCard key={apt.id} appointment={apt} />)
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Right Panel - Calendar + Send Confirmation */}
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Envio de Confirmações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Calendar */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm font-medium">
+                    {format(calendarMonth, "MMMM yyyy", { locale: ptBR })}
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-1">
+                  {["S", "T", "Q", "Q", "S", "S", "D"].map((day, i) => (
+                    <div key={i} className="text-muted-foreground font-medium py-1">{day}</div>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map(day => {
+                    const dateKey = format(day, "yyyy-MM-dd");
+                    const dayData = appointmentsByDay[dateKey];
+                    const isSelected = isSameDay(day, selectedDate);
+                    const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    const isTargetDate = isSameDay(day, confirmationTargetDate);
+                    
+                    return (
+                      <button
+                        key={dateKey}
+                        onClick={() => setSelectedDate(day)}
+                        className={cn(
+                          "p-1.5 text-xs rounded transition-colors aspect-square flex flex-col items-center justify-center",
+                          isSelected && "bg-primary text-primary-foreground",
+                          !isSelected && isToday(day) && "bg-accent",
+                          !isSelected && !isToday(day) && "hover:bg-accent",
+                          !isCurrentMonth && "text-muted-foreground/40",
+                          isTargetDate && !isSelected && "ring-1 ring-primary"
+                        )}
+                      >
+                        <span>{format(day, "d")}</span>
+                        {dayData && dayData.total > 0 && (
+                          <div className="flex gap-0.5 mt-0.5">
+                            {dayData.confirmed > 0 && <div className="w-1 h-1 rounded-full bg-emerald-500" />}
+                            {dayData.pending > 0 && <div className="w-1 h-1 rounded-full bg-yellow-500" />}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span>Enviado</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span>Pendente</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selected Date - Pending Confirmations */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-medium truncate">
+                      {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {pendingConfirmationAppointments.length} aguardando
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={selectAllForDate} className="text-xs h-7">
+                      Todos
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={clearSelection} className="text-xs">
+                    <Button variant="ghost" size="sm" onClick={clearSelection} className="text-xs h-7">
                       Limpar
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto max-h-[calc(100vh-520px)] min-h-[200px]">
-                  <div className="space-y-3 pr-2">
-                    {selectedDayPending.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        Nenhum agendamento pendente nesta data
-                      </p>
-                    ) : (
-                      selectedDayPending.map(apt => (
-                        <AppointmentCard key={apt.id} appointment={apt} showCheckbox={!apt.confirmacaoEnviada} />
-                      ))
-                    )}
-                  </div>
-                </div>
-                
-                {/* Send button only in pendentes tab */}
-                {selectedDayPending.length > 0 && (
-                  <div className="pt-4 border-t mt-4 space-y-3">
-                    {/* Progress Bar */}
-                    {sendProgress && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-3 p-4 rounded-lg bg-muted/50 border"
-                      >
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">Progresso do envio</span>
-                          <span className="text-muted-foreground">
-                            {sendProgress.sent + sendProgress.errors} / {sendProgress.total}
-                          </span>
-                        </div>
-                        
-                        <Progress 
-                          value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} 
-                          invisible
-                        />
-                        
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-1 text-emerald-500">
-                              <CheckCircle className="h-3.5 w-3.5" />
-                              {sendProgress.sent} enviado(s)
-                            </span>
-                            {sendProgress.errors > 0 && (
-                              <span className="flex items-center gap-1 text-red-500">
-                                <XCircle className="h-3.5 w-3.5" />
-                                {sendProgress.errors} erro(s)
-                              </span>
-                            )}
-                          </div>
-                          {sendProgress.currentPhone && (
-                            <span className="text-muted-foreground animate-pulse truncate max-w-[150px]">
-                              Enviando: {sendProgress.currentPhone}
-                            </span>
-                          )}
-                        </div>
 
-                        {/* Recent Messages */}
-                        {sendProgress.messages.length > 0 && (
-                          <ScrollArea className="h-20 mt-2">
-                            <div className="space-y-1">
-                              {sendProgress.messages.slice(-5).map((msg, idx) => (
-                                <div 
-                                  key={idx} 
-                                  className={cn(
-                                    "text-xs px-2 py-1 rounded flex items-center gap-2",
-                                    msg.success ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
-                                  )}
-                                >
-                                  {msg.success ? <CheckCircle className="h-3 w-3 flex-shrink-0" /> : <XCircle className="h-3 w-3 flex-shrink-0" />}
-                                  <span className="font-mono flex-shrink-0">{msg.phone}</span>
-                                  <span className="truncate">{msg.message}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        )}
-                      </motion.div>
-                    )}
-
-                    <Button 
-                      onClick={sendConfirmation}
-                      disabled={sendingConfirmation || selectedAppointments.length === 0}
-                      className="w-full gap-2 h-12"
-                      size="lg"
-                    >
-                      {sendingConfirmation ? (
-                        <>
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          Enviando confirmações...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-5 w-5" />
-                          Enviar Confirmação ({selectedAppointments.length})
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-              <TabsContent value="confirmados" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
-                <div className="overflow-y-auto max-h-[calc(100vh-420px)] min-h-[200px]">
-                  <div className="space-y-3 pr-2">
-                    {selectedDayConfirmed.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        Nenhum agendamento confirmado nesta data
-                      </p>
-                    ) : (
-                      selectedDayConfirmed.map(apt => (
-                        <AppointmentCard key={apt.id} appointment={apt} />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="risco" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
-                <div className="overflow-y-auto max-h-[calc(100vh-420px)] min-h-[200px]">
-                  <div className="space-y-3 pr-2">
-                    {selectedDayRisk.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        Nenhum agendamento com risco nesta data
-                      </p>
-                    ) : (
-                      selectedDayRisk.map(apt => (
-                        <AppointmentCard key={apt.id} appointment={apt} />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="cancelados" className="flex-1 min-h-0 mt-4 data-[state=inactive]:hidden">
-                <div className="overflow-y-auto max-h-[calc(100vh-420px)] min-h-[200px]">
-                  <div className="space-y-3 pr-2">
-                    {selectedDayCancelled.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                        Nenhum agendamento cancelado nesta data
-                      </p>
-                    ) : (
-                      selectedDayCancelled.map(apt => (
-                        <AppointmentCard key={apt.id} appointment={apt} />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Right Panel - Confirmation Calendar (Larger) */}
-        <Card className="shadow-card flex flex-col min-h-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              Envio de Confirmações
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0 flex flex-col">
-            {/* Calendar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <Button variant="ghost" size="icon" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-base font-medium">
-                  {format(calendarMonth, "MMMM yyyy", { locale: ptBR })}
-                </span>
-                <Button variant="ghost" size="icon" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-7 gap-2 text-center text-sm mb-2">
-                {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(day => (
-                  <div key={day} className="text-muted-foreground font-medium py-2">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-2">
-                {calendarDays.map(day => {
-                  const dateKey = format(day, "yyyy-MM-dd");
-                  const dayData = appointmentsByDay[dateKey];
-                  const isSelected = isSameDay(day, selectedDate);
-                  const isCurrentMonth = isSameMonth(day, calendarMonth);
-                  const isTargetDate = isSameDay(day, confirmationTargetDate);
-                  
-                  return (
-                    <button
-                      key={dateKey}
-                      onClick={() => setSelectedDate(day)}
-                      className={cn(
-                        "relative p-2 text-sm rounded-lg transition-colors aspect-square flex flex-col items-center justify-center",
-                        isSelected && "bg-primary text-primary-foreground",
-                        !isSelected && isToday(day) && "bg-accent",
-                        !isSelected && !isToday(day) && "hover:bg-accent",
-                        !isCurrentMonth && "text-muted-foreground/50",
-                        isTargetDate && !isSelected && "ring-2 ring-primary ring-offset-2"
-                      )}
-                    >
-                      <span>{format(day, "d")}</span>
-                      {dayData && dayData.total > 0 && (
-                        <div className="flex gap-1 mt-1">
-                          {dayData.confirmed > 0 && (
-                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                          )}
-                          {dayData.pending > 0 && (
-                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                          )}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              
-              <div className="flex items-center gap-6 mt-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span>Confirmação enviada</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span>Pendente envio</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Date Appointments - Only pending - LARGER AREA */}
-            <div className="flex-1 min-h-0 flex flex-col border-t pt-4">
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-base font-medium truncate">
-                    {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-                  </h4>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {pendingConfirmationAppointments.length} agendamento(s) aguardando confirmação
-                  </p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <Button variant="outline" size="sm" onClick={selectAllForDate} className="whitespace-nowrap">
-                    Selecionar todos
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={clearSelection} className="whitespace-nowrap">
-                    Limpar
-                  </Button>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 min-h-0 max-h-[300px]">
-                <div className="space-y-3 pr-2">
-                  <AnimatePresence mode="wait">
+                <ScrollArea className="h-[180px] mb-4">
+                  <div className="space-y-2 pr-2">
                     {pendingConfirmationAppointments.length === 0 ? (
-                      <motion.div
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-8"
-                      >
-                        <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
-                        <p className="text-muted-foreground">
-                          Todas as confirmações já foram enviadas para esta data!
-                        </p>
-                      </motion.div>
+                      <div className="text-center py-6">
+                        <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Todas enviadas!</p>
+                      </div>
                     ) : (
                       pendingConfirmationAppointments.map(apt => (
                         <AppointmentCard key={apt.id} appointment={apt} showCheckbox />
                       ))
                     )}
-                  </AnimatePresence>
-                </div>
-              </ScrollArea>
-
-              {/* Send Confirmation Button and Progress */}
-              <div className="pt-4 border-t mt-4 space-y-4">
-                {/* Progress Bar */}
-                {sendProgress && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-3 p-4 rounded-lg bg-muted/50 border"
-                  >
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">Progresso do envio</span>
-                      <span className="text-muted-foreground">
-                        {sendProgress.sent + sendProgress.errors} / {sendProgress.total}
-                      </span>
-                    </div>
-                    
-                    <Progress 
-                      value={((sendProgress.sent + sendProgress.errors) / sendProgress.total) * 100} 
-                      invisible
-                    />
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1 text-emerald-500">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          {sendProgress.sent} enviado(s)
-                        </span>
-                        {sendProgress.errors > 0 && (
-                          <span className="flex items-center gap-1 text-red-500">
-                            <XCircle className="h-3.5 w-3.5" />
-                            {sendProgress.errors} erro(s)
-                          </span>
-                        )}
-                      </div>
-                      {sendProgress.currentPhone && (
-                        <span className="text-muted-foreground animate-pulse">
-                          Enviando: {sendProgress.currentPhone}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Recent Messages */}
-                    {sendProgress.messages.length > 0 && (
-                      <ScrollArea className="h-24 mt-2">
-                        <div className="space-y-1">
-                          {sendProgress.messages.slice(-5).map((msg, idx) => (
-                            <div 
-                              key={idx} 
-                              className={cn(
-                                "text-xs px-2 py-1 rounded flex items-center gap-2",
-                                msg.success ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
-                              )}
-                            >
-                              {msg.success ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                              <span className="font-mono">{msg.phone}</span>
-                              <span className="truncate">{msg.message}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </motion.div>
-                )}
+                  </div>
+                </ScrollArea>
 
                 <Button 
                   onClick={sendConfirmation}
                   disabled={sendingConfirmation || selectedAppointments.length === 0}
-                  className="w-full gap-2 h-14 text-base font-semibold"
+                  className="w-full gap-2 h-11"
                   size="lg"
                 >
                   {sendingConfirmation ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Enviando confirmações...
-                    </>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
                   ) : (
-                    <>
-                      <Send className="h-5 w-5" />
-                      Enviar Confirmação ({selectedAppointments.length} selecionado{selectedAppointments.length !== 1 ? 's' : ''})
-                    </>
+                    <><Send className="h-4 w-4" /> Enviar Confirmação ({selectedAppointments.length})</>
                   )}
                 </Button>
+                
                 {isSameDay(selectedDate, confirmationTargetDate) && (
-                  <p className="text-sm text-center text-primary font-medium">
-                    📅 Data recomendada para envio de confirmações
+                  <p className="text-xs text-center text-primary font-medium mt-2">
+                    📅 Data recomendada
                   </p>
                 )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* No-Show Risk Calculation Section */}
-      <Card className="shadow-card mt-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Activity className="h-5 w-5 text-orange-500" />
-            Risco de No-Show
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Selecione agendamentos para calcular o risco de falta. Disponível apenas para agendamentos com pelo menos 24h de antecedência.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p className="text-sm text-muted-foreground">
-              {riskEligibleAppointments.length} agendamento(s) elegível(is) para cálculo
+        {/* No-Show Risk Calculation Section */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="h-4 w-4 text-orange-500" />
+              Risco de No-Show
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Calcule o risco de falta para agendamentos com pelo menos 24h de antecedência.
             </p>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={selectAllRiskAppointments}
-                className="text-xs"
-              >
-                Selecionar todos
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={clearRiskSelection} 
-                className="text-xs"
-              >
-                Limpar
-              </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <p className="text-xs text-muted-foreground">
+                {riskEligibleAppointments.length} elegível(is)
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={selectAllRiskAppointments} className="text-xs h-7">
+                  Selecionar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={clearRiskSelection} className="text-xs h-7">
+                  Limpar
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Risk Eligible Appointments List */}
-          <div className="max-h-[300px] overflow-y-auto mb-4">
-            <div className="space-y-2">
-              {riskEligibleAppointments.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  Nenhum agendamento disponível para cálculo de risco
-                </p>
-              ) : (
-                riskEligibleAppointments.map(apt => (
-                  <motion.div
-                    key={apt.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={selectedRiskAppointments.includes(apt.id)}
-                        onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium text-sm truncate">
-                            {apt.patientName || apt.lead?.name || "Sem nome"}
-                          </span>
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
-                            {formatISOToDisplay(apt.scheduled_at)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {apt.phoneNumber || apt.lead?.phone || "N/A"}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Briefcase className="h-3 w-3" />
-                            {apt.serviceName || "Serviço"}
-                          </span>
+            <ScrollArea className="h-[200px] mb-4">
+              <div className="space-y-2 pr-2">
+                {riskEligibleAppointments.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-6 text-sm">
+                    Nenhum agendamento disponível
+                  </p>
+                ) : (
+                  riskEligibleAppointments.map(apt => (
+                    <div
+                      key={apt.id}
+                      className="p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedRiskAppointments.includes(apt.id)}
+                          onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-sm truncate">
+                              {apt.patientName || apt.lead?.name || "Sem nome"}
+                            </span>
+                            <Badge variant="outline" className="text-xs flex-shrink-0">
+                              {formatISOToDisplay(apt.scheduled_at)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {apt.phoneNumber || apt.lead?.phone || "N/A"}
+                            </span>
+                            <span className="flex items-center gap-1 truncate">
+                              <Briefcase className="h-3 w-3" />
+                              {apt.serviceName || "Serviço"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Risk Progress */}
-          {riskProgress && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-3 p-4 rounded-lg bg-muted/50 border mb-4"
-            >
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">Progresso do cálculo</span>
-                <span className="text-muted-foreground">
-                  {riskProgress.calculated + riskProgress.errors} / {riskProgress.total}
-                </span>
-              </div>
-              
-              <Progress 
-                value={((riskProgress.calculated + riskProgress.errors) / riskProgress.total) * 100} 
-              />
-              
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1 text-emerald-500">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    {riskProgress.calculated} calculado(s)
-                  </span>
-                  {riskProgress.errors > 0 && (
-                    <span className="flex items-center gap-1 text-red-500">
-                      <XCircle className="h-3.5 w-3.5" />
-                      {riskProgress.errors} erro(s)
-                    </span>
-                  )}
-                </div>
-                {riskProgress.currentName && (
-                  <span className="text-muted-foreground animate-pulse truncate max-w-[200px]">
-                    Calculando: {riskProgress.currentName}
-                  </span>
+                  ))
                 )}
               </div>
+            </ScrollArea>
 
-              {/* Risk Results */}
-              {riskProgress.results.length > 0 && (
-                <ScrollArea className="h-32 mt-2">
-                  <div className="space-y-2">
-                    {riskProgress.results.map((res, idx) => (
-                      <div 
-                        key={idx} 
-                        className={cn(
-                          "text-xs p-2 rounded",
-                          res.success ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          {res.success ? <CheckCircle className="h-3 w-3 flex-shrink-0" /> : <XCircle className="h-3 w-3 flex-shrink-0" />}
-                          <span className="font-medium">{res.name}</span>
-                          <Badge variant="outline" className="text-2xs ml-auto">
-                            {res.success ? "Calculado" : "Erro"}
-                          </Badge>
+            {riskProgress && (
+              <div className="mb-4 p-3 rounded-lg bg-muted/50 border space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">Progresso do cálculo</span>
+                  <span>{riskProgress.calculated + riskProgress.errors} / {riskProgress.total}</span>
+                </div>
+                <Progress value={((riskProgress.calculated + riskProgress.errors) / riskProgress.total) * 100} />
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-emerald-500">{riskProgress.calculated} calculado(s)</span>
+                  {riskProgress.errors > 0 && <span className="text-red-500">{riskProgress.errors} erro(s)</span>}
+                </div>
+                {riskProgress.results.length > 0 && (
+                  <ScrollArea className="h-24 mt-2">
+                    <div className="space-y-1">
+                      {riskProgress.results.map((res, idx) => (
+                        <div 
+                          key={idx} 
+                          className={cn(
+                            "text-xs p-2 rounded",
+                            res.success ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            {res.success ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                            <span className="font-medium truncate">{res.name}</span>
+                          </div>
+                          <p className="text-xs pl-5 mt-1 whitespace-pre-wrap">{res.result}</p>
                         </div>
-                        <p className="text-xs pl-5 whitespace-pre-wrap">{res.result}</p>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </motion.div>
-          )}
-
-          {/* Calculate Button */}
-          <Button 
-            onClick={calculateNoShowRisk}
-            disabled={calculatingRisk || selectedRiskAppointments.length === 0}
-            className="w-full gap-2 h-12 bg-orange-500 hover:bg-orange-600 text-white"
-            size="lg"
-          >
-            {calculatingRisk ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Calculando risco...
-              </>
-            ) : (
-              <>
-                <Activity className="h-5 w-5" />
-                Calcular Risco ({selectedRiskAppointments.length} selecionado{selectedRiskAppointments.length !== 1 ? 's' : ''})
-              </>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
             )}
-          </Button>
-        </CardContent>
-      </Card>
+
+            <Button 
+              onClick={calculateNoShowRisk}
+              disabled={calculatingRisk || selectedRiskAppointments.length === 0}
+              className="w-full gap-2 h-10 bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              {calculatingRisk ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Calculando...</>
+              ) : (
+                <><Activity className="h-4 w-4" /> Calcular Risco ({selectedRiskAppointments.length})</>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
