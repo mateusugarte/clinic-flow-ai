@@ -3,12 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Loader2, CheckCircle2, XCircle, RefreshCw, QrCode, Unplug } from "lucide-react";
+import { MessageCircle, Loader2, CheckCircle2, XCircle, RefreshCw, QrCode } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-
-
 
 interface WhatsAppConnectionProps {
   configId: string | undefined;
@@ -16,7 +14,7 @@ interface WhatsAppConnectionProps {
   connectedPhone: string;
 }
 
-export default function WhatsAppConnection({ configId, isConnected, connectedPhone }: WhatsAppConnectionProps) {
+export default function WhatsAppConnection({ configId, isConnected }: WhatsAppConnectionProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -66,8 +64,6 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   };
 
   const invokeWhatsAppProxy = async (body: Record<string, unknown>) => {
-    // This function should be callable without Supabase Auth.
-    // Supabase gateway still requires anon key headers.
     const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/whatsapp-proxy`, {
       method: "POST",
       headers: {
@@ -130,7 +126,6 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
     },
     onSuccess: (data) => {
       console.log("WhatsApp response:", data);
-      // Now we receive a ready-to-use link/text (ex: data:image/png;base64,...) – just render it in the mockup.
       const qrLink = extractQrLink(data);
       if (qrLink) {
         setQrCode(qrLink);
@@ -148,31 +143,6 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
     },
   });
 
-  // Generate QR code with phone number
-  const generateQR = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) throw new Error("Usuário não autenticado");
-      return invokeWhatsAppProxy({ acao: "gerar qr code", phone: connectedPhone, userID: user.id });
-    },
-    onSuccess: (data) => {
-      console.log("WhatsApp QR response:", data);
-      const qrLink = extractQrLink(data);
-      if (qrLink) {
-        setQrCode(qrLink);
-        setTimer(59);
-        setIsTimerActive(true);
-        setConnectionStatus("waiting");
-        toast({ title: "QR Code gerado!", description: "Escaneie com seu WhatsApp" });
-      } else {
-        toast({ variant: "destructive", title: "Erro ao gerar QR Code" });
-      }
-    },
-    onError: (error) => {
-      console.error("WhatsApp QR error:", error);
-      toast({ variant: "destructive", title: "Erro ao gerar QR Code" });
-    },
-  });
-
   // Verify connection
   const verifyConnection = useMutation({
     mutationFn: async () => {
@@ -184,7 +154,6 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
       console.log("Verificar conexão response:", data);
       const normalizedData = data.toLowerCase();
       
-      // Verifica se está conectado - aceita "conectado", "connected", "true" ou status: "conectado"
       const isConnectedResult = 
         (normalizedData.includes("conectado") && !normalizedData.includes("desconectado")) ||
         (normalizedData.includes("connected") && !normalizedData.includes("disconnected")) ||
@@ -199,7 +168,6 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         setIsTimerActive(false);
         toast({ title: "WhatsApp conectado com sucesso!" });
       } else {
-        // Atualiza para FALSE quando desconectado
         await updateConnectionStatus(false);
         setConnectionStatus("disconnected");
         toast({ 
@@ -215,24 +183,6 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
     },
   });
 
-  // Disconnect
-  const disconnect = useMutation({
-    mutationFn: async () => {
-      if (!user?.id) throw new Error("Usuário não autenticado");
-      return invokeWhatsAppProxy({ acao: "desconectar", userID: user.id });
-    },
-    onSuccess: async () => {
-      await updateConnectionStatus(false);
-      setConnectionStatus("idle");
-      setQrCode(null);
-      toast({ title: "WhatsApp desconectado" });
-    },
-    onError: (error) => {
-      console.error("WhatsApp disconnect error:", error);
-      toast({ variant: "destructive", title: "Erro ao desconectar" });
-    },
-  });
-
   const handleConnectionDone = useCallback(() => {
     verifyConnection.mutate();
   }, [verifyConnection]);
@@ -243,7 +193,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const isLoading = createInstance.isPending || generateQR.isPending || verifyConnection.isPending || disconnect.isPending;
+  const isLoading = createInstance.isPending || verifyConnection.isPending;
 
   return (
     <Card className="col-span-12 shadow-card">
@@ -354,47 +304,18 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
               )}
 
               {connectionStatus === "connected" && (
-                <>
-                  <Button
-                    onClick={() => generateQR.mutate()}
-                    disabled={isLoading}
-                    variant="outline"
-                  >
-                    {generateQR.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <QrCode className="h-4 w-4 mr-2" />
-                    )}
-                    Gerar QR Code
-                  </Button>
-
-                  <Button
-                    onClick={() => verifyConnection.mutate()}
-                    disabled={isLoading}
-                    variant="outline"
-                  >
-                    {verifyConnection.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                    )}
-                    Verificar Conexão
-                  </Button>
-
-                  <Button
-                    onClick={() => disconnect.mutate()}
-                    disabled={isLoading}
-                    variant="outline"
-                    className="border-destructive text-destructive hover:bg-destructive/10"
-                  >
-                    {disconnect.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Unplug className="h-4 w-4 mr-2" />
-                    )}
-                    Desconectar
-                  </Button>
-                </>
+                <Button
+                  onClick={() => verifyConnection.mutate()}
+                  disabled={isLoading}
+                  variant="outline"
+                >
+                  {verifyConnection.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Verificar Conexão
+                </Button>
               )}
 
               {connectionStatus !== "connected" && !qrCode && (
