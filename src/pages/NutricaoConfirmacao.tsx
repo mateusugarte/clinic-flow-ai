@@ -78,6 +78,7 @@ export default function NutricaoConfirmacao() {
   const [sentAppointmentIds, setSentAppointmentIds] = useState<Set<string>>(new Set());
   
   // Risk calculation states
+  const [riskCalendarMonth, setRiskCalendarMonth] = useState(new Date());
   const [selectedRiskAppointments, setSelectedRiskAppointments] = useState<string[]>([]);
   const [calculatingRisk, setCalculatingRisk] = useState(false);
   const [riskProgress, setRiskProgress] = useState<RiskProgress | null>(null);
@@ -231,16 +232,27 @@ export default function NutricaoConfirmacao() {
   // Check if date is the target date for sending confirmations (2 days ahead)
   const confirmationTargetDate = useMemo(() => addDays(today, 2), [today]);
 
-  // Get appointments eligible for risk calculation (at least 24h/1 day before appointment DATE)
+  // Tomorrow's date for risk calculation
+  const tomorrow = useMemo(() => addDays(today, 1), [today]);
+  const tomorrowKey = useMemo(() => format(tomorrow, "yyyy-MM-dd"), [tomorrow]);
+
+  // Risk calendar days
+  const riskCalendarDays = useMemo(() => {
+    const monthStart = startOfMonth(riskCalendarMonth);
+    const monthEnd = endOfMonth(riskCalendarMonth);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [riskCalendarMonth]);
+
+  // Get appointments eligible for risk calculation (ONLY tomorrow's appointments)
   const riskEligibleAppointments = useMemo(() => {
-    const tomorrow = addDays(today, 1);
-    const tomorrowKey = format(tomorrow, "yyyy-MM-dd");
     return appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      // Appointment date must be at least tomorrow (24h from today)
-      return date >= tomorrowKey;
+      // Only appointments for tomorrow
+      return date === tomorrowKey;
     });
-  }, [appointments, today]);
+  }, [appointments, tomorrowKey]);
 
   // Calculate confirmation target date key (2 days ahead) - MOVED BEFORE EARLY RETURN
   const targetDateKey = useMemo(() => format(confirmationTargetDate, "yyyy-MM-dd"), [confirmationTargetDate]);
@@ -1089,7 +1101,7 @@ export default function NutricaoConfirmacao() {
               Risco de No-Show
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Calcule o risco de falta para agendamentos com pelo menos 24h de antecedência.
+              Calcule o risco de falta para agendamentos de amanhã ({format(tomorrow, "dd/MM/yyyy")}).
             </p>
           </CardHeader>
           <CardContent>
@@ -1097,13 +1109,13 @@ export default function NutricaoConfirmacao() {
               {/* Left - Risk Calendar */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setRiskCalendarMonth(subMonths(riskCalendarMonth, 1))}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="text-sm font-medium">
-                    {format(calendarMonth, "MMMM yyyy", { locale: ptBR })}
+                    {format(riskCalendarMonth, "MMMM yyyy", { locale: ptBR })}
                   </span>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setRiskCalendarMonth(addMonths(riskCalendarMonth, 1))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1115,25 +1127,20 @@ export default function NutricaoConfirmacao() {
                 </div>
                 
                 <div className="grid grid-cols-7 gap-1">
-                  {calendarDays.map(day => {
+                  {riskCalendarDays.map(day => {
                     const dateKey = format(day, "yyyy-MM-dd");
                     const dayData = appointmentsByDay[dateKey];
-                    const isSelected = isSameDay(day, selectedDate);
-                    const isCurrentMonth = isSameMonth(day, calendarMonth);
-                    const tomorrow = addDays(today, 1);
-                    const isEligibleForRisk = day >= tomorrow;
+                    const isCurrentMonth = isSameMonth(day, riskCalendarMonth);
+                    const isTomorrow = isSameDay(day, tomorrow);
                     
                     return (
-                      <button
+                      <div
                         key={dateKey}
-                        onClick={() => setSelectedDate(day)}
                         className={cn(
-                          "p-1.5 text-xs rounded transition-colors aspect-square flex flex-col items-center justify-center",
-                          isSelected && "bg-primary text-primary-foreground",
-                          !isSelected && isToday(day) && "bg-accent",
-                          !isSelected && !isToday(day) && "hover:bg-accent",
-                          !isCurrentMonth && "text-muted-foreground/40",
-                          !isSelected && isEligibleForRisk && dayData?.total > 0 && "ring-1 ring-orange-400"
+                          "p-1.5 text-xs rounded aspect-square flex flex-col items-center justify-center",
+                          isTomorrow && "bg-orange-500 text-white font-bold",
+                          !isTomorrow && isToday(day) && "bg-accent",
+                          !isCurrentMonth && "text-muted-foreground/40"
                         )}
                       >
                         <span>{format(day, "d")}</span>
@@ -1141,11 +1148,11 @@ export default function NutricaoConfirmacao() {
                           <div className="flex gap-0.5 mt-0.5">
                             <div className={cn(
                               "w-1.5 h-1.5 rounded-full",
-                              isEligibleForRisk ? "bg-orange-500" : "bg-muted-foreground/40"
+                              isTomorrow ? "bg-white" : "bg-muted-foreground/40"
                             )} />
                           </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1153,7 +1160,7 @@ export default function NutricaoConfirmacao() {
                 <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-orange-500" />
-                    <span>Elegível para cálculo</span>
+                    <span>Amanhã (elegível)</span>
                   </div>
                 </div>
               </div>
@@ -1163,7 +1170,7 @@ export default function NutricaoConfirmacao() {
                 <div className="flex items-center justify-between mb-3 gap-2">
                   <div className="min-w-0">
                     <h4 className="text-sm font-medium truncate">
-                      Agendamentos elegíveis
+                      Agendamentos de amanhã
                     </h4>
                     <p className="text-xs text-muted-foreground">
                       {riskEligibleAppointments.length} agendamento(s) | {selectedRiskAppointments.length} selecionado(s)
@@ -1179,12 +1186,13 @@ export default function NutricaoConfirmacao() {
                   </div>
                 </div>
 
-                <ScrollArea className="h-[280px] border rounded-lg">
+                <ScrollArea className="h-[320px] flex-1 border rounded-lg">
                   <div className="space-y-2 p-2">
                     {riskEligibleAppointments.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-6 text-sm">
-                        Nenhum agendamento disponível
-                      </p>
+                      <div className="text-center py-10">
+                        <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Nenhum agendamento para amanhã</p>
+                      </div>
                     ) : (
                       riskEligibleAppointments.map(apt => (
                         <div
