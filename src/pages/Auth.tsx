@@ -158,23 +158,32 @@ export default function Auth() {
             <img src={logoIcon} alt="stickIA" className="h-16 w-16 object-contain" />
           </motion.div>
           
-          <div className="space-y-6">
-            <motion.h1
+          <div className="space-y-8">
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-4xl lg:text-5xl font-light text-white leading-tight"
+              className="space-y-4"
             >
-              Simplifique.<br />
-              <span className="font-semibold">Automatize.</span>
-            </motion.h1>
+              <h1 className="text-5xl lg:text-6xl font-bold text-white tracking-tight">
+                stick<span className="text-[#F8F5F1]">AI</span>
+              </h1>
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/70 font-medium">
+                  AI First System for Clinics
+                </p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/50">
+                  Sistema AI First para Clínicas
+                </p>
+              </div>
+            </motion.div>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
-              className="text-white/60 text-lg max-w-md leading-relaxed"
+              className="text-white/60 text-lg max-w-md leading-relaxed font-light"
             >
-              Transforme a gestão da sua clínica com inteligência artificial
+              Uma estrutura que aumenta seu faturamento usando <span className="text-white/80 font-medium">IA como centro</span>.
             </motion.p>
           </div>
 
