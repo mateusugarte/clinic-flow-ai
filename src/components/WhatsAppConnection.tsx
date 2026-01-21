@@ -181,7 +181,17 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
       return typeof data === "string" ? data : JSON.stringify(data);
     },
     onSuccess: async (data) => {
-      const isConnectedResult = data.toLowerCase().includes("conectado") || data.toLowerCase().includes("connected") || data.toLowerCase().includes("true");
+      console.log("Verificar conexão response:", data);
+      const normalizedData = data.toLowerCase();
+      
+      // Verifica se está conectado - aceita "conectado", "connected", "true" ou status: "conectado"
+      const isConnectedResult = 
+        (normalizedData.includes("conectado") && !normalizedData.includes("desconectado")) ||
+        (normalizedData.includes("connected") && !normalizedData.includes("disconnected")) ||
+        normalizedData.includes('"status":"conectado"') ||
+        normalizedData.includes('"status": "conectado"') ||
+        normalizedData === "true";
+      
       if (isConnectedResult) {
         await updateConnectionStatus(true);
         setConnectionStatus("connected");
@@ -189,8 +199,14 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         setIsTimerActive(false);
         toast({ title: "WhatsApp conectado com sucesso!" });
       } else {
+        // Atualiza para FALSE quando desconectado
+        await updateConnectionStatus(false);
         setConnectionStatus("disconnected");
-        toast({ variant: "destructive", title: "Não conectado", description: data });
+        toast({ 
+          variant: "destructive", 
+          title: "WhatsApp desconectado", 
+          description: "A conexão foi atualizada no sistema." 
+        });
       }
     },
     onError: (error) => {
