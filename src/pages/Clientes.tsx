@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { User, Phone, Mail, Calendar, TrendingUp, Star, Clock, Trash2 } from "lucide-react";
+import { User, Phone, Mail, Calendar as CalendarIcon, TrendingUp, Star, Clock, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -131,22 +131,25 @@ export default function Clientes() {
   });
 
   return (
-    <PageTransition className="h-full flex flex-col gap-4">
-      {/* Header */}
-      <FadeIn direction="down" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
-        <div><h1 className="text-2xl font-bold text-foreground">Clientes</h1><p className="text-sm text-muted-foreground">Leads que já realizaram agendamentos</p></div>
-        <div className="flex gap-2">
+    <PageTransition className="h-full flex flex-col gap-3">
+      {/* Header - Compact */}
+      <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-lg font-bold text-foreground">Clientes</h1>
+          <p className="text-xs text-muted-foreground">Leads que já realizaram agendamentos</p>
+        </div>
+        <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg">
           {dateFilters.map((f) => (
-            <Button key={f.value} variant={dateFilter === f.value ? "default" : "outline"} size="sm" onClick={() => setDateFilter(f.value)} className={dateFilter === f.value ? "gradient-primary" : ""}>{f.label}</Button>
+            <Button key={f.value} variant={dateFilter === f.value ? "default" : "ghost"} size="sm" onClick={() => setDateFilter(f.value)} className={`h-6 px-2 text-xs ${dateFilter === f.value ? "" : ""}`}>{f.label}</Button>
           ))}
         </div>
       </FadeIn>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4 flex-shrink-0">
-        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Serviço Mais Agendado</CardTitle></CardHeader><CardContent><p className="text-lg font-bold truncate">{stats?.topService || "N/A"}</p></CardContent></Card>
-        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" />Dia Mais Popular</CardTitle></CardHeader><CardContent><p className="text-lg font-bold">{stats?.topDay || "N/A"}</p></CardContent></Card>
-        <Card className="shadow-card"><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground flex items-center gap-2"><Star className="h-4 w-4 text-primary" />Total de Clientes</CardTitle></CardHeader><CardContent><p className="text-lg font-bold">{clients?.length || 0}</p></CardContent></Card>
+      {/* Stats Row - Compact */}
+      <div className="grid grid-cols-3 gap-3 flex-shrink-0">
+        <Card className="shadow-card border-0"><CardContent className="p-3 flex items-center gap-3"><TrendingUp className="h-4 w-4 text-primary" /><div><p className="text-sm font-bold truncate">{stats?.topService || "N/A"}</p><p className="text-[10px] text-muted-foreground">Serviço Popular</p></div></CardContent></Card>
+        <Card className="shadow-card border-0"><CardContent className="p-3 flex items-center gap-3"><CalendarIcon className="h-4 w-4 text-primary" /><div><p className="text-sm font-bold">{stats?.topDay || "N/A"}</p><p className="text-[10px] text-muted-foreground">Dia Popular</p></div></CardContent></Card>
+        <Card className="shadow-card border-0"><CardContent className="p-3 flex items-center gap-3"><Star className="h-4 w-4 text-primary" /><div><p className="text-sm font-bold">{clients?.length || 0}</p><p className="text-[10px] text-muted-foreground">Total Clientes</p></div></CardContent></Card>
       </div>
 
       {/* Clients Grid - Fill remaining space */}
@@ -165,7 +168,7 @@ export default function Clientes() {
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                  <Badge variant="secondary" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" />{client.appointmentCount}</Badge>
+                  <Badge variant="secondary" className="text-xs flex items-center gap-1"><CalendarIcon className="h-3 w-3" />{client.appointmentCount}</Badge>
                   {client.lastAppointment && <span className="text-[10px] text-muted-foreground">{formatDateKeyBR(getScheduledDateKey(client.lastAppointment.scheduled_at))}</span>}
                 </div>
               </CardContent>

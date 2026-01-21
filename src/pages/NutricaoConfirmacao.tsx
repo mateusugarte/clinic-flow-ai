@@ -122,29 +122,42 @@ export default function NutricaoConfirmacao() {
     },
   });
 
-  // Get today and week boundaries
+  // Get today
   const today = useMemo(() => new Date(), []);
-  const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
-  const weekEnd = useMemo(() => endOfWeek(today, { weekStartsOn: 1 }), [today]);
-
+  const todayKey = useMemo(() => format(today, "yyyy-MM-dd"), [today]);
   const selectedKey = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
-  const weekStartKey = useMemo(() => format(weekStart, "yyyy-MM-dd"), [weekStart]);
-  const weekEndKey = useMemo(() => format(weekEnd, "yyyy-MM-dd"), [weekEnd]);
 
-  const inWeek = (dateKey: string) => dateKey >= weekStartKey && dateKey <= weekEndKey;
+  // Filter appointments for today only (for metrics)
+  const todayPending = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === todayKey && apt.status === "pendente";
+    }), [appointments, todayKey]);
 
-  // Filter appointments using string extraction (no timezone conversion)
+  const todayConfirmed = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === todayKey && apt.status === "confirmado";
+    }), [appointments, todayKey]);
+
+  const todayRisk = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === todayKey && apt.status === "risco";
+    }), [appointments, todayKey]);
+
+  const todayCancelled = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === todayKey && apt.status === "cancelado";
+    }), [appointments, todayKey]);
+
+  // Filter for selected day (tabs)
   const selectedDayConfirmed = useMemo(() =>
     appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
       return date === selectedKey && apt.status === "confirmado";
     }), [appointments, selectedKey]);
-
-  const weekConfirmed = useMemo(() =>
-    appointments.filter((apt) => {
-      const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      return inWeek(date) && apt.status === "confirmado";
-    }), [appointments, weekStartKey, weekEndKey]);
 
   const selectedDayCancelled = useMemo(() =>
     appointments.filter((apt) => {
@@ -152,35 +165,17 @@ export default function NutricaoConfirmacao() {
       return date === selectedKey && apt.status === "cancelado";
     }), [appointments, selectedKey]);
 
-  const weekCancelled = useMemo(() =>
-    appointments.filter((apt) => {
-      const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      return inWeek(date) && apt.status === "cancelado";
-    }), [appointments, weekStartKey, weekEndKey]);
-
   const selectedDayPending = useMemo(() =>
     appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
       return date === selectedKey && apt.status === "pendente";
     }), [appointments, selectedKey]);
 
-  const weekPending = useMemo(() =>
-    appointments.filter((apt) => {
-      const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      return inWeek(date) && apt.status === "pendente";
-    }), [appointments, weekStartKey, weekEndKey]);
-
   const selectedDayRisk = useMemo(() =>
     appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
       return date === selectedKey && apt.status === "risco";
     }), [appointments, selectedKey]);
-
-  const weekRisk = useMemo(() =>
-    appointments.filter((apt) => {
-      const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      return inWeek(date) && apt.status === "risco";
-    }), [appointments, weekStartKey, weekEndKey]);
 
   // Get all appointments for selected date in calendar
   const selectedDateAppointments = useMemo(() =>
@@ -531,15 +526,15 @@ export default function NutricaoConfirmacao() {
   );
 
   const StatCard = ({ title, count, icon: Icon, color }: { title: string; count: number; icon: any; color: string }) => (
-    <Card className="shadow-card">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{count}</p>
+    <Card className="shadow-card border-0">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-3">
+          <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0", color)}>
+            <Icon className="h-4 w-4" />
           </div>
-          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center", color)}>
-            <Icon className="h-5 w-5" />
+          <div className="min-w-0">
+            <p className="text-lg font-bold leading-none">{count}</p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{title}</p>
           </div>
         </div>
       </CardContent>
@@ -554,55 +549,94 @@ export default function NutricaoConfirmacao() {
     );
   }
 
+  // Calculate confirmation target date key (2 days ahead)
+  const targetDateKey = useMemo(() => format(confirmationTargetDate, "yyyy-MM-dd"), [confirmationTargetDate]);
+  
+  // Appointments for target date (2 days ahead) that need confirmation
+  const targetDateAppointments = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === targetDateKey;
+    }), [appointments, targetDateKey]);
+  
+  const targetDateNotSent = useMemo(() => 
+    targetDateAppointments.filter(apt => !apt.confirmacaoEnviada),
+    [targetDateAppointments]
+  );
+  
+  const allConfirmationsSent = targetDateAppointments.length > 0 && targetDateNotSent.length === 0;
+
   return (
-    <div className="h-full flex flex-col gap-6 p-6 overflow-auto">
-      {/* Header Stats - Week always fixed */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+    <div className="h-full flex flex-col gap-4 p-4 overflow-auto">
+      {/* Confirmation Alert Card */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          "p-4 rounded-lg border-2 flex items-center justify-between gap-4",
+          allConfirmationsSent 
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400" 
+            : "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          {allConfirmationsSent ? (
+            <CheckCircle className="h-6 w-6 flex-shrink-0" />
+          ) : (
+            <AlertTriangle className="h-6 w-6 flex-shrink-0" />
+          )}
+          <div>
+            <p className="font-semibold text-sm">
+              {allConfirmationsSent 
+                ? "Todas as confirmações foram enviadas!" 
+                : `${targetDateNotSent.length} confirmação(ões) pendente(s)`}
+            </p>
+            <p className="text-xs opacity-80">
+              {allConfirmationsSent 
+                ? `Agendamentos de ${format(confirmationTargetDate, "dd/MM", { locale: ptBR })} estão confirmados`
+                : `Envie as confirmações para ${format(confirmationTargetDate, "dd/MM", { locale: ptBR })} (daqui 2 dias)`}
+            </p>
+          </div>
+        </div>
+        {!allConfirmationsSent && targetDateNotSent.length > 0 && (
+          <Button 
+            size="sm" 
+            variant="outline"
+            className="border-red-500/50 text-red-600 hover:bg-red-500/10 flex-shrink-0"
+            onClick={() => {
+              setSelectedDate(confirmationTargetDate);
+              setSelectedAppointments(targetDateNotSent.map(apt => apt.id));
+            }}
+          >
+            <Send className="h-3.5 w-3.5 mr-1.5" />
+            Enviar agora
+          </Button>
+        )}
+      </motion.div>
+
+      {/* Today's Stats - Compact row */}
+      <div className="grid grid-cols-4 gap-3">
         <StatCard 
-          title={`Pendentes ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
-          count={selectedDayPending.length} 
+          title="Pendentes Hoje"
+          count={todayPending.length} 
           icon={HourglassIcon} 
           color="bg-yellow-500/10 text-yellow-500" 
         />
         <StatCard 
-          title="Pendentes Semana" 
-          count={weekPending.length} 
-          icon={HourglassIcon} 
-          color="bg-yellow-500/10 text-yellow-500" 
-        />
-        <StatCard 
-          title={`Confirmados ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
-          count={selectedDayConfirmed.length} 
+          title="Confirmados Hoje"
+          count={todayConfirmed.length} 
           icon={CheckCircle} 
           color="bg-emerald-500/10 text-emerald-500" 
         />
         <StatCard 
-          title="Confirmados Semana" 
-          count={weekConfirmed.length} 
-          icon={CheckCircle} 
-          color="bg-emerald-500/10 text-emerald-500" 
-        />
-        <StatCard 
-          title={`Risco ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
-          count={selectedDayRisk.length} 
+          title="Risco Hoje"
+          count={todayRisk.length} 
           icon={AlertTriangle} 
           color="bg-orange-500/10 text-orange-500" 
         />
         <StatCard 
-          title="Risco Semana" 
-          count={weekRisk.length} 
-          icon={AlertTriangle} 
-          color="bg-orange-500/10 text-orange-500" 
-        />
-        <StatCard 
-          title={`Cancelados ${format(selectedDate, "dd/MM", { locale: ptBR })}`}
-          count={selectedDayCancelled.length} 
-          icon={XCircle} 
-          color="bg-red-500/10 text-red-500" 
-        />
-        <StatCard 
-          title="Cancelados Semana" 
-          count={weekCancelled.length} 
+          title="Cancelados Hoje"
+          count={todayCancelled.length} 
           icon={XCircle} 
           color="bg-red-500/10 text-red-500" 
         />
