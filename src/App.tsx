@@ -16,6 +16,7 @@ import Servicos from "./pages/Servicos";
 import IAConfig from "./pages/IAConfig";
 import Relatorios from "./pages/Relatorios";
 import NutricaoConfirmacao from "./pages/NutricaoConfirmacao";
+import FollowUp from "./pages/FollowUp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="/ia-config" element={<IAConfig />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/nutricao-confirmacao" element={<NutricaoConfirmacao />} />
+                <Route path="/follow-up" element={<FollowUp />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
