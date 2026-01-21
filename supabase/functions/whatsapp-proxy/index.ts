@@ -30,10 +30,13 @@ Deno.serve(async (req) => {
 
     console.log("Sending to webhook:", JSON.stringify(payload));
 
-    // Get webhook credentials from environment
-    const webhookUsername = Deno.env.get("N8N_WEBHOOK_USERNAME") || "webhook_api";
-    const webhookPassword = Deno.env.get("N8N_WEBHOOK_PASSWORD") || "";
-    
+    // Get webhook credentials from environment (trim to avoid copy/paste whitespace)
+    const webhookUsername = (Deno.env.get("N8N_WEBHOOK_USERNAME") ?? "webhook_api").trim();
+    const webhookPassword = (Deno.env.get("N8N_WEBHOOK_PASSWORD") ?? "").trim();
+
+    console.log("Using webhook username:", webhookUsername);
+    console.log("Webhook password length:", webhookPassword.length);
+
     // Create Basic Auth header in correct format: username:password
     const basicAuth = btoa(`${webhookUsername}:${webhookPassword}`);
 
