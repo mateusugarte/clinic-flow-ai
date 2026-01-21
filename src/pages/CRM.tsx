@@ -531,21 +531,40 @@ export default function CRM() {
         {selectedLead && (
           <div className="space-y-4">
             {/* Edit/Save buttons */}
-            <div className="flex justify-end gap-2">
-              {isEditing ? (
-                <>
-                  <Button variant="ghost" size="sm" onClick={cancelEditing} className="h-8 text-xs">
-                    <X className="h-3 w-3 mr-1.5" /> Cancelar
+            <div className="flex justify-between gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-3 w-3 mr-1.5" /> Excluir Lead
                   </Button>
-                  <Button size="sm" onClick={saveEdits} className="h-8 text-xs bg-primary">
-                    <Save className="h-3 w-3 mr-1.5" /> Salvar
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir lead?</AlertDialogTitle>
+                    <AlertDialogDescription>Isso excluirá o lead e todos os seus agendamentos. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteLead.mutate(selectedLead.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <div className="flex gap-2">
+                {isEditing ? (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={cancelEditing} className="h-8 text-xs">
+                      <X className="h-3 w-3 mr-1.5" /> Cancelar
+                    </Button>
+                    <Button size="sm" onClick={saveEdits} className="h-8 text-xs bg-primary">
+                      <Save className="h-3 w-3 mr-1.5" /> Salvar
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={startEditing} className="h-8 text-xs">
+                    <Pencil className="h-3 w-3 mr-1.5" /> Editar
                   </Button>
-                </>
-              ) : (
-                <Button variant="outline" size="sm" onClick={startEditing} className="h-8 text-xs">
-                  <Pencil className="h-3 w-3 mr-1.5" /> Editar
-                </Button>
-              )}
+                )}
+              </div>
             </div>
 
             {isEditing ? (
@@ -678,6 +697,23 @@ export default function CRM() {
                           onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} 
                           size="sm" 
                         />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir agendamento?</AlertDialogTitle>
+                              <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteAppointment.mutate(apt.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ))}
