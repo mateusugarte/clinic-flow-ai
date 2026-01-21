@@ -67,8 +67,10 @@ export function AppSidebar() {
         )}
       >
         {/* Header with Logo */}
-        <div className="flex items-center justify-center px-2 py-5 h-24 border-b border-sidebar-border">
-          <img src={logoIcon} alt="stickIA" className="h-14 w-14 object-contain" />
+        <div className="flex items-center justify-center px-2 py-5 h-28 border-b border-sidebar-border">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#F8F5F1] shadow-md">
+            <img src={logoIcon} alt="stickIA" className="h-12 w-12 object-contain" />
+          </div>
         </div>
 
         {/* Navigation */}
