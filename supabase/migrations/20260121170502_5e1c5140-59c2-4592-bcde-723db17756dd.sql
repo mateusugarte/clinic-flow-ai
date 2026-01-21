@@ -1,0 +1,7 @@
+INSERT INTO appointments (user_id, lead_id, professional_id, service_id, scheduled_at, status, "patientName", "professionalName", "serviceName", duracao, price)
+VALUES 
+  ('0f9dda5b-1cb5-4604-adb9-34d3d6a687dc', 'f2d2321c-7a83-4e19-b08e-738706cb966f', '6f8f9d53-5c49-4e70-b228-2d60cde3d934', '0f09b1ee-0797-4587-9b79-166d0c110dee', '2025-01-23 09:00:00+00', 'pendente', 'Carlos Eduardo', 'Dr. Jose Silva', 'Limpeza Dental', 45, 150),
+  ('0f9dda5b-1cb5-4604-adb9-34d3d6a687dc', 'c596ecc3-ab06-45af-b50e-3e5f738ef2d8', '9fbe1188-fc45-45f1-8d50-378d2d3f56e0', 'a32912f9-5c49-4532-a1ae-2add670dd584', '2025-01-23 10:30:00+00', 'confirmado', 'Juliana Moreira', 'Dra. Ana Paula', 'Clareamento Dental', 60, 1200),
+  ('0f9dda5b-1cb5-4604-adb9-34d3d6a687dc', '964def01-148c-4e7f-b7ea-99c2759dd8bf', 'd518b27f-8c81-4877-8207-7202ed438231', '1e9feb91-ed5a-4b13-ab08-8c6cf601d985', '2025-01-23 14:00:00+00', 'pendente', 'Mateus Ugarte', 'Dr. Roberto Santos', 'Limpeza Preventiva', 45, 250),
+  ('0f9dda5b-1cb5-4604-adb9-34d3d6a687dc', '36699eb5-dd62-4c25-9188-8f277c3bafb3', 'cf592cfc-b94a-4303-bcd2-a575cfb05597', '111e3936-1434-4e53-aab2-857e63402691', '2025-01-23 15:30:00+00', 'pendente', 'Simone Ugarte', 'Dra. Marina Lopes', 'Preenchimento Labial', 40, 1500),
+  ('0f9dda5b-1cb5-4604-adb9-34d3d6a687dc', '04158777-5f94-48d5-af88-558ccf571f4e', '6f8f9d53-5c49-4e70-b228-2d60cde3d934', '1f8d7a42-e7ab-4cbc-81a6-e8092967078d', '2025-01-23 16:30:00+00', 'confirmado', 'Fernando Alencar', 'Dr. Jose Silva', 'Implante de Titânio', 90, 3500);
