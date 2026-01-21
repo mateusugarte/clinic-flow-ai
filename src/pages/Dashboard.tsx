@@ -125,7 +125,7 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch appointments count
+  // Fetch appointments count (based on creation date, not scheduled date)
   const { data: appointmentsData } = useQuery({
     queryKey: ["appointments-count", user?.id, dateRange],
     queryFn: async () => {
@@ -133,8 +133,8 @@ export default function Dashboard() {
         .from("appointments")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user!.id)
-        .gte("scheduled_at", start.toISOString())
-        .lte("scheduled_at", end.toISOString());
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString());
       if (error) throw error;
       return count || 0;
     },
@@ -201,21 +201,21 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch chart data
+  // Fetch chart data (based on creation date to show when appointments were made)
   const { data: chartData } = useQuery({
     queryKey: ["chart-data", user?.id, dateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("scheduled_at")
+        .select("created_at")
         .eq("user_id", user!.id)
-        .gte("scheduled_at", start.toISOString())
-        .lte("scheduled_at", end.toISOString())
-        .order("scheduled_at");
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString())
+        .order("created_at");
       if (error) throw error;
       const grouped: Record<string, number> = {};
       data?.forEach((apt) => {
-        const day = extractDateTimeFromISO(apt.scheduled_at).date;
+        const day = extractDateTimeFromISO(apt.created_at).date;
         grouped[day] = (grouped[day] || 0) + 1;
       });
       const days: { date: string; label: string; count: number }[] = [];
