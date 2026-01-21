@@ -158,43 +158,47 @@ export default function Auth() {
             <img src={logoIcon} alt="stickIA" className="h-16 w-16 object-contain" />
           </motion.div>
           
-          <div className="space-y-8">
+          <div className="space-y-10">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="space-y-4"
+              className="space-y-6"
             >
-              <h1 className="text-5xl lg:text-6xl font-bold text-white tracking-tight">
-                stick<span className="text-[#F8F5F1]">AI</span>
-              </h1>
-              <div className="space-y-1">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/70 font-medium">
-                  AI First System for Clinics
-                </p>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/50">
-                  Sistema AI First para Clínicas
-                </p>
+              <div className="space-y-2">
+                <h1 className="text-5xl lg:text-7xl font-light text-white tracking-[-0.02em]">
+                  stick<span className="font-semibold">AI</span>
+                </h1>
+                <div className="w-12 h-[1px] bg-white/30" />
               </div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-white/50 font-medium">
+                Intelligent Practice Management
+              </p>
             </motion.div>
-            <motion.p
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.5 }}
-              className="text-white/60 text-lg max-w-md leading-relaxed font-light"
+              className="space-y-4 max-w-sm"
             >
-              Uma estrutura que aumenta seu faturamento usando <span className="text-white/80 font-medium">IA como centro</span>.
-            </motion.p>
+              <p className="text-xl text-white/90 font-light leading-relaxed tracking-tight">
+                Inteligência artificial que transforma sua clínica em uma 
+                <span className="text-white font-medium"> máquina de resultados</span>.
+              </p>
+              <p className="text-sm text-white/40 font-light leading-relaxed">
+                Automatize agendamentos, reduza no-shows e aumente seu faturamento com decisões orientadas por dados.
+              </p>
+            </motion.div>
           </div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="flex items-center gap-2 text-white/40 text-sm"
+            className="flex items-center gap-3 text-white/30 text-xs tracking-wide"
           >
-            <Sparkles className="h-4 w-4" />
-            <span>Powered by AI</span>
+            <span className="w-8 h-[1px] bg-white/20" />
+            <span className="uppercase tracking-[0.2em]">AI-Powered</span>
           </motion.div>
         </div>
 
@@ -237,22 +241,22 @@ export default function Auth() {
             </motion.div>
           </div>
 
-          <div className="text-center mb-10">
+          <div className="text-center mb-12">
             <motion.h2 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-2xl font-semibold text-[#2D2420]"
+              className="text-2xl font-light text-[#2D2420] tracking-tight"
             >
-              {isLogin ? "Bem-vindo de volta" : "Crie sua conta"}
+              {isLogin ? "Bem-vindo de volta" : "Comece agora"}
             </motion.h2>
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-sm text-[#8B7355] mt-2"
+              className="text-sm text-[#8B7355]/70 mt-2 font-light"
             >
-              {isLogin ? "Entre para continuar" : "Comece sua jornada"}
+              {isLogin ? "Acesse sua conta para continuar" : "Crie sua conta em segundos"}
             </motion.p>
           </div>
 
@@ -367,13 +371,13 @@ export default function Auth() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="mt-12 flex items-center justify-center gap-6 text-xs text-[#A89080]"
+            className="mt-16 flex items-center justify-center gap-8 text-[10px] uppercase tracking-[0.15em] text-[#A89080]/60"
           >
-            <span>Seguro</span>
-            <span className="w-1 h-1 rounded-full bg-[#D4C8B8]" />
-            <span>Rápido</span>
-            <span className="w-1 h-1 rounded-full bg-[#D4C8B8]" />
-            <span>Inteligente</span>
+            <span>Criptografado</span>
+            <span className="w-[3px] h-[3px] rounded-full bg-[#D4C8B8]" />
+            <span>LGPD</span>
+            <span className="w-[3px] h-[3px] rounded-full bg-[#D4C8B8]" />
+            <span>99.9% Uptime</span>
           </motion.div>
         </motion.div>
       </div>
