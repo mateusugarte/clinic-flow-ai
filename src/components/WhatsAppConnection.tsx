@@ -66,6 +66,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.access_token}`,
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
         },
         body: JSON.stringify({
           acao: "criar instancia e gerar qr code",
@@ -101,6 +102,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.access_token}`,
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
         },
         body: JSON.stringify({
           acao: "gerar qr code",
@@ -136,6 +138,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.access_token}`,
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
         },
         body: JSON.stringify({
           acao: "verificar conexao",
@@ -171,6 +174,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.access_token}`,
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik",
         },
         body: JSON.stringify({
           acao: "desconectar",
