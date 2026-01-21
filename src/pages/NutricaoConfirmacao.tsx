@@ -569,7 +569,7 @@ export default function NutricaoConfirmacao() {
           };
 
           const response = await fetch(
-            "https://aula-n8n.riftvt.easypanel.host/webhook/ff742695-f2f7-4e98-ada8-85b68edf3cee",
+            "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/risk-proxy",
             {
               method: "POST",
               headers: {
