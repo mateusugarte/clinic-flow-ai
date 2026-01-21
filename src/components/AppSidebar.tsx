@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import logoIcon from "@/assets/logo-icon.png";
-import logoWordmark from "@/assets/logo-wordmark.png";
 import {
   LayoutDashboard,
   Calendar,
@@ -68,51 +67,12 @@ export function AppSidebar() {
         )}
       >
         {/* Header with Logo */}
-        <div className="flex items-center justify-center px-1 py-3 h-24 border-b border-sidebar-border">
-          <AnimatePresence mode="wait">
-            {isHovered ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-2"
-              >
-                <img src={logoIcon} alt="stickIA" className="h-[72px] w-[72px] object-scale-down flex-shrink-0" />
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ 
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 25,
-                    delay: 0.05 
-                  }}
-                  className="overflow-hidden"
-                >
-                  <img 
-                    src={logoWordmark} 
-                    alt="stickIA" 
-                    className="h-16 object-scale-down"
-                  />
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="mx-auto"
-              >
-                <img src={logoIcon} alt="stickIA" className="h-[72px] w-[72px] object-scale-down" />
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="flex items-center justify-center px-2 py-4 h-20 border-b border-sidebar-border">
+          <img src={logoIcon} alt="stickIA" className="h-12 w-12 object-contain" />
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.to;
             return (
@@ -120,13 +80,13 @@ export function AppSidebar() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-colors group relative",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group relative",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                 )}
               >
-                <item.icon className="h-4 w-4 flex-shrink-0" />
+                <item.icon className="h-5 w-5 flex-shrink-0" />
                 <AnimatePresence mode="wait">
                   {isHovered && (
                     <motion.span
@@ -134,7 +94,7 @@ export function AppSidebar() {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.15 }}
-                      className="whitespace-nowrap overflow-hidden text-xs"
+                      className="whitespace-nowrap overflow-hidden"
                     >
                       {item.label}
                     </motion.span>
@@ -152,42 +112,42 @@ export function AppSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-2 border-t border-sidebar-border space-y-0.5">
+        <div className="p-2 border-t border-sidebar-border space-y-1">
           <button
             onClick={toggleTheme}
             className={cn(
-              "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium",
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
               "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
             )}
           >
             {theme === "light" ? (
-              <Moon className="h-4 w-4 flex-shrink-0" />
+              <Moon className="h-5 w-5 flex-shrink-0" />
             ) : (
-              <Sun className="h-4 w-4 flex-shrink-0" />
+              <Sun className="h-5 w-5 flex-shrink-0" />
             )}
-            {isHovered && <span className="text-xs">{theme === "light" ? "Escuro" : "Claro"}</span>}
+            {isHovered && <span>{theme === "light" ? "Escuro" : "Claro"}</span>}
           </button>
 
           <button
             onClick={() => navigate("/ia-config")}
             className={cn(
-              "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium",
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
               "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
             )}
           >
-            <Settings className="h-4 w-4 flex-shrink-0" />
-            {isHovered && <span className="text-xs">Config</span>}
+            <Settings className="h-5 w-5 flex-shrink-0" />
+            {isHovered && <span>Config</span>}
           </button>
 
           <button
             onClick={handleSignOut}
             className={cn(
-              "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium",
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
               "text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             )}
           >
-            <LogOut className="h-4 w-4 flex-shrink-0" />
-            {isHovered && <span className="text-xs">Sair</span>}
+            <LogOut className="h-5 w-5 flex-shrink-0" />
+            {isHovered && <span>Sair</span>}
           </button>
         </div>
       </motion.aside>
@@ -207,8 +167,7 @@ export function AppSidebar() {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-card border-b border-border flex items-center justify-between px-3 z-40">
         <div className="flex items-center gap-2">
-          <img src={logoIcon} alt="stickIA" className="h-8 w-8 object-contain" />
-          <img src={logoWordmark} alt="stickIA" className="h-5 object-contain" />
+          <img src={logoIcon} alt="stickIA" className="h-10 w-10 object-contain" />
         </div>
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}

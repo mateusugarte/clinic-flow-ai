@@ -415,7 +415,7 @@ export default function Dashboard() {
             <TrendingUp className="h-4 w-4 text-primary" />
             <div>
               <div className="text-lg font-bold">
-                {extraStats?.totalLeads ? ((extraStats.uniqueClients / extraStats.totalLeads) * 100).toFixed(0) : 0}%
+                {leadsData && leadsData > 0 ? Math.min(((appointmentsData ?? 0) / leadsData) * 100, 100).toFixed(0) : 0}%
               </div>
               <p className="text-[10px] text-muted-foreground">Conversão</p>
             </div>
