@@ -34,12 +34,34 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
 
   const extractQrLink = (data: unknown): string | null => {
     if (!data) return null;
-    if (typeof data === "string") return data;
+    
+    // Se for string
+    if (typeof data === "string") {
+      // Se já for data:image, retorna direto
+      if (data.startsWith("data:image")) return data;
+      
+      // Tenta extrair base64 de texto no formato: "base64": "data:image/png;base64,..."
+      const base64Match = data.match(/"base64"\s*:\s*"([^"]+)"/);
+      if (base64Match?.[1]) {
+        return base64Match[1];
+      }
+      
+      // Tenta extrair qualquer data:image do texto
+      const dataImageMatch = data.match(/(data:image\/[^;]+;base64,[A-Za-z0-9+/=]+)/);
+      if (dataImageMatch?.[1]) {
+        return dataImageMatch[1];
+      }
+      
+      return null;
+    }
+    
+    // Se for objeto
     if (typeof data === "object") {
       const d = data as Record<string, unknown>;
       const candidate = d.base64 ?? d.qrcode ?? d.qr;
       return typeof candidate === "string" ? candidate : null;
     }
+    
     return null;
   };
 
