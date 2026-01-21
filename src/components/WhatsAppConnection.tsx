@@ -28,6 +28,31 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
     isConnected ? "connected" : "idle"
   );
 
+  const extractQrLink = (data: unknown): string | null => {
+    if (!data) return null;
+    if (typeof data === "string") return data;
+    if (typeof data === "object") {
+      const d = data as Record<string, unknown>;
+      const candidate = d.base64 ?? d.qrcode ?? d.qr;
+      return typeof candidate === "string" ? candidate : null;
+    }
+    return null;
+  };
+
+  const invokeWhatsAppProxy = async (body: Record<string, unknown>) => {
+    // Force an explicit Authorization header (some gateways are picky about header casing).
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+
+    const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
+      body,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    });
+
+    if (error) throw error;
+    return data;
+  };
+
   // Timer countdown effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -60,18 +85,14 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Create instance and generate QR code
   const createInstance = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
-        body: { acao: "criar instancia e gerar qr code" },
-      });
-      if (error) throw error;
-      return data;
+      return invokeWhatsAppProxy({ acao: "criar instancia e gerar qr code" });
     },
     onSuccess: (data) => {
       console.log("WhatsApp response:", data);
-      // Extract base64 QR code from response - it comes as data.base64 with full data URL
-      const base64 = data?.base64 || data?.qrcode || data?.qr || data;
-      if (base64) {
-        setQrCode(typeof base64 === "string" ? base64 : JSON.stringify(base64));
+      // Now we receive a ready-to-use link/text (ex: data:image/png;base64,...) – just render it in the mockup.
+      const qrLink = extractQrLink(data);
+      if (qrLink) {
+        setQrCode(qrLink);
         setTimer(59);
         setIsTimerActive(true);
         setConnectionStatus("waiting");
@@ -89,17 +110,13 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Generate QR code with phone number
   const generateQR = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
-        body: { acao: "gerar qr code", phone: connectedPhone },
-      });
-      if (error) throw error;
-      return data;
+      return invokeWhatsAppProxy({ acao: "gerar qr code", phone: connectedPhone });
     },
     onSuccess: (data) => {
       console.log("WhatsApp QR response:", data);
-      const base64 = data?.base64 || data?.qrcode || data?.qr || data;
-      if (base64) {
-        setQrCode(typeof base64 === "string" ? base64 : JSON.stringify(base64));
+      const qrLink = extractQrLink(data);
+      if (qrLink) {
+        setQrCode(qrLink);
         setTimer(59);
         setIsTimerActive(true);
         setConnectionStatus("waiting");
@@ -117,10 +134,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Verify connection
   const verifyConnection = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
-        body: { acao: "verificar conexao" },
-      });
-      if (error) throw error;
+      const data = await invokeWhatsAppProxy({ acao: "verificar conexao" });
       return typeof data === "string" ? data : JSON.stringify(data);
     },
     onSuccess: async (data) => {
@@ -145,11 +159,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
   // Disconnect
   const disconnect = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("whatsapp-proxy", {
-        body: { acao: "desconectar" },
-      });
-      if (error) throw error;
-      return data;
+      return invokeWhatsAppProxy({ acao: "desconectar" });
     },
     onSuccess: async () => {
       await updateConnectionStatus(false);
@@ -213,7 +223,7 @@ export default function WhatsAppConnection({ configId, isConnected, connectedPho
                 >
                   <div className="p-3 bg-white rounded-xl shadow-lg">
                     <img
-                      src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`}
+                      src={qrCode}
                       alt="QR Code WhatsApp"
                       className="w-48 h-48 object-contain"
                     />
