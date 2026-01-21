@@ -5,7 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const WEBHOOK_URL = "https://aula-n8n.riftvt.easypanel.host/webhook/3563be98-d85f-47b1-9eec-895f2a507258";
+// Webhook URL from environment variable for security
+const WEBHOOK_URL = Deno.env.get("N8N_CONFIRMATION_WEBHOOK_URL") ?? "";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
