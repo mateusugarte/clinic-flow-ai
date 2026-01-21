@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
 
   try {
     // Verify JWT
-    const authHeader = req.headers.get("Authorization");
+    // Some environments may normalize header casing differently.
+    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
