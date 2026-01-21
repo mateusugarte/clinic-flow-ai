@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -17,75 +15,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get auth header (check both casings)
-    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
-    console.log("Auth header present:", !!authHeader);
-
-    let userId = "anonymous";
-
-    // Try to extract user from JWT if present
-    if (authHeader?.startsWith("Bearer ")) {
-      try {
-        const supabase = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_ANON_KEY")!,
-          { global: { headers: { Authorization: authHeader } } }
-        );
-
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (!userError && user) {
-          userId = user.id;
-          console.log("User authenticated:", userId);
-        } else {
-          console.log("User auth failed:", userError?.message || "No user");
-        }
-      } catch (authErr) {
-        console.error("Auth error:", authErr);
-      }
-    }
-
     // Parse request body
     const body = await req.json();
-    const { acao, phone } = body;
-    console.log("Action:", acao, "Phone:", phone);
+    const { userID, user_id } = body;
+
+    // We do NOT authenticate with Supabase here.
+    // The client must send the user id explicitly.
+    const resolvedUserId = typeof userID === "string" ? userID : typeof user_id === "string" ? user_id : null;
 
     // Build payload
     const payload = {
-      acao,
-      user_id: userId,
-      ...(phone && { phone }),
+      user_id: resolvedUserId,
     };
 
     console.log("Sending to webhook:", JSON.stringify(payload));
 
-    // Get webhook secret and create HMAC signature
-    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    // Forward to webhook without any extra authentication.
     const payloadStr = JSON.stringify(payload);
-    
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-
-    if (webhookSecret) {
-      const encoder = new TextEncoder();
-      const key = await crypto.subtle.importKey(
-        "raw",
-        encoder.encode(webhookSecret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
-      );
-      const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        encoder.encode(payloadStr)
-      );
-      const signatureHex = Array.from(new Uint8Array(signature))
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
-      headers["X-Webhook-Signature"] = signatureHex;
-      headers["Authorization"] = `Bearer ${webhookSecret}`;
-    }
 
     // Forward to n8n webhook
     const response = await fetch(WEBHOOK_URL, {
