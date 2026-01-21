@@ -6,62 +6,62 @@
 
 @layer base {
   :root {
-    /* Light Mode - Clean White with Red Accent */
-    --background: 0 0% 99%;
-    --foreground: 0 0% 9%;
+    /* Light Mode - Warm Beige with Burgundy Accent */
+    --background: 35 30% 96%;
+    --foreground: 20 15% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card: 40 25% 98%;
+    --card-foreground: 20 15% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover: 40 25% 98%;
+    --popover-foreground: 20 15% 15%;
 
-    /* Primary - Professional Red #a01010 */
-    --primary: 0 83% 34%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Burgundy/Bordeaux #722F37 */
+    --primary: 355 45% 32%;
+    --primary-foreground: 40 25% 98%;
 
-    /* Secondary - Neutral Gray */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+    /* Secondary - Warm Beige */
+    --secondary: 35 20% 92%;
+    --secondary-foreground: 20 15% 20%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 35 15% 93%;
+    --muted-foreground: 20 10% 45%;
 
-    --accent: 0 83% 97%;
-    --accent-foreground: 0 83% 30%;
+    --accent: 355 40% 95%;
+    --accent-foreground: 355 45% 28%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 83% 34%;
+    --border: 35 15% 85%;
+    --input: 35 15% 88%;
+    --ring: 355 45% 32%;
 
     --radius: 0.5rem;
 
     /* Sidebar Light */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 83% 34%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 92%;
-    --sidebar-ring: 0 83% 34%;
+    --sidebar-background: 40 25% 98%;
+    --sidebar-foreground: 20 15% 15%;
+    --sidebar-primary: 355 45% 32%;
+    --sidebar-primary-foreground: 40 25% 98%;
+    --sidebar-accent: 35 20% 92%;
+    --sidebar-accent-foreground: 20 15% 20%;
+    --sidebar-border: 35 15% 88%;
+    --sidebar-ring: 355 45% 32%;
 
     /* Custom Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(0 83% 34%), hsl(0 83% 28%));
-    --gradient-glow: linear-gradient(135deg, hsl(0 83% 34% / 0.08), hsl(0 83% 28% / 0.04));
-    --shadow-primary: 0 4px 14px -4px hsl(0 83% 34% / 0.25);
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.03);
-    --shadow-card-hover: 0 4px 16px -4px hsl(0 0% 0% / 0.08);
+    --gradient-primary: linear-gradient(135deg, hsl(355 45% 32%), hsl(355 50% 25%));
+    --gradient-glow: linear-gradient(135deg, hsl(355 45% 32% / 0.08), hsl(355 50% 25% / 0.04));
+    --shadow-primary: 0 4px 14px -4px hsl(355 45% 32% / 0.25);
+    --shadow-card: 0 1px 3px 0 hsl(20 15% 15% / 0.04), 0 1px 2px -1px hsl(20 15% 15% / 0.03);
+    --shadow-card-hover: 0 4px 16px -4px hsl(20 15% 15% / 0.08);
 
-    /* Chart Colors - Monochrome with Red accent */
-    --chart-1: 0 83% 34%;
-    --chart-2: 0 0% 30%;
-    --chart-3: 0 0% 50%;
-    --chart-4: 0 0% 70%;
-    --chart-5: 0 0% 85%;
+    /* Chart Colors - Warm with Burgundy accent */
+    --chart-1: 355 45% 32%;
+    --chart-2: 20 15% 30%;
+    --chart-3: 20 10% 50%;
+    --chart-4: 35 15% 65%;
+    --chart-5: 35 20% 80%;
 
     /* Status Colors - Keep these colorful for visibility */
     --success: 142 71% 45%;
@@ -70,65 +70,65 @@
     --warning-foreground: 0 0% 0%;
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
-    --danger: 0 84% 60%;
+    --danger: 0 84% 55%;
     --danger-foreground: 0 0% 100%;
   }
 
   .dark {
-    /* Dark Mode - Rich Black with Red Accent */
-    --background: 0 0% 7%;
-    --foreground: 0 0% 95%;
+    /* Dark Mode - Deep Warm with Burgundy Accent */
+    --background: 20 15% 8%;
+    --foreground: 35 20% 92%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 20 12% 11%;
+    --card-foreground: 35 20% 92%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 20 12% 11%;
+    --popover-foreground: 35 20% 92%;
 
-    /* Primary - Lighter Red for Dark Mode */
-    --primary: 0 75% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Lighter Burgundy for Dark Mode */
+    --primary: 355 50% 45%;
+    --primary-foreground: 35 20% 98%;
 
     /* Secondary */
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 20 10% 16%;
+    --secondary-foreground: 35 20% 92%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 20 10% 16%;
+    --muted-foreground: 35 10% 55%;
 
-    --accent: 0 75% 15%;
-    --accent-foreground: 0 75% 70%;
+    --accent: 355 40% 18%;
+    --accent-foreground: 355 50% 70%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 0 75% 50%;
+    --border: 20 10% 20%;
+    --input: 20 10% 20%;
+    --ring: 355 50% 45%;
 
     /* Sidebar Dark */
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 0 75% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 0 75% 50%;
+    --sidebar-background: 20 12% 9%;
+    --sidebar-foreground: 35 20% 92%;
+    --sidebar-primary: 355 50% 45%;
+    --sidebar-primary-foreground: 35 20% 98%;
+    --sidebar-accent: 20 10% 15%;
+    --sidebar-accent-foreground: 35 20% 92%;
+    --sidebar-border: 20 10% 20%;
+    --sidebar-ring: 355 50% 45%;
 
     /* Custom Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(0 75% 50%), hsl(0 75% 42%));
-    --gradient-glow: linear-gradient(135deg, hsl(0 75% 50% / 0.15), hsl(0 75% 42% / 0.08));
-    --shadow-primary: 0 4px 20px -4px hsl(0 75% 50% / 0.35);
+    --gradient-primary: linear-gradient(135deg, hsl(355 50% 45%), hsl(355 55% 38%));
+    --gradient-glow: linear-gradient(135deg, hsl(355 50% 45% / 0.15), hsl(355 55% 38% / 0.08));
+    --shadow-primary: 0 4px 20px -4px hsl(355 50% 45% / 0.35);
     --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.15);
     --shadow-card-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.3);
 
     /* Chart Colors */
-    --chart-1: 0 75% 50%;
-    --chart-2: 0 0% 70%;
-    --chart-3: 0 0% 55%;
-    --chart-4: 0 0% 40%;
-    --chart-5: 0 0% 25%;
+    --chart-1: 355 50% 45%;
+    --chart-2: 35 15% 65%;
+    --chart-3: 35 10% 50%;
+    --chart-4: 20 10% 40%;
+    --chart-5: 20 10% 25%;
 
     /* Status Colors - Keep colorful */
     --success: 142 71% 50%;
@@ -137,7 +137,7 @@
     --warning-foreground: 0 0% 0%;
     --info: 217 91% 65%;
     --info-foreground: 0 0% 100%;
-    --danger: 0 84% 60%;
+    --danger: 0 84% 55%;
     --danger-foreground: 0 0% 100%;
   }
 }
