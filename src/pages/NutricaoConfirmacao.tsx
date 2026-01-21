@@ -242,6 +242,26 @@ export default function NutricaoConfirmacao() {
     });
   }, [appointments, today]);
 
+  // Calculate confirmation target date key (2 days ahead) - MOVED BEFORE EARLY RETURN
+  const targetDateKey = useMemo(() => format(confirmationTargetDate, "yyyy-MM-dd"), [confirmationTargetDate]);
+  
+  // Appointments for target date (2 days ahead) that need confirmation
+  const targetDateAppointments = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === targetDateKey;
+    }), [appointments, targetDateKey]);
+  
+  const targetDateNotSent = useMemo(() => 
+    targetDateAppointments.filter(apt => !apt.confirmacaoEnviada),
+    [targetDateAppointments]
+  );
+  
+  const allConfirmationsSent = useMemo(() => 
+    targetDateAppointments.length > 0 && targetDateNotSent.length === 0,
+    [targetDateAppointments, targetDateNotSent]
+  );
+
   // Toggle appointment selection
   const toggleAppointmentSelection = (id: string) => {
     setSelectedAppointments(prev => 
@@ -714,22 +734,6 @@ export default function NutricaoConfirmacao() {
     );
   }
 
-  // Calculate confirmation target date key (2 days ahead)
-  const targetDateKey = useMemo(() => format(confirmationTargetDate, "yyyy-MM-dd"), [confirmationTargetDate]);
-  
-  // Appointments for target date (2 days ahead) that need confirmation
-  const targetDateAppointments = useMemo(() =>
-    appointments.filter((apt) => {
-      const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      return date === targetDateKey;
-    }), [appointments, targetDateKey]);
-  
-  const targetDateNotSent = useMemo(() => 
-    targetDateAppointments.filter(apt => !apt.confirmacaoEnviada),
-    [targetDateAppointments]
-  );
-  
-  const allConfirmationsSent = targetDateAppointments.length > 0 && targetDateNotSent.length === 0;
 
   return (
     <div className="h-full flex flex-col gap-4 p-4 overflow-auto">
