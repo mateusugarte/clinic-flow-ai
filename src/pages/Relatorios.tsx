@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,38 +22,53 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GitHubCalendar } from "@/components/ui/github-calendar";
+import { GlassButton } from "@/components/ui/glass-button";
 import { format, subDays, startOfDay, startOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getScheduledDateKey, formatDateKeyBR } from "@/lib/scheduledAt";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--primary) / 0.7)", "hsl(var(--primary) / 0.5)", "hsl(var(--primary) / 0.3)"];
 
+const dateRanges = [
+  { value: 7, label: "7 dias" },
+  { value: 15, label: "15 dias" },
+  { value: 30, label: "30 dias" },
+];
+
 export default function Relatorios() {
   const { user } = useAuth();
+  const [dateRange, setDateRange] = useState(30);
+
+  // Calculate date range
+  const { start } = useMemo(() => {
+    const now = new Date();
+    return {
+      start: startOfDay(subDays(now, dateRange)),
+      end: now,
+    };
+  }, [dateRange]);
 
   const { data: stats } = useQuery({
-    queryKey: ["report-stats", user?.id],
+    queryKey: ["report-stats", user?.id, dateRange],
     queryFn: async () => {
-      const last30Days = startOfDay(subDays(new Date(), 30));
       const { data: appointments, error: aptError } = await supabase
         .from("appointments")
         .select("*, services(name, price)")
         .eq("user_id", user!.id)
-        .gte("scheduled_at", last30Days.toISOString());
+        .gte("scheduled_at", start.toISOString());
       if (aptError) throw aptError;
 
       const { data: leads, error: leadError } = await supabase
         .from("leads")
         .select("*")
         .eq("user_id", user!.id)
-        .gte("created_at", last30Days.toISOString());
+        .gte("created_at", start.toISOString());
       if (leadError) throw leadError;
 
       const totalRevenue = appointments?.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0) || 0;
       const totalLeads = leads?.length || 0;
       const totalAppointments = appointments?.length || 0;
-      const uniqueLeadsWithAppointments = new Set(appointments?.map(apt => apt.lead_id)).size;
-      const conversionRate = totalLeads > 0 ? ((uniqueLeadsWithAppointments / totalLeads) * 100).toFixed(1) : 0;
+      const conversionRate = totalLeads > 0 ? Math.min((totalAppointments / totalLeads) * 100, 100).toFixed(1) : 0;
 
       const statusCounts: Record<string, number> = {};
       appointments?.forEach((apt) => {
@@ -71,7 +87,7 @@ export default function Relatorios() {
         const day = formatDateKeyBR(getScheduledDateKey(apt.scheduled_at));
         dailyData[day] = (dailyData[day] || 0) + 1;
       });
-      const chartData = Object.entries(dailyData).map(([day, count]) => ({ day, count })).slice(-14);
+      const chartData = Object.entries(dailyData).map(([day, count]) => ({ day, count })).slice(-dateRange);
 
       return { totalRevenue, totalLeads, totalAppointments, conversionRate, statusData, chartData };
     },
@@ -109,9 +125,24 @@ export default function Relatorios() {
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Header */}
-      <div className="flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-        <p className="text-sm text-muted-foreground">Análise dos últimos 30 dias</p>
+      <div className="flex-shrink-0 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">Análise dos últimos {dateRange} dias</p>
+        </div>
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+          {dateRanges.map((range) => (
+            <GlassButton
+              key={range.value}
+              variant={dateRange === range.value ? "primary" : "default"}
+              size="sm"
+              onClick={() => setDateRange(range.value)}
+              className="h-7 px-3 text-xs"
+            >
+              {range.label}
+            </GlassButton>
+          ))}
+        </div>
       </div>
 
       {/* Grid Layout */}
