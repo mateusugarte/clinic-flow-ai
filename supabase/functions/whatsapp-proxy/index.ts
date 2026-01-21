@@ -17,15 +17,16 @@ Deno.serve(async (req) => {
   try {
     // Parse request body
     const body = await req.json();
-    const { userID, user_id } = body;
+    const { userID, user_id, acao } = body;
 
     // We do NOT authenticate with Supabase here.
     // The client must send the user id explicitly.
     const resolvedUserId = typeof userID === "string" ? userID : typeof user_id === "string" ? user_id : null;
 
-    // Build payload
+    // Build payload - include acao from client
     const payload = {
       user_id: resolvedUserId,
+      acao: acao || null,
     };
 
     console.log("Sending to webhook:", JSON.stringify(payload));
