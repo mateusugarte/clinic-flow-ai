@@ -182,16 +182,19 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
-  // Fetch no-show risk appointments (status = 'risco')
+  // Fetch no-show risk appointments (status = 'risco') - TODAY ONLY
   const { data: noShowRiskData } = useQuery({
     queryKey: ["no-show-risk", user?.id],
     queryFn: async () => {
+      const todayStart = startOfDay(new Date());
+      const todayEnd = endOfDay(new Date());
       const { data, error } = await supabase
         .from("appointments")
         .select("*")
         .eq("user_id", user!.id)
         .eq("status", "risco")
-        .gte("scheduled_at", startOfDay(new Date()).toISOString());
+        .gte("scheduled_at", todayStart.toISOString())
+        .lte("scheduled_at", todayEnd.toISOString());
       if (error) throw error;
       return data || [];
     },
@@ -419,13 +422,13 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* No-Show Risk Card - Compact */}
+        {/* No-Show Risk Card - TODAY ONLY - Compact */}
         <Card className="col-span-12 lg:col-span-6 shadow-card border-0 border-l-4 border-l-orange-500/50">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-orange-500 flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                Risco de No-Show
+                Risco de No-Show (Hoje)
               </span>
               <Badge variant="outline" className="text-orange-500 border-orange-500/50 text-xs h-5">
                 {noShowRiskData?.length || 0}

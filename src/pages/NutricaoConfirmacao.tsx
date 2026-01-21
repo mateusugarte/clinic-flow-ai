@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, CheckCircle, XCircle, Send, ChevronLeft, ChevronRight, Clock, User, Phone, Briefcase, DollarSign, Loader2, AlertTriangle, HourglassIcon } from "lucide-react";
+import { Calendar, CheckCircle, XCircle, Send, ChevronLeft, ChevronRight, Clock, User, Phone, Briefcase, DollarSign, Loader2, AlertTriangle, HourglassIcon, Activity } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,6 +59,14 @@ interface SendProgress {
   messages: { phone: string; success: boolean; message: string }[];
 }
 
+interface RiskProgress {
+  total: number;
+  calculated: number;
+  errors: number;
+  currentName?: string;
+  results: { id: string; name: string; success: boolean; result: string }[];
+}
+
 export default function NutricaoConfirmacao() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -68,6 +76,11 @@ export default function NutricaoConfirmacao() {
   const [sendingConfirmation, setSendingConfirmation] = useState(false);
   const [sendProgress, setSendProgress] = useState<SendProgress | null>(null);
   const [sentAppointmentIds, setSentAppointmentIds] = useState<Set<string>>(new Set());
+  
+  // Risk calculation states
+  const [selectedRiskAppointments, setSelectedRiskAppointments] = useState<string[]>([]);
+  const [calculatingRisk, setCalculatingRisk] = useState(false);
+  const [riskProgress, setRiskProgress] = useState<RiskProgress | null>(null);
 
   // Fetch appointments with leads
   const { data: appointments = [], isLoading } = useQuery({
@@ -218,6 +231,17 @@ export default function NutricaoConfirmacao() {
   // Check if date is the target date for sending confirmations (2 days ahead)
   const confirmationTargetDate = useMemo(() => addDays(today, 2), [today]);
 
+  // Get appointments eligible for risk calculation (at least 24h/1 day before appointment DATE)
+  const riskEligibleAppointments = useMemo(() => {
+    const tomorrow = addDays(today, 1);
+    const tomorrowKey = format(tomorrow, "yyyy-MM-dd");
+    return appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      // Appointment date must be at least tomorrow (24h from today)
+      return date >= tomorrowKey;
+    });
+  }, [appointments, today]);
+
   // Toggle appointment selection
   const toggleAppointmentSelection = (id: string) => {
     setSelectedAppointments(prev => 
@@ -231,9 +255,26 @@ export default function NutricaoConfirmacao() {
     setSelectedAppointments(notSentYet.map(apt => apt.id));
   };
 
-  // Clear selection
+  // Clear confirmation selection
   const clearSelection = () => {
     setSelectedAppointments([]);
+  };
+
+  // Toggle risk appointment selection
+  const toggleRiskAppointmentSelection = (id: string) => {
+    setSelectedRiskAppointments(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  // Select all risk-eligible appointments
+  const selectAllRiskAppointments = () => {
+    setSelectedRiskAppointments(riskEligibleAppointments.map(apt => apt.id));
+  };
+
+  // Clear risk selection
+  const clearRiskSelection = () => {
+    setSelectedRiskAppointments([]);
   };
 
   // Process streamed text response
@@ -444,6 +485,130 @@ export default function NutricaoConfirmacao() {
         setSendProgress(null);
         setSentAppointmentIds(new Set());
       }, 5000);
+    }
+  };
+
+  // Calculate no-show risk via webhook - ONE BY ONE for real-time progress
+  const calculateNoShowRisk = async () => {
+    if (selectedRiskAppointments.length === 0) {
+      toast.error("Selecione pelo menos um agendamento");
+      return;
+    }
+
+    const appointmentsToCalculate = appointments.filter(apt => 
+      selectedRiskAppointments.includes(apt.id)
+    );
+
+    setCalculatingRisk(true);
+    setRiskProgress({
+      total: appointmentsToCalculate.length,
+      calculated: 0,
+      errors: 0,
+      results: [],
+    });
+
+    let calculatedCount = 0;
+    let errorCount = 0;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      for (const apt of appointmentsToCalculate) {
+        const patientName = apt.patientName || apt.lead?.name || "Paciente";
+        
+        setRiskProgress(prev => prev ? {
+          ...prev,
+          currentName: patientName,
+        } : null);
+
+        try {
+          const payload = {
+            appointmentId: apt.id,
+            patientName,
+            phone: apt.phoneNumber?.toString() || apt.lead?.phone || "",
+            scheduledAt: apt.scheduled_at,
+            serviceName: apt.serviceName || "Consulta",
+            professionalName: apt.professionalName || "",
+            leadId: apt.lead_id,
+            notes: apt.notes || apt.lead?.notes || "",
+            tags: apt.lead?.tags || [],
+            qualification: apt.lead?.qualification || "",
+            lastInteraction: apt.lead?.last_interaction || "",
+          };
+
+          const response = await fetch(
+            "https://aula-n8n.riftvt.easypanel.host/webhook/ff742695-f2f7-4e98-ada8-85b68edf3cee",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session?.access_token}`,
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+
+          const responseText = await response.text();
+          
+          if (response.ok) {
+            calculatedCount++;
+            setRiskProgress(prev => prev ? {
+              ...prev,
+              calculated: calculatedCount,
+              results: [...prev.results, { 
+                id: apt.id,
+                name: patientName, 
+                success: true, 
+                result: responseText || "Calculado" 
+              }],
+            } : null);
+          } else {
+            errorCount++;
+            setRiskProgress(prev => prev ? {
+              ...prev,
+              errors: errorCount,
+              results: [...prev.results, { 
+                id: apt.id,
+                name: patientName, 
+                success: false, 
+                result: responseText || `Erro ${response.status}` 
+              }],
+            } : null);
+          }
+        } catch (fetchError) {
+          errorCount++;
+          setRiskProgress(prev => prev ? {
+            ...prev,
+            errors: errorCount,
+            results: [...prev.results, { 
+              id: apt.id,
+              name: patientName, 
+              success: false, 
+              result: "Erro de conexão" 
+            }],
+          } : null);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      if (errorCount > 0) {
+        toast.warning(`${calculatedCount} calculado(s), ${errorCount} erro(s)`);
+      } else {
+        toast.success(`Risco calculado para ${calculatedCount} agendamento(s)!`);
+      }
+      
+      setSelectedRiskAppointments([]);
+    } catch (error) {
+      console.error("Error calculating risk:", error);
+      toast.error("Erro ao calcular risco");
+    } finally {
+      setCalculatingRisk(false);
+      setRiskProgress(prev => prev ? { ...prev, currentName: undefined } : null);
+      // Keep progress visible for longer to see results
+      setTimeout(() => {
+        setRiskProgress(null);
+      }, 10000);
     }
   };
 
@@ -1060,6 +1225,177 @@ export default function NutricaoConfirmacao() {
           </CardContent>
         </Card>
       </div>
+
+      {/* No-Show Risk Calculation Section */}
+      <Card className="shadow-card mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Activity className="h-5 w-5 text-orange-500" />
+            Risco de No-Show
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Selecione agendamentos para calcular o risco de falta. Disponível apenas para agendamentos com pelo menos 24h de antecedência.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <p className="text-sm text-muted-foreground">
+              {riskEligibleAppointments.length} agendamento(s) elegível(is) para cálculo
+            </p>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={selectAllRiskAppointments}
+                className="text-xs"
+              >
+                Selecionar todos
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearRiskSelection} 
+                className="text-xs"
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+
+          {/* Risk Eligible Appointments List */}
+          <div className="max-h-[300px] overflow-y-auto mb-4">
+            <div className="space-y-2">
+              {riskEligibleAppointments.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum agendamento disponível para cálculo de risco
+                </p>
+              ) : (
+                riskEligibleAppointments.map(apt => (
+                  <motion.div
+                    key={apt.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedRiskAppointments.includes(apt.id)}
+                        onCheckedChange={() => toggleRiskAppointmentSelection(apt.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-sm truncate">
+                            {apt.patientName || apt.lead?.name || "Sem nome"}
+                          </span>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            {formatISOToDisplay(apt.scheduled_at)}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {apt.phoneNumber || apt.lead?.phone || "N/A"}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="h-3 w-3" />
+                            {apt.serviceName || "Serviço"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Risk Progress */}
+          {riskProgress && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-3 p-4 rounded-lg bg-muted/50 border mb-4"
+            >
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Progresso do cálculo</span>
+                <span className="text-muted-foreground">
+                  {riskProgress.calculated + riskProgress.errors} / {riskProgress.total}
+                </span>
+              </div>
+              
+              <Progress 
+                value={((riskProgress.calculated + riskProgress.errors) / riskProgress.total) * 100} 
+              />
+              
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1 text-emerald-500">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    {riskProgress.calculated} calculado(s)
+                  </span>
+                  {riskProgress.errors > 0 && (
+                    <span className="flex items-center gap-1 text-red-500">
+                      <XCircle className="h-3.5 w-3.5" />
+                      {riskProgress.errors} erro(s)
+                    </span>
+                  )}
+                </div>
+                {riskProgress.currentName && (
+                  <span className="text-muted-foreground animate-pulse truncate max-w-[200px]">
+                    Calculando: {riskProgress.currentName}
+                  </span>
+                )}
+              </div>
+
+              {/* Risk Results */}
+              {riskProgress.results.length > 0 && (
+                <ScrollArea className="h-32 mt-2">
+                  <div className="space-y-2">
+                    {riskProgress.results.map((res, idx) => (
+                      <div 
+                        key={idx} 
+                        className={cn(
+                          "text-xs p-2 rounded",
+                          res.success ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {res.success ? <CheckCircle className="h-3 w-3 flex-shrink-0" /> : <XCircle className="h-3 w-3 flex-shrink-0" />}
+                          <span className="font-medium">{res.name}</span>
+                          <Badge variant="outline" className="text-2xs ml-auto">
+                            {res.success ? "Calculado" : "Erro"}
+                          </Badge>
+                        </div>
+                        <p className="text-xs pl-5 whitespace-pre-wrap">{res.result}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </motion.div>
+          )}
+
+          {/* Calculate Button */}
+          <Button 
+            onClick={calculateNoShowRisk}
+            disabled={calculatingRisk || selectedRiskAppointments.length === 0}
+            className="w-full gap-2 h-12 bg-orange-500 hover:bg-orange-600 text-white"
+            size="lg"
+          >
+            {calculatingRisk ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Calculando risco...
+              </>
+            ) : (
+              <>
+                <Activity className="h-5 w-5" />
+                Calcular Risco ({selectedRiskAppointments.length} selecionado{selectedRiskAppointments.length !== 1 ? 's' : ''})
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
