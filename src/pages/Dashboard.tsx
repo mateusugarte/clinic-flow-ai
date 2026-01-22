@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Users, Calendar, Clock, Moon, TrendingUp, UserCheck, Briefcase, User, Phone, ChevronRight, AlertTriangle } from "lucide-react";
+import { Users, Calendar, Clock, Moon, TrendingUp, UserCheck, Briefcase, User, Phone, ChevronRight, AlertTriangle, Activity, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { PageTransition, FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/page-transition";
@@ -249,6 +249,9 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // Calculate today's attended appointments
+  const todayAttended = todayAppointments?.filter(apt => apt.status === "atendido") || [];
+
   // Fetch recent leads
   const { data: recentLeads } = useQuery({
     queryKey: ["recent-leads", user?.id],
@@ -418,6 +421,21 @@ export default function Dashboard() {
                 {leadsData && leadsData > 0 ? Math.min(((appointmentsData ?? 0) / leadsData) * 100, 100).toFixed(0) : 0}%
               </div>
               <p className="text-[10px] text-muted-foreground">Conversão</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Atendidos Hoje Card */}
+        <Card className="col-span-6 lg:col-span-3 shadow-card border-0 border-l-4 border-l-blue-500/50">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Activity className="h-4 w-4 text-blue-500" />
+              </div>
+              <div>
+                <div className="text-xl font-bold text-blue-500">{todayAttended.length}</div>
+                <p className="text-xs text-muted-foreground">Atendidos Hoje</p>
+              </div>
             </div>
           </CardContent>
         </Card>

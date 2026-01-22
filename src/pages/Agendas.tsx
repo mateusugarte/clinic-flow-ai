@@ -435,9 +435,9 @@ export default function Agendas() {
       </FadeIn>
 
       {/* Grid Layout */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-y-auto">
         {/* Main Calendar */}
-        <Card className="col-span-12 lg:col-span-5 shadow-card overflow-hidden flex flex-col">
+        <Card className="col-span-12 lg:col-span-5 shadow-card flex flex-col min-h-[380px]">
           <CardHeader className="pb-2 flex-shrink-0">
             <div className="flex items-center justify-between">
               <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}><ChevronLeft className="h-4 w-4" /></Button>
@@ -445,15 +445,15 @@ export default function Agendas() {
               <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden">
+          <CardContent className="flex-1 flex flex-col">
             <div className="grid grid-cols-7 gap-1 mb-2">
               {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => (
                 <div key={day} className="text-center text-xs font-medium text-muted-foreground py-1">{day}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1 flex-1 auto-rows-fr">
               {daysInMonth.map((day, index) => {
-                if (!day) return <div key={`empty-${index}`} className="aspect-square" />;
+                if (!day) return <div key={`empty-${index}`} className="min-h-[40px]" />;
                 const dateKey = format(day, "yyyy-MM-dd");
                 const count = appointmentsByDate[dateKey] || 0;
                 const isTodayDate = isToday(day);
@@ -462,7 +462,7 @@ export default function Agendas() {
                     key={dateKey}
                     onClick={() => handleDayClick(day)}
                     className={cn(
-                      "aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-colors hover:bg-muted relative",
+                      "min-h-[40px] rounded-lg flex flex-col items-center justify-center text-sm transition-colors hover:bg-muted relative",
                       isTodayDate && "ring-2 ring-primary",
                       count > 0 && "bg-primary/10"
                     )}
