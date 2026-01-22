@@ -214,15 +214,11 @@
     @apply bg-card/90 backdrop-blur-2xl border border-border/60;
   }
 
-  /* Premium modal backdrop: blur puro que mantém cores vibrantes */
+  /* Premium modal backdrop: blur total que cobre completamente o fundo */
   .overlay-dim-blur {
-    background: linear-gradient(
-      180deg,
-      hsl(0 0% 0% / 0.08),
-      hsl(0 0% 0% / 0.15)
-    );
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    background: transparent;
+    backdrop-filter: blur(80px);
+    -webkit-backdrop-filter: blur(80px);
   }
 
   /* Backwards-compatible alias (kept to avoid breaking any usage) */
