@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Plus, Clock, DollarSign, Tag, Trash2, User, Edit } from "lucide-react";
+import { Plus, Clock, DollarSign, Tag, Trash2, User, Edit, FlaskConical, AlertTriangle, ShieldAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ export default function Servicos() {
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editData, setEditData] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" as typeof categories[number] });
+  const [formData, setFormData] = useState({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" as typeof categories[number], products_used: "", contraindications: "", possible_reactions: "" });
 
   const { data: services } = useQuery({
     queryKey: ["services", user?.id],
@@ -59,7 +59,7 @@ export default function Servicos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services"] });
       setIsNewOpen(false);
-      setFormData({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" });
+      setFormData({ name: "", description: "", duration: 30, price: 0, category: "Preventivo", products_used: "", contraindications: "", possible_reactions: "" });
       toast({ title: "Serviço criado com sucesso!" });
     },
     onError: () => toast({ variant: "destructive", title: "Erro ao criar serviço" }),
@@ -133,7 +133,7 @@ export default function Servicos() {
         </div>
         <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
           <DialogTrigger asChild><Button size="sm" className="h-8 gradient-primary"><Plus className="h-4 w-4 mr-1.5" />Novo</Button></DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Novo Serviço</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2"><Label>Nome *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nome do serviço" /></div>
@@ -145,6 +145,18 @@ export default function Servicos() {
               <div className="space-y-2">
                 <Label>Categoria</Label>
                 <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v as typeof categories[number] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><FlaskConical className="h-3.5 w-3.5 text-primary" />Produtos Utilizados</Label>
+                <Textarea value={formData.products_used} onChange={(e) => setFormData({ ...formData, products_used: e.target.value })} placeholder="Ex: Ácido hialurônico, toxina botulínica..." rows={2} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5 text-amber-500" />Contraindicações</Label>
+                <Textarea value={formData.contraindications} onChange={(e) => setFormData({ ...formData, contraindications: e.target.value })} placeholder="Ex: Gestantes, alérgicos a..." rows={2} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" />Possíveis Reações</Label>
+                <Textarea value={formData.possible_reactions} onChange={(e) => setFormData({ ...formData, possible_reactions: e.target.value })} placeholder="Ex: Vermelhidão, inchaço temporário..." rows={2} />
               </div>
               <Button onClick={() => createService.mutate()} disabled={!formData.name || !formData.duration || createService.isPending} className="w-full gradient-primary">Criar Serviço</Button>
             </div>
@@ -192,7 +204,19 @@ export default function Servicos() {
                   <div className="space-y-2"><Label>Preço (R$)</Label><Input type="number" step="0.01" value={editData.price} onChange={(e) => setEditData({ ...editData, price: parseFloat(e.target.value) || 0 })} /></div>
                 </div>
                 <div className="space-y-2"><Label>Categoria</Label><Select value={editData.category || "Preventivo"} onValueChange={(v) => setEditData({ ...editData, category: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select></div>
-                <Button onClick={() => updateService.mutate({ id: selectedService.id, data: { name: editData.name, description: editData.description, duration: editData.duration, price: editData.price, category: editData.category } })} className="w-full gradient-primary">Salvar</Button>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5"><FlaskConical className="h-3.5 w-3.5 text-primary" />Produtos Utilizados</Label>
+                  <Textarea value={editData.products_used || ""} onChange={(e) => setEditData({ ...editData, products_used: e.target.value })} rows={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5 text-amber-500" />Contraindicações</Label>
+                  <Textarea value={editData.contraindications || ""} onChange={(e) => setEditData({ ...editData, contraindications: e.target.value })} rows={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" />Possíveis Reações</Label>
+                  <Textarea value={editData.possible_reactions || ""} onChange={(e) => setEditData({ ...editData, possible_reactions: e.target.value })} rows={2} />
+                </div>
+                <Button onClick={() => updateService.mutate({ id: selectedService.id, data: { name: editData.name, description: editData.description, duration: editData.duration, price: editData.price, category: editData.category, products_used: editData.products_used, contraindications: editData.contraindications, possible_reactions: editData.possible_reactions } })} className="w-full gradient-primary">Salvar</Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -206,6 +230,25 @@ export default function Servicos() {
                   <div><Label className="text-muted-foreground text-xs">Preço</Label><p className="text-lg font-semibold text-primary">{formatPrice(selectedService.price)}</p></div>
                 </div>
                 <div><Label className="text-muted-foreground text-xs">Disponível</Label><p>{selectedService.is_available ? "Sim" : "Não"}</p></div>
+                
+                {selectedService.products_used && (
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                    <Label className="text-xs flex items-center gap-1.5 text-primary"><FlaskConical className="h-3.5 w-3.5" />Produtos Utilizados</Label>
+                    <p className="text-sm mt-1">{selectedService.products_used}</p>
+                  </div>
+                )}
+                {selectedService.contraindications && (
+                  <div className="p-3 bg-amber-500/5 rounded-lg border border-amber-500/10">
+                    <Label className="text-xs flex items-center gap-1.5 text-amber-600"><ShieldAlert className="h-3.5 w-3.5" />Contraindicações</Label>
+                    <p className="text-sm mt-1">{selectedService.contraindications}</p>
+                  </div>
+                )}
+                {selectedService.possible_reactions && (
+                  <div className="p-3 bg-destructive/5 rounded-lg border border-destructive/10">
+                    <Label className="text-xs flex items-center gap-1.5 text-destructive"><AlertTriangle className="h-3.5 w-3.5" />Possíveis Reações</Label>
+                    <p className="text-sm mt-1">{selectedService.possible_reactions}</p>
+                  </div>
+                )}
                 
                 <div className="border-t pt-4">
                   <Label className="text-muted-foreground text-xs">Profissionais que realizam</Label>
