@@ -67,13 +67,20 @@ export default function Relatorios() {
         .gte("created_at", start.toISOString());
       if (leadError) throw leadError;
 
-      const totalRevenue = appointments?.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0) || 0;
+      // Only count revenue from attended appointments
+      const attendedAppointments = appointments?.filter(apt => apt.status === "atendido") || [];
+      const totalRevenue = attendedAppointments.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0);
+      
+      // Calculate lost revenue from cancelled or no-show (risco) appointments
+      const lostAppointments = appointments?.filter(apt => apt.status === "cancelado" || apt.status === "risco") || [];
+      const lostRevenue = lostAppointments.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0);
+      
       const totalLeads = leads?.length || 0;
       const totalAppointments = appointments?.length || 0;
       const conversionRate = totalLeads > 0 ? Math.min((totalAppointments / totalLeads) * 100, 100).toFixed(1) : 0;
 
       // Count attended and cancelled
-      const totalAttended = appointments?.filter(apt => apt.status === "atendido").length || 0;
+      const totalAttended = attendedAppointments.length;
       const totalCancelled = appointments?.filter(apt => apt.status === "cancelado").length || 0;
 
       const statusCounts: Record<string, number> = {};
@@ -95,7 +102,7 @@ export default function Relatorios() {
       });
       const chartData = Object.entries(dailyData).map(([day, count]) => ({ day, count })).slice(-dateRange);
 
-      return { totalRevenue, totalLeads, totalAppointments, conversionRate, statusData, chartData, totalAttended, totalCancelled };
+      return { totalRevenue, lostRevenue, totalLeads, totalAppointments, conversionRate, statusData, chartData, totalAttended, totalCancelled };
     },
     enabled: !!user,
   });
@@ -219,6 +226,18 @@ export default function Relatorios() {
             <p className="text-xl font-bold text-red-500">{stats?.totalCancelled || 0}</p>
           </CardContent>
         </Card>
+
+        {/* Lost Revenue Alert */}
+        {(stats?.lostRevenue || 0) > 0 && (
+          <Card className="col-span-12 shadow-card border-destructive/30 bg-destructive/5">
+            <CardContent className="py-4">
+              <p className="text-sm text-center text-muted-foreground">
+                No período, o valor perdido em agendamentos cancelados ou não comparecidos foi de:{" "}
+                <span className="font-bold text-destructive text-base">{formatCurrency(stats?.lostRevenue || 0)}</span>
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Yearly Calendar */}
         <Card className="col-span-12 shadow-card">
