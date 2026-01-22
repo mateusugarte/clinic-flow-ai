@@ -214,16 +214,15 @@
     @apply bg-card/90 backdrop-blur-2xl border border-border/60;
   }
 
-  /* Premium modal backdrop: stronger blur + gentle tint for a “total blur” feel */
+  /* Premium modal backdrop: blur puro que mantém cores vibrantes */
   .overlay-dim-blur {
-    /* subtle dark veil + strong blur (matches “total blur” reference) */
     background: linear-gradient(
       180deg,
-      hsl(var(--foreground) / 0.20),
-      hsl(var(--foreground) / 0.32)
+      hsl(0 0% 0% / 0.08),
+      hsl(0 0% 0% / 0.15)
     );
-    backdrop-filter: blur(30px) saturate(165%);
-    -webkit-backdrop-filter: blur(30px) saturate(165%);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
   }
 
   /* Backwards-compatible alias (kept to avoid breaking any usage) */
