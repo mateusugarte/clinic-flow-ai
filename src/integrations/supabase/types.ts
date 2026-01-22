@@ -33,7 +33,7 @@ export type Database = {
           owner_name: string | null
           support_phone: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           whatsapp_connected: boolean | null
         }
         Insert: {
@@ -54,7 +54,7 @@ export type Database = {
           owner_name?: string | null
           support_phone?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           whatsapp_connected?: boolean | null
         }
         Update: {
@@ -75,7 +75,7 @@ export type Database = {
           owner_name?: string | null
           support_phone?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           whatsapp_connected?: boolean | null
         }
         Relationships: []
