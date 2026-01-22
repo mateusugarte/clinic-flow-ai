@@ -19,10 +19,6 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const SUPABASE_FUNCTIONS_URL = "https://qdsvbhtaldyjtfmujmyt.functions.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkc3ZiaHRhbGR5anRmbXVqbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5Nzc5MzksImV4cCI6MjA4MzU1MzkzOX0.hIQs0Ql2qHBrwJlJW54n22WJtjkA27_6maBLt3kyqik";
-
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [timer, setTimer] = useState<number>(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -63,16 +59,26 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
     return null;
   };
 
+  // Secure function to invoke WhatsApp proxy with user's JWT token
   const invokeWhatsAppProxy = async (body: Record<string, unknown>) => {
-    const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/whatsapp-proxy`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify(body),
-    });
+    // Get the user's session token for secure authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error("Sessão não encontrada. Faça login novamente.");
+    }
+
+    const res = await fetch(
+      "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/whatsapp-proxy",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     const text = await res.text();
     let data: unknown = text;
