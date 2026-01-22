@@ -19,6 +19,8 @@ import {
   Users,
   Calendar,
   DollarSign,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GitHubCalendar } from "@/components/ui/github-calendar";
@@ -70,6 +72,10 @@ export default function Relatorios() {
       const totalAppointments = appointments?.length || 0;
       const conversionRate = totalLeads > 0 ? Math.min((totalAppointments / totalLeads) * 100, 100).toFixed(1) : 0;
 
+      // Count attended and cancelled
+      const totalAttended = appointments?.filter(apt => apt.status === "atendido").length || 0;
+      const totalCancelled = appointments?.filter(apt => apt.status === "cancelado").length || 0;
+
       const statusCounts: Record<string, number> = {};
       appointments?.forEach((apt) => {
         const status = apt.status || "pendente";
@@ -89,7 +95,7 @@ export default function Relatorios() {
       });
       const chartData = Object.entries(dailyData).map(([day, count]) => ({ day, count })).slice(-dateRange);
 
-      return { totalRevenue, totalLeads, totalAppointments, conversionRate, statusData, chartData };
+      return { totalRevenue, totalLeads, totalAppointments, conversionRate, statusData, chartData, totalAttended, totalCancelled };
     },
     enabled: !!user,
   });
@@ -148,7 +154,7 @@ export default function Relatorios() {
       {/* Grid Layout */}
       <div className="flex-1 grid grid-cols-12 gap-4 auto-rows-min">
         {/* Stats Cards Row */}
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
+        <Card className="col-span-6 lg:col-span-2 shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />Faturamento
@@ -159,7 +165,7 @@ export default function Relatorios() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
+        <Card className="col-span-6 lg:col-span-2 shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />Novos Leads
@@ -170,7 +176,7 @@ export default function Relatorios() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
+        <Card className="col-span-6 lg:col-span-2 shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />Agendamentos
@@ -181,14 +187,36 @@ export default function Relatorios() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-6 lg:col-span-3 shadow-card">
+        <Card className="col-span-6 lg:col-span-2 shadow-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />Taxa de Conversão
+              <TrendingUp className="h-4 w-4 text-primary" />Conversão
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-bold">{stats?.conversionRate || 0}%</p>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-6 lg:col-span-2 shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />Atendidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold text-emerald-500">{stats?.totalAttended || 0}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-6 lg:col-span-2 shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-red-500" />Cancelados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xl font-bold text-red-500">{stats?.totalCancelled || 0}</p>
           </CardContent>
         </Card>
 

@@ -166,6 +166,12 @@ export default function NutricaoConfirmacao() {
       return date === todayKey && apt.status === "cancelado";
     }), [appointments, todayKey]);
 
+  const todayAttended = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === todayKey && apt.status === "atendido";
+    }), [appointments, todayKey]);
+
   // Filter for selected day (tabs)
   const selectedDayConfirmed = useMemo(() =>
     appointments.filter((apt) => {
@@ -189,6 +195,12 @@ export default function NutricaoConfirmacao() {
     appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
       return date === selectedKey && apt.status === "risco";
+    }), [appointments, selectedKey]);
+
+  const selectedDayAttended = useMemo(() =>
+    appointments.filter((apt) => {
+      const { date } = extractDateTimeFromISO(apt.scheduled_at);
+      return date === selectedKey && apt.status === "atendido";
     }), [appointments, selectedKey]);
 
   // Get all appointments for selected date in calendar
@@ -807,7 +819,7 @@ export default function NutricaoConfirmacao() {
         </motion.div>
 
         {/* Today's Stats - Compact row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard 
             title="Pendentes Hoje"
             count={todayPending.length} 
@@ -832,6 +844,12 @@ export default function NutricaoConfirmacao() {
             icon={XCircle} 
             color="bg-red-500/10 text-red-500" 
           />
+          <StatCard 
+            title="Atendidos Hoje"
+            count={todayAttended.length} 
+            icon={Activity} 
+            color="bg-blue-500/10 text-blue-500" 
+          />
         </div>
       </div>
 
@@ -849,7 +867,7 @@ export default function NutricaoConfirmacao() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="pendentes" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 mb-4">
+                <TabsList className="grid w-full grid-cols-5 mb-4">
                   <TabsTrigger value="pendentes" className="text-xs px-1">
                     Pend. ({selectedDayPending.length})
                   </TabsTrigger>
@@ -861,6 +879,9 @@ export default function NutricaoConfirmacao() {
                   </TabsTrigger>
                   <TabsTrigger value="cancelados" className="text-xs px-1">
                     Canc. ({selectedDayCancelled.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="atendidos" className="text-xs px-1">
+                    Atend. ({selectedDayAttended.length})
                   </TabsTrigger>
                 </TabsList>
 
@@ -961,6 +982,18 @@ export default function NutricaoConfirmacao() {
                         <p className="text-center text-muted-foreground py-6 text-sm">Nenhum cancelado</p>
                       ) : (
                         selectedDayCancelled.map(apt => <AppointmentCard key={apt.id} appointment={apt} />)
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="atendidos" className="mt-0">
+                  <ScrollArea className="h-[320px]">
+                    <div className="space-y-2 pr-2">
+                      {selectedDayAttended.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-6 text-sm">Nenhum atendido</p>
+                      ) : (
+                        selectedDayAttended.map(apt => <AppointmentCard key={apt.id} appointment={apt} />)
                       )}
                     </div>
                   </ScrollArea>
