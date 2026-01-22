@@ -71,8 +71,8 @@ export default function Relatorios() {
       const attendedAppointments = appointments?.filter(apt => apt.status === "atendido") || [];
       const totalRevenue = attendedAppointments.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0);
       
-      // Calculate lost revenue from cancelled or no-show (risco) appointments
-      const lostAppointments = appointments?.filter(apt => apt.status === "cancelado" || apt.status === "risco") || [];
+      // Calculate lost revenue from cancelled appointments only
+      const lostAppointments = appointments?.filter(apt => apt.status === "cancelado") || [];
       const lostRevenue = lostAppointments.reduce((sum, apt) => sum + (Number(apt.price) || 0), 0);
       
       const totalLeads = leads?.length || 0;
