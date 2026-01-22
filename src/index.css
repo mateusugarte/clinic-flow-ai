@@ -208,6 +208,17 @@
     @apply bg-card/90 backdrop-blur-2xl border border-border/60;
   }
 
+  /* Premium modal backdrop: stronger blur + gentle tint for a “total blur” feel */
+  .modal-backdrop-premium {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--background) / 0.42),
+      hsl(var(--background) / 0.58)
+    );
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background: var(--gradient-primary);
