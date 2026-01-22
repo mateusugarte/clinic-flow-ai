@@ -216,7 +216,7 @@
 
   /* Premium modal backdrop: blur total que cobre completamente o fundo */
   .overlay-dim-blur {
-    background: transparent;
+    background: hsl(var(--background) / 0.97);
     backdrop-filter: blur(80px);
     -webkit-backdrop-filter: blur(80px);
   }
