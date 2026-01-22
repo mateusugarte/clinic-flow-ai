@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
 import { z } from "zod";
-import logoIcon from "@/assets/logo-icon.png";
+import logoIcon from "@/assets/logo-g.png";
 
 const authSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -104,7 +104,7 @@ export default function Auth() {
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-8 h-8 border-2 border-[#722F37] border-t-transparent rounded-full"
+            className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
           />
         </motion.div>
       </div>
@@ -118,7 +118,7 @@ export default function Auth() {
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#722F37] via-[#8B3A42] to-[#5C252C] overflow-hidden"
+        className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#b60259] via-[#8a0245] to-[#47001e] overflow-hidden"
       >
         {/* Abstract shapes */}
         <div className="absolute inset-0">
@@ -279,7 +279,7 @@ export default function Auth() {
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 bg-white border-[#E5DDD3] text-[#2D2420] placeholder:text-[#C4B8A8] focus:border-[#722F37] focus:ring-[#722F37]/10 rounded-xl transition-all duration-200"
+                  className="pl-10 h-12 bg-white border-[#E5DDD3] text-[#2D2420] placeholder:text-[#C4B8A8] focus:border-primary focus:ring-primary/10 rounded-xl transition-all duration-200"
                 />
               </div>
               <AnimatePresence>
@@ -308,7 +308,7 @@ export default function Auth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-12 bg-white border-[#E5DDD3] text-[#2D2420] placeholder:text-[#C4B8A8] focus:border-[#722F37] focus:ring-[#722F37]/10 rounded-xl transition-all duration-200"
+                  className="pl-10 h-12 bg-white border-[#E5DDD3] text-[#2D2420] placeholder:text-[#C4B8A8] focus:border-primary focus:ring-primary/10 rounded-xl transition-all duration-200"
                 />
               </div>
               <AnimatePresence>
@@ -330,7 +330,7 @@ export default function Auth() {
               disabled={isLoading}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              className="w-full h-12 bg-[#722F37] hover:bg-[#5C252C] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-[#722F37]/20"
+              className="w-full h-12 bg-gradient-to-r from-[#b60259] to-[#47001e] hover:from-[#9c024c] hover:to-[#380018] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-primary/30"
             >
               {isLoading ? (
                 <motion.div
@@ -356,12 +356,12 @@ export default function Auth() {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-[#8B7355] hover:text-[#722F37] transition-colors"
+              className="text-sm text-[#8B7355] hover:text-primary transition-colors"
             >
               {isLogin ? (
-                <>Não tem conta? <span className="font-medium text-[#722F37]">Criar agora</span></>
+                <>Não tem conta? <span className="font-medium text-primary">Criar agora</span></>
               ) : (
-                <>Já tem conta? <span className="font-medium text-[#722F37]">Entrar</span></>
+                <>Já tem conta? <span className="font-medium text-primary">Entrar</span></>
               )}
             </button>
           </motion.div>

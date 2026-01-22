@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
-import logoIcon from "@/assets/logo-icon.png";
+import logoIcon from "@/assets/logo-g.png";
 import {
   LayoutDashboard,
   Calendar,

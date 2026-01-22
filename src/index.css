@@ -16,9 +16,12 @@
     --popover: 40 25% 98%;
     --popover-foreground: 20 15% 15%;
 
-    /* Primary - Burgundy/Bordeaux #722F37 */
-    --primary: 355 45% 32%;
+    /* Primary - Vibrant Magenta/Pink #b60259 */
+    --primary: 332 95% 37%;
     --primary-foreground: 40 25% 98%;
+
+    /* Primary Gradient End - Deep Wine #47001e */
+    --primary-dark: 334 100% 14%;
 
     /* Secondary - Warm Beige */
     --secondary: 35 20% 92%;
@@ -27,39 +30,39 @@
     --muted: 35 15% 93%;
     --muted-foreground: 20 10% 45%;
 
-    --accent: 355 40% 95%;
-    --accent-foreground: 355 45% 28%;
+    --accent: 332 80% 95%;
+    --accent-foreground: 332 95% 30%;
 
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 35 15% 85%;
     --input: 35 15% 88%;
-    --ring: 355 45% 32%;
+    --ring: 332 95% 37%;
 
     --radius: 0.5rem;
 
     /* Sidebar Light */
     --sidebar-background: 40 25% 98%;
     --sidebar-foreground: 20 15% 15%;
-    --sidebar-primary: 355 45% 32%;
+    --sidebar-primary: 332 95% 37%;
     --sidebar-primary-foreground: 40 25% 98%;
     --sidebar-accent: 35 20% 92%;
     --sidebar-accent-foreground: 20 15% 20%;
     --sidebar-border: 35 15% 88%;
-    --sidebar-ring: 355 45% 32%;
+    --sidebar-ring: 332 95% 37%;
 
-    /* Custom Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(355 45% 32%), hsl(355 50% 25%));
-    --gradient-glow: linear-gradient(135deg, hsl(355 45% 32% / 0.08), hsl(355 50% 25% / 0.04));
-    --shadow-primary: 0 4px 14px -4px hsl(355 45% 32% / 0.25);
+    /* Custom Tokens - Gradient from #b60259 to #47001e */
+    --gradient-primary: linear-gradient(135deg, hsl(332 95% 37%), hsl(334 100% 14%));
+    --gradient-glow: linear-gradient(135deg, hsl(332 95% 37% / 0.12), hsl(334 100% 14% / 0.06));
+    --shadow-primary: 0 4px 14px -4px hsl(332 95% 37% / 0.35);
     --shadow-card: 0 1px 3px 0 hsl(20 15% 15% / 0.04), 0 1px 2px -1px hsl(20 15% 15% / 0.03);
     --shadow-card-hover: 0 4px 16px -4px hsl(20 15% 15% / 0.08);
 
-    /* Chart Colors - Warm with Burgundy accent */
-    --chart-1: 355 45% 32%;
-    --chart-2: 20 15% 30%;
-    --chart-3: 20 10% 50%;
+    /* Chart Colors - Pink/Magenta accent */
+    --chart-1: 332 95% 37%;
+    --chart-2: 334 100% 14%;
+    --chart-3: 332 60% 50%;
     --chart-4: 35 15% 65%;
     --chart-5: 35 20% 80%;
 
@@ -85,9 +88,12 @@
     --popover: 20 12% 11%;
     --popover-foreground: 35 20% 92%;
 
-    /* Primary - Lighter Burgundy for Dark Mode */
-    --primary: 355 50% 45%;
+    /* Primary - Lighter Magenta for Dark Mode */
+    --primary: 332 90% 50%;
     --primary-foreground: 35 20% 98%;
+
+    /* Primary Gradient End - Deep Wine */
+    --primary-dark: 334 100% 20%;
 
     /* Secondary */
     --secondary: 20 10% 16%;
@@ -96,37 +102,37 @@
     --muted: 20 10% 16%;
     --muted-foreground: 35 10% 55%;
 
-    --accent: 355 40% 18%;
-    --accent-foreground: 355 50% 70%;
+    --accent: 332 70% 20%;
+    --accent-foreground: 332 80% 75%;
 
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 20 10% 20%;
     --input: 20 10% 20%;
-    --ring: 355 50% 45%;
+    --ring: 332 90% 50%;
 
     /* Sidebar Dark */
     --sidebar-background: 20 12% 9%;
     --sidebar-foreground: 35 20% 92%;
-    --sidebar-primary: 355 50% 45%;
+    --sidebar-primary: 332 90% 50%;
     --sidebar-primary-foreground: 35 20% 98%;
     --sidebar-accent: 20 10% 15%;
     --sidebar-accent-foreground: 35 20% 92%;
     --sidebar-border: 20 10% 20%;
-    --sidebar-ring: 355 50% 45%;
+    --sidebar-ring: 332 90% 50%;
 
-    /* Custom Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(355 50% 45%), hsl(355 55% 38%));
-    --gradient-glow: linear-gradient(135deg, hsl(355 50% 45% / 0.15), hsl(355 55% 38% / 0.08));
-    --shadow-primary: 0 4px 20px -4px hsl(355 50% 45% / 0.35);
+    /* Custom Tokens - Gradient from #b60259 to #47001e */
+    --gradient-primary: linear-gradient(135deg, hsl(332 90% 50%), hsl(334 100% 20%));
+    --gradient-glow: linear-gradient(135deg, hsl(332 90% 50% / 0.18), hsl(334 100% 20% / 0.10));
+    --shadow-primary: 0 4px 20px -4px hsl(332 90% 50% / 0.45);
     --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.15);
     --shadow-card-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.3);
 
     /* Chart Colors */
-    --chart-1: 355 50% 45%;
-    --chart-2: 35 15% 65%;
-    --chart-3: 35 10% 50%;
+    --chart-1: 332 90% 50%;
+    --chart-2: 334 100% 20%;
+    --chart-3: 332 60% 60%;
     --chart-4: 20 10% 40%;
     --chart-5: 20 10% 25%;
 
