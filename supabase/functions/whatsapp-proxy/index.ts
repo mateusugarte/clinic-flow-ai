@@ -9,10 +9,6 @@ const corsHeaders = {
 const WEBHOOK_URL = Deno.env.get("N8N_WHATSAPP_WEBHOOK_URL") ?? "";
 
 Deno.serve(async (req) => {
-  console.log("=== whatsapp-proxy invoked ===");
-  console.log("Method:", req.method);
-  console.log("URL:", req.url);
-  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -21,7 +17,6 @@ Deno.serve(async (req) => {
     // Validate JWT authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      console.error("Missing or invalid Authorization header");
       return new Response(
         JSON.stringify({ error: "Unauthorized: Missing authentication token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -40,7 +35,6 @@ Deno.serve(async (req) => {
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     
     if (claimsError || !claimsData?.claims) {
-      console.error("JWT verification failed:", claimsError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized: Invalid authentication token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -48,7 +42,6 @@ Deno.serve(async (req) => {
     }
 
     const authenticatedUserId = claimsData.claims.sub;
-    console.log("Authenticated user ID:", authenticatedUserId);
 
     // Parse request body
     const body = await req.json();
@@ -59,7 +52,6 @@ Deno.serve(async (req) => {
 
     // Verify the authenticated user matches the requested user_id
     if (resolvedUserId && resolvedUserId !== authenticatedUserId) {
-      console.error("User ID mismatch - authenticated:", authenticatedUserId, "requested:", resolvedUserId);
       return new Response(
         JSON.stringify({ error: "Forbidden: Cannot perform operations for other users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -72,16 +64,11 @@ Deno.serve(async (req) => {
       acao: acao || null,
     };
 
-    console.log("Sending to webhook:", JSON.stringify(payload));
-
-    // Get webhook credentials from environment (trim to avoid copy/paste whitespace)
+    // Get webhook credentials from environment
     const webhookUsername = (Deno.env.get("N8N_WEBHOOK_USERNAME") ?? "webhook_api").trim();
     const webhookPassword = (Deno.env.get("N8N_WEBHOOK_PASSWORD") ?? "").trim();
 
-    console.log("Using webhook username:", webhookUsername);
-    console.log("Webhook password length:", webhookPassword.length);
-
-    // Create Basic Auth header in correct format: username:password
+    // Create Basic Auth header
     const basicAuth = btoa(`${webhookUsername}:${webhookPassword}`);
 
     const headers: Record<string, string> = {
@@ -96,10 +83,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    console.log("Webhook response status:", response.status);
-
     const responseText = await response.text();
-    console.log("Webhook response body:", responseText);
     
     // Try to parse as JSON, otherwise return as text
     let responseData;
