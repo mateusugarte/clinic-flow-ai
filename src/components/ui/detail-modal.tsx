@@ -36,7 +36,7 @@ export function DetailModal({ isOpen, onClose, title, children, className }: Det
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-             className="fixed inset-0 z-50 modal-backdrop-premium"
+             className="fixed inset-0 z-50 overlay-dim-blur"
             onClick={onClose}
           />
           

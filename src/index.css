@@ -209,14 +209,20 @@
   }
 
   /* Premium modal backdrop: stronger blur + gentle tint for a “total blur” feel */
-  .modal-backdrop-premium {
+  .overlay-dim-blur {
+    /* subtle dark veil + strong blur (matches “total blur” reference) */
     background: linear-gradient(
       180deg,
-      hsl(var(--background) / 0.42),
-      hsl(var(--background) / 0.58)
+      hsl(var(--foreground) / 0.20),
+      hsl(var(--foreground) / 0.32)
     );
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(165%);
+    -webkit-backdrop-filter: blur(30px) saturate(165%);
+  }
+
+  /* Backwards-compatible alias (kept to avoid breaking any usage) */
+  .modal-backdrop-premium {
+    @apply overlay-dim-blur;
   }
 
   .text-gradient {
