@@ -1,16 +1,16 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-// CORS headers - allow all Lovable preview URLs and localhost
+// CORS headers - allow Lovable, localhost, and any HTTPS origin (production)
 const getCorsHeaders = (origin: string | null) => {
-  // Allow all Lovable preview URLs and localhost for development
   const isAllowed = origin && (
     origin.includes(".lovable.app") ||
-    origin.includes("localhost")
+    origin.includes("localhost") ||
+    origin.startsWith("https://")
   );
   
   return {
-    "Access-Control-Allow-Origin": isAllowed ? origin : "https://id-preview--966a54dc-5453-47ad-9053-c67781d9699a.lovable.app",
+    "Access-Control-Allow-Origin": isAllowed && origin ? origin : "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
