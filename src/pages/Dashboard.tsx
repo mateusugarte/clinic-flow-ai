@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import { useToast } from "@/hooks/use-toast";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
+import { ActionAlerts } from "@/components/dashboard/ActionAlerts";
 import {
   XAxis,
   YAxis,
@@ -22,7 +24,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { format, subDays, startOfDay, endOfDay, parseISO } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type DateRange = "today" | "7days" | "15days" | "30days";
@@ -80,17 +82,70 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { start, end } = getDateRange(dateRange);
 
-  // Fetch AI config for opening hours
+  // Fetch AI config for opening hours and onboarding check
   const { data: aiConfig } = useQuery({
-    queryKey: ["ai-config", user?.id],
+    queryKey: ["ai-config-full", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ai_configs")
-        .select("opening_hours")
+        .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch onboarding data
+  const { data: onboardingData } = useQuery({
+    queryKey: ["onboarding-status", user?.id],
+    queryFn: async () => {
+      const [servicesRes, professionalsRes] = await Promise.all([
+        supabase.from("services").select("id", { count: "exact", head: true }).eq("user_id", user!.id),
+        supabase.from("professionals").select("id", { count: "exact", head: true }).eq("user_id", user!.id),
+      ]);
+      return {
+        hasServices: (servicesRes.count || 0) > 0,
+        hasProfessionals: (professionalsRes.count || 0) > 0,
+      };
+    },
+    enabled: !!user,
+  });
+
+  // Fetch pending confirmations for next 2 days
+  const { data: pendingConfirmations } = useQuery({
+    queryKey: ["pending-confirmations", user?.id],
+    queryFn: async () => {
+      const today = new Date();
+      const day1 = addDays(today, 1);
+      const day2 = addDays(today, 2);
+      
+      const results: { date: Date; count: number; notSentCount: number }[] = [];
+      
+      for (const targetDate of [day1, day2]) {
+        const dayStart = startOfDay(targetDate);
+        const dayEnd = endOfDay(targetDate);
+        
+        const { data, error } = await supabase
+          .from("appointments")
+          .select("id, confirmacaoEnviada")
+          .eq("user_id", user!.id)
+          .gte("scheduled_at", dayStart.toISOString())
+          .lte("scheduled_at", dayEnd.toISOString())
+          .in("status", ["pendente", "confirmado"]);
+        
+        if (error) throw error;
+        
+        const count = data?.length || 0;
+        const notSentCount = data?.filter(apt => !apt.confirmacaoEnviada).length || 0;
+        
+        if (count > 0) {
+          results.push({ date: targetDate, count, notSentCount });
+        }
+      }
+      
+      return results;
     },
     enabled: !!user,
   });
@@ -311,7 +366,21 @@ export default function Dashboard() {
   };
 
   return (
-    <PageTransition className="h-full flex flex-col gap-3">
+    <PageTransition className="h-full flex flex-col gap-3 overflow-y-auto">
+      {/* Onboarding Checklist for new users */}
+      <OnboardingChecklist
+        hasAiConfig={!!aiConfig?.clinic_name}
+        hasServices={onboardingData?.hasServices || false}
+        hasProfessionals={onboardingData?.hasProfessionals || false}
+        hasWhatsAppConnection={aiConfig?.whatsapp_connected || false}
+      />
+
+      {/* Action Alerts for pending tasks */}
+      <ActionAlerts
+        pendingConfirmations={pendingConfirmations || []}
+        noShowRiskCount={noShowRiskData?.length || 0}
+      />
+
       {/* Header - Compact */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div>
