@@ -1,18 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-// Allowed origins for CORS
-const ALLOWED_ORIGINS = [
-  "https://id-preview--966a54dc-5453-47ad-9053-c67781d9699a.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:8080",
-];
-
-const getCorsHeaders = (origin: string | null) => ({
-  "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-});
+// CORS headers - allow all Lovable preview URLs and localhost
+const getCorsHeaders = (origin: string | null) => {
+  // Allow all Lovable preview URLs and localhost for development
+  const isAllowed = origin && (
+    origin.includes(".lovable.app") ||
+    origin.includes("localhost")
+  );
+  
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : "https://id-preview--966a54dc-5453-47ad-9053-c67781d9699a.lovable.app",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+};
 
 // Input validation schema
 const whatsappPayloadSchema = z.object({
