@@ -440,13 +440,19 @@ export default function NutricaoConfirmacao() {
         } : null);
 
         try {
-          // Send minimal payload to edge function
+          // Send complete appointment data to edge function
           const payload = {
-            appointmentId: apt.id,
-            phone,
-            patientName: apt.patientName || apt.lead?.name || "Paciente",
-            scheduledAt: apt.scheduled_at,
-            serviceName: apt.serviceName || "Consulta",
+            agendamento: {
+              id: apt.id,
+              phone,
+              patientName: apt.patientName || apt.lead?.name || "Paciente",
+              scheduledAt: apt.scheduled_at,
+              serviceName: apt.serviceName || "Consulta",
+              professionalName: apt.professionalName || "Profissional",
+              duracao: apt.duracao || 30,
+              price: apt.price || 0,
+              notes: apt.notes || "",
+            },
           };
 
           const result = await invokeEdgeFunction<unknown>("confirmation-proxy", payload);
