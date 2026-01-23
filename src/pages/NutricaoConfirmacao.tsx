@@ -17,6 +17,7 @@ import { StatusSelect } from "@/components/ui/status-select";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { invokeEdgeFunction, EdgeFunctionError } from "@/lib/edgeFunctions";
 
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
 
@@ -428,9 +429,6 @@ export default function NutricaoConfirmacao() {
     let errorCount = 0;
 
     try {
-      // Get session for auth
-      const { data: { session } } = await supabase.auth.getSession();
-      
       // Process each appointment one by one
       for (const apt of appointmentsToSend) {
         const phone = apt.phoneNumber?.toString() || apt.lead?.phone || "N/A";
@@ -451,68 +449,50 @@ export default function NutricaoConfirmacao() {
             serviceName: apt.serviceName || "Consulta",
           };
 
-          const response = await fetch(
-            "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/confirmation-proxy",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${session?.access_token}`,
-              },
-              body: JSON.stringify(payload),
-            }
-          );
-
-          const responseText = await response.text();
+          const result = await invokeEdgeFunction<unknown>("confirmation-proxy", payload);
           
-          if (response.ok) {
-            // Success
-            sentCount++;
-            successfulIds.push(apt.id);
-            setSentAppointmentIds(prev => new Set([...prev, apt.id]));
-            
-            setSendProgress(prev => prev ? {
-              ...prev,
-              sent: sentCount,
-              messages: [...prev.messages, { 
-                phone, 
-                success: true, 
-                message: responseText || "Enviado com sucesso" 
-              }],
-            } : null);
+          // Success
+          sentCount++;
+          successfulIds.push(apt.id);
+          setSentAppointmentIds(prev => new Set([...prev, apt.id]));
+          
+          const responseText = typeof result.data === "string" 
+            ? result.data 
+            : JSON.stringify(result.data);
+          
+          setSendProgress(prev => prev ? {
+            ...prev,
+            sent: sentCount,
+            messages: [...prev.messages, { 
+              phone, 
+              success: true, 
+              message: responseText || "Enviado com sucesso" 
+            }],
+          } : null);
 
-            // Mark as sent in database immediately
-            await supabase
-              .from("appointments")
-              .update({ confirmacaoEnviada: true })
-              .eq("id", apt.id);
-          } else {
-            // Error from webhook
-            errorCount++;
-            setSendProgress(prev => prev ? {
-              ...prev,
-              errors: errorCount,
-              messages: [...prev.messages, { 
-                phone, 
-                success: false, 
-                message: responseText || `Erro ${response.status}` 
-              }],
-            } : null);
-          }
-        } catch (fetchError) {
-          // Network or other error
+          // Mark as sent in database immediately
+          await supabase
+            .from("appointments")
+            .update({ confirmacaoEnviada: true })
+            .eq("id", apt.id);
+        } catch (error) {
+          // Error from webhook or network
           errorCount++;
+          const errorMessage = error instanceof EdgeFunctionError 
+            ? `Erro ${error.status}: ${error.message}`
+            : "Erro de conexão";
+          
           setSendProgress(prev => prev ? {
             ...prev,
             errors: errorCount,
             messages: [...prev.messages, { 
               phone, 
               success: false, 
-              message: "Erro de conexão" 
+              message: errorMessage
             }],
           } : null);
         }
-
+          
         // Small delay between requests to avoid overwhelming the webhook
         await new Promise(resolve => setTimeout(resolve, 300));
       }
@@ -564,8 +544,6 @@ export default function NutricaoConfirmacao() {
     let errorCount = 0;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       for (const apt of appointmentsToCalculate) {
         const patientName = apt.patientName || apt.lead?.name || "Paciente";
         
@@ -589,47 +567,29 @@ export default function NutricaoConfirmacao() {
             lastInteraction: apt.lead?.last_interaction || "",
           };
 
-          const response = await fetch(
-            "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/risk-proxy",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${session?.access_token}`,
-              },
-              body: JSON.stringify(payload),
-            }
-          );
-
-          const responseText = await response.text();
+          const result = await invokeEdgeFunction<unknown>("risk-proxy", payload);
           
-          if (response.ok) {
-            calculatedCount++;
-            setRiskProgress(prev => prev ? {
-              ...prev,
-              calculated: calculatedCount,
-              results: [...prev.results, { 
-                id: apt.id,
-                name: patientName, 
-                success: true, 
-                result: responseText || "Calculado" 
-              }],
-            } : null);
-          } else {
-            errorCount++;
-            setRiskProgress(prev => prev ? {
-              ...prev,
-              errors: errorCount,
-              results: [...prev.results, { 
-                id: apt.id,
-                name: patientName, 
-                success: false, 
-                result: responseText || `Erro ${response.status}` 
-              }],
-            } : null);
-          }
-        } catch (fetchError) {
+          calculatedCount++;
+          const responseText = typeof result.data === "string" 
+            ? result.data 
+            : JSON.stringify(result.data);
+          
+          setRiskProgress(prev => prev ? {
+            ...prev,
+            calculated: calculatedCount,
+            results: [...prev.results, { 
+              id: apt.id,
+              name: patientName, 
+              success: true, 
+              result: responseText || "Calculado" 
+            }],
+          } : null);
+        } catch (error) {
           errorCount++;
+          const errorMessage = error instanceof EdgeFunctionError 
+            ? `Erro ${error.status}: ${error.message}`
+            : "Erro de conexão";
+          
           setRiskProgress(prev => prev ? {
             ...prev,
             errors: errorCount,
@@ -637,7 +597,7 @@ export default function NutricaoConfirmacao() {
               id: apt.id,
               name: patientName, 
               success: false, 
-              result: "Erro de conexão" 
+              result: errorMessage
             }],
           } : null);
         }

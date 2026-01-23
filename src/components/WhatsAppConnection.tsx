@@ -7,6 +7,7 @@ import { MessageCircle, Loader2, CheckCircle2, XCircle, RefreshCw, QrCode } from
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { invokeEdgeFunction, EdgeFunctionError } from "@/lib/edgeFunctions";
 
 interface WhatsAppConnectionProps {
   configId: string | undefined;
@@ -59,40 +60,10 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
     return null;
   };
 
-  // Secure function to invoke WhatsApp proxy with user's JWT token
+  // Secure function to invoke WhatsApp proxy using the centralized helper
   const invokeWhatsAppProxy = async (body: Record<string, unknown>) => {
-    // Get the user's session token for secure authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error("Sessão não encontrada. Faça login novamente.");
-    }
-
-    const res = await fetch(
-      "https://qdsvbhtaldyjtfmujmyt.supabase.co/functions/v1/whatsapp-proxy",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(body),
-      }
-    );
-
-    const text = await res.text();
-    let data: unknown = text;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      // keep as text
-    }
-
-    if (!res.ok) {
-      throw new Error(`Edge Function ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
-    }
-
-    return data;
+    const result = await invokeEdgeFunction<unknown>("whatsapp-proxy", body);
+    return result.data;
   };
 
   // Timer countdown effect
@@ -145,7 +116,10 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
     },
     onError: (error) => {
       console.error("WhatsApp error:", error);
-      toast({ variant: "destructive", title: "Erro ao conectar com webhook" });
+      const message = error instanceof EdgeFunctionError 
+        ? `Erro ${error.status}: ${error.message}`
+        : "Erro ao conectar com webhook";
+      toast({ variant: "destructive", title: message });
     },
   });
 
@@ -185,7 +159,10 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
     },
     onError: (error) => {
       console.error("WhatsApp verify error:", error);
-      toast({ variant: "destructive", title: "Erro ao verificar conexão" });
+      const message = error instanceof EdgeFunctionError 
+        ? `Erro ${error.status}: ${error.message}`
+        : "Erro ao verificar conexão";
+      toast({ variant: "destructive", title: message });
     },
   });
 

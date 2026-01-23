@@ -11,6 +11,7 @@ const ALLOWED_ORIGINS = [
 const getCorsHeaders = (origin: string | null) => ({
   "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 });
 
 // Input validation schema
@@ -106,13 +107,24 @@ Deno.serve(async (req) => {
       "Authorization": `Basic ${basicAuth}`,
     };
 
+    // Check if webhook URL is configured
+    if (!WEBHOOK_URL) {
+      console.error("[risk-proxy] N8N_RISK_WEBHOOK_URL is not configured");
+      return new Response(
+        JSON.stringify({ error: "Webhook URL not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Forward to n8n webhook
+    console.log("[risk-proxy] Forwarding request to n8n...");
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
     });
 
+    console.log("[risk-proxy] n8n response status:", response.status);
     const responseText = await response.text();
 
     return new Response(responseText, {
