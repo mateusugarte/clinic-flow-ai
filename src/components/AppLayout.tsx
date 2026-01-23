@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PageLoading } from "@/components/ui/page-loading";
+import logoIcon from "@/assets/logo-icon.png";
 
 export function AppLayout() {
   const location = useLocation();
@@ -18,6 +19,15 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background relative">
+      {/* Background watermark logo */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img 
+          src={logoIcon} 
+          alt="" 
+          className="w-96 h-96 object-contain opacity-[0.03]"
+        />
+      </div>
+      
       <PageLoading isLoading={isLoading} />
       
       <AppSidebar />

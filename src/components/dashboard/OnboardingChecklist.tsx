@@ -8,10 +8,10 @@ import {
   MessageSquare, 
   CheckCircle2, 
   ChevronRight,
-  Sparkles,
   X
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import logoIcon from "@/assets/logo-icon.png";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -120,8 +120,8 @@ export function OnboardingChecklist({
             : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"
         )}>
           {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
-            <Sparkles className="w-full h-full text-primary" />
+          <div className="absolute top-2 right-2 w-20 h-20 opacity-10">
+            <img src={logoIcon} alt="" className="w-full h-full object-contain" />
           </div>
 
           <CardContent className="p-4">
@@ -135,7 +135,7 @@ export function OnboardingChecklist({
                     </>
                   ) : (
                     <>
-                      <Sparkles className="h-5 w-5 text-primary" />
+                      <img src={logoIcon} alt="" className="h-5 w-5 object-contain" />
                       Bem-vindo! Configure seu sistema
                     </>
                   )}
