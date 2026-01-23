@@ -14,7 +14,7 @@ function dayStartTs(dateKey: string) {
 function dayEndTs(dateKey: string) {
   return `${dateKey} 23:59:59+00`;
 }
-import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase } from "lucide-react";
+import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,6 +49,7 @@ export default function Agendas() {
   const [isEditProfOpen, setIsEditProfOpen] = useState(false);
   const [editingProfessional, setEditingProfessional] = useState<any>(null);
   const [newProfName, setNewProfName] = useState("");
+  const [newProfAddress, setNewProfAddress] = useState("");
   const [newProfServiceIds, setNewProfServiceIds] = useState<string[]>([]);
   const [editProfServiceIds, setEditProfServiceIds] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -66,8 +67,22 @@ export default function Agendas() {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("");
   const [appointmentNotes, setAppointmentNotes] = useState("");
+  const [appointmentAddress, setAppointmentAddress] = useState("");
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
+
+  // Fetch addresses from ai_configs
+  const { data: aiConfig } = useQuery({
+    queryKey: ["ai-config-addresses", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ai_configs").select("addresses").eq("user_id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const configuredAddresses = (aiConfig?.addresses as string[]) || [];
 
   const { data: allProfessionals } = useQuery({
     queryKey: ["all-professionals", user?.id],
@@ -138,13 +153,14 @@ export default function Agendas() {
   });
 
   const createProfessional = useMutation({
-    mutationFn: async ({ name, serviceIds }: { name: string; serviceIds: string[] }) => {
-      const { error } = await supabase.from("professionals").insert({ name, user_id: user!.id, service_ids: serviceIds });
+    mutationFn: async ({ name, serviceIds, address }: { name: string; serviceIds: string[]; address?: string }) => {
+      const { error } = await supabase.from("professionals").insert({ name, user_id: user!.id, service_ids: serviceIds, address: address || null });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-professionals"] });
       setNewProfName("");
+      setNewProfAddress("");
       setNewProfServiceIds([]);
       setIsNewProfOpen(false);
       toast({ title: "Profissional criado com sucesso!" });
@@ -152,8 +168,8 @@ export default function Agendas() {
   });
 
   const updateProfessional = useMutation({
-    mutationFn: async ({ id, name, serviceIds, startTime, endTime }: { id: string; name: string; serviceIds: string[]; startTime: string; endTime: string }) => {
-      const { error } = await supabase.from("professionals").update({ name, service_ids: serviceIds, start_time: startTime, end_time: endTime }).eq("id", id);
+    mutationFn: async ({ id, name, serviceIds, startTime, endTime, address }: { id: string; name: string; serviceIds: string[]; startTime: string; endTime: string; address?: string }) => {
+      const { error } = await supabase.from("professionals").update({ name, service_ids: serviceIds, start_time: startTime, end_time: endTime, address: address || null }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -198,7 +214,7 @@ export default function Agendas() {
   });
 
   const updateAppointment = useMutation({
-    mutationFn: async (data: { id: string; service_id: string; professional_id: string; scheduled_at: string; notes: string; serviceName: string; professionalName: string; duracao: number; price: number }) => {
+    mutationFn: async (data: { id: string; service_id: string; professional_id: string; scheduled_at: string; notes: string; serviceName: string; professionalName: string; duracao: number; price: number; address?: string }) => {
       const { error } = await supabase.from("appointments").update({
         service_id: data.service_id,
         professional_id: data.professional_id,
@@ -208,6 +224,7 @@ export default function Agendas() {
         professionalName: data.professionalName,
         duracao: data.duracao,
         price: data.price,
+        address: data.address || null,
       }).eq("id", data.id);
       if (error) throw error;
     },
@@ -227,6 +244,7 @@ export default function Agendas() {
     setAppointmentDate("");
     setAppointmentTime("");
     setAppointmentNotes("");
+    setAppointmentAddress("");
     setNewLeadName("");
     setNewLeadPhone("");
     setAppointmentTab("existing");
@@ -258,6 +276,7 @@ export default function Agendas() {
       professionalName: professional?.name || "",
       duracao: service?.duration || 0,
       price: service?.price || 0,
+      address: editingAppointment.address || "",
     });
   };
 
@@ -284,11 +303,16 @@ export default function Agendas() {
     const professional = professionals?.find(p => p.id === selectedProfId);
     const lead = appointmentTab === "existing" ? selectedLead : { name: newLeadName, phone: newLeadPhone };
     const scheduledAt = toStoredScheduledAt(appointmentDate, appointmentTime);
+    
+    // Use selected address or default to professional's address
+    const finalAddress = appointmentAddress || professional?.address || "";
+    
     createAppointment.mutate({
       user_id: user!.id, lead_id: leadId, service_id: selectedServiceId, professional_id: selectedProfId,
       scheduled_at: scheduledAt, serviceName: service?.name, professionalName: professional?.name,
       patientName: lead?.name, phoneNumber: parseInt(lead?.phone?.replace(/\D/g, "") || "0"),
       duracao: service?.duration, price: service?.price, notes: appointmentNotes, status: "pendente",
+      address: finalAddress,
     });
   };
 
@@ -416,6 +440,21 @@ export default function Agendas() {
               <div className="space-y-4 pt-4">
                 <div className="space-y-2"><Label>Nome</Label><Input value={newProfName} onChange={(e) => setNewProfName(e.target.value)} placeholder="Nome" /></div>
                 <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" />Unidade</Label>
+                  {configuredAddresses.length > 0 ? (
+                    <Select value={newProfAddress} onValueChange={setNewProfAddress}>
+                      <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                      <SelectContent>
+                        {configuredAddresses.map((addr, idx) => (
+                          <SelectItem key={idx} value={addr}>{addr}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-xs text-muted-foreground p-2 bg-muted rounded-lg">Cadastre endereços nas Configurações do Agente de IA</p>
+                  )}
+                </div>
+                <div className="space-y-2">
                   <Label>Serviços</Label>
                   <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-2">
                     {allServices?.map((service) => (
@@ -426,7 +465,7 @@ export default function Agendas() {
                     ))}
                   </div>
                 </div>
-                <Button onClick={() => createProfessional.mutate({ name: newProfName, serviceIds: newProfServiceIds })} disabled={!newProfName} className="w-full gradient-primary">Criar</Button>
+                <Button onClick={() => createProfessional.mutate({ name: newProfName, serviceIds: newProfServiceIds, address: newProfAddress })} disabled={!newProfName} className="w-full gradient-primary">Criar</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -567,6 +606,21 @@ export default function Agendas() {
                 <Label>Nome</Label>
                 <Input value={editingProfessional.name} onChange={(e) => setEditingProfessional({ ...editingProfessional, name: e.target.value })} />
               </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" />Unidade</Label>
+                {configuredAddresses.length > 0 ? (
+                  <Select value={editingProfessional.address || ""} onValueChange={(v) => setEditingProfessional({ ...editingProfessional, address: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                    <SelectContent>
+                      {configuredAddresses.map((addr, idx) => (
+                        <SelectItem key={idx} value={addr}>{addr}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-xs text-muted-foreground p-2 bg-muted rounded-lg">Cadastre endereços nas Configurações do Agente de IA</p>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Início Expediente</Label>
@@ -612,7 +666,8 @@ export default function Agendas() {
                     name: editingProfessional.name, 
                     serviceIds: editProfServiceIds,
                     startTime: editingProfessional.start_time || "08:00",
-                    endTime: editingProfessional.end_time || "18:00"
+                    endTime: editingProfessional.end_time || "18:00",
+                    address: editingProfessional.address || ""
                   })}
                 >
                   Salvar
@@ -698,6 +753,21 @@ export default function Agendas() {
                 </Select>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" />Unidade</Label>
+              {configuredAddresses.length > 0 ? (
+                <Select value={appointmentAddress} onValueChange={setAppointmentAddress}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a unidade (opcional)" /></SelectTrigger>
+                  <SelectContent>
+                    {configuredAddresses.map((addr, idx) => (
+                      <SelectItem key={idx} value={addr}>{addr}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-xs text-muted-foreground p-2 bg-muted rounded-lg">Cadastre endereços nas Configurações</p>
+              )}
+            </div>
             <div className="space-y-2"><Label>Observações</Label><Textarea value={appointmentNotes} onChange={(e) => setAppointmentNotes(e.target.value)} /></div>
             <Button onClick={handleCreateAppointment} className="w-full gradient-primary" disabled={createAppointment.isPending}>
               {createAppointment.isPending ? "Criando..." : "Criar Agendamento"}
@@ -762,6 +832,21 @@ export default function Agendas() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><MapPin className="h-3 w-3" />Unidade</Label>
+                {configuredAddresses.length > 0 ? (
+                  <Select value={editingAppointment.address || ""} onValueChange={(v) => setEditingAppointment({ ...editingAppointment, address: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                    <SelectContent>
+                      {configuredAddresses.map((addr, idx) => (
+                        <SelectItem key={idx} value={addr}>{addr}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-xs text-muted-foreground p-2 bg-muted rounded-lg">Cadastre endereços nas Configurações</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Observações</Label>

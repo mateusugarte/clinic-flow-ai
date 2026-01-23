@@ -82,6 +82,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          address: string | null
           confirmacaoEnviada: boolean | null
           created_at: string | null
           duracao: number | null
@@ -101,6 +102,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           confirmacaoEnviada?: boolean | null
           created_at?: string | null
           duracao?: number | null
@@ -120,6 +122,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           confirmacaoEnviada?: boolean | null
           created_at?: string | null
           duracao?: number | null
@@ -218,6 +221,7 @@ export type Database = {
       }
       professionals: {
         Row: {
+          address: string | null
           created_at: string | null
           end_time: string
           id: string
@@ -230,6 +234,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           created_at?: string | null
           end_time?: string
           id?: string
@@ -242,6 +247,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           created_at?: string | null
           end_time?: string
           id?: string

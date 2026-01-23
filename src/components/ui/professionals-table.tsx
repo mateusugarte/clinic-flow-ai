@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Clock, Briefcase } from "lucide-react";
+import { User, Clock, Briefcase, MapPin } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,6 +20,7 @@ interface Professional {
   start_time: string;
   end_time: string;
   service_ids: string[];
+  address?: string | null;
   appointmentsCount?: number;
 }
 
@@ -54,6 +55,7 @@ function ProfessionalsTable({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>Nome</TableHead>
+            <TableHead>Unidade</TableHead>
             <TableHead>Horário</TableHead>
             <TableHead>Serviços</TableHead>
             <TableHead>Status</TableHead>
@@ -78,6 +80,16 @@ function ProfessionalsTable({
                     {person.name}
                   </span>
                 </div>
+              </TableCell>
+              <TableCell>
+                {person.address ? (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
+                    <span className="truncate max-w-[150px]">{person.address}</span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -123,7 +135,7 @@ function ProfessionalsTable({
           ))}
           {professionals.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                 Nenhum profissional cadastrado
               </TableCell>
             </TableRow>
