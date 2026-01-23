@@ -16,7 +16,7 @@ interface WhatsAppConnectionProps {
 }
 
 export default function WhatsAppConnection({ configId, isConnected }: WhatsAppConnectionProps) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -95,11 +95,24 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
     queryClient.invalidateQueries({ queryKey: ["ai-config"] });
   };
 
+  // Validate session before making requests
+  const validateSession = (): boolean => {
+    if (!user?.id || !session?.access_token) {
+      toast({ 
+        variant: "destructive", 
+        title: "Sessão inválida", 
+        description: "Faça login novamente para continuar." 
+      });
+      return false;
+    }
+    return true;
+  };
+
   // Create instance and generate QR code
   const createInstance = useMutation({
     mutationFn: async () => {
-      if (!user?.id) throw new Error("Usuário não autenticado");
-      return invokeWhatsAppProxy({ acao: "criar instancia e gerar qr code", userID: user.id });
+      if (!validateSession()) throw new Error("Sessão inválida");
+      return invokeWhatsAppProxy({ acao: "criar instancia e gerar qr code", userID: user!.id });
     },
     onSuccess: (data) => {
       console.log("WhatsApp response:", data);
@@ -126,8 +139,8 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
   // Verify connection
   const verifyConnection = useMutation({
     mutationFn: async () => {
-      if (!user?.id) throw new Error("Usuário não autenticado");
-      const data = await invokeWhatsAppProxy({ acao: "verificar conexao", userID: user.id });
+      if (!validateSession()) throw new Error("Sessão inválida");
+      const data = await invokeWhatsAppProxy({ acao: "verificar conexao", userID: user!.id });
       return typeof data === "string" ? data : JSON.stringify(data);
     },
     onSuccess: async (data) => {

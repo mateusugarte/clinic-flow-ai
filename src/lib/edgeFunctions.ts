@@ -34,17 +34,31 @@ export async function invokeEdgeFunction<T = unknown>(
   body: Record<string, unknown>
 ): Promise<EdgeFunctionResponse<T>> {
   // Get the current session
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  let { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
   if (sessionError) {
     console.error("[EdgeFunction] Session error:", sessionError.message);
     throw new EdgeFunctionError("Erro ao obter sessão", 401);
   }
   
+  // If no session or token expired, attempt to refresh
   if (!session?.access_token) {
-    console.error("[EdgeFunction] No access token found");
-    throw new EdgeFunctionError("Sessão expirada. Faça login novamente.", 401);
+    console.log("[EdgeFunction] No access token, attempting refresh...");
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError || !refreshData.session?.access_token) {
+      console.error("[EdgeFunction] Token refresh failed:", refreshError?.message || "No session after refresh");
+      throw new EdgeFunctionError("Sessão expirada. Faça login novamente.", 401);
+    }
+    
+    session = refreshData.session;
+    console.log("[EdgeFunction] Session refreshed successfully");
   }
+  
+  console.log("[EdgeFunction] Session state:", { 
+    hasToken: !!session.access_token,
+    expiresAt: session.expires_at 
+  });
   
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
   
