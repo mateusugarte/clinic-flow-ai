@@ -17,13 +17,43 @@ const getCorsHeaders = (origin: string | null) => {
 };
 
 // Input validation schema
-const confirmationSchema = z.object({
+// Supports two formats:
+// 1) Legacy/minimal (top-level fields)
+// 2) "Como antes" payload: { agendamento: { ... } }
+const confirmationMinimalSchema = z.object({
   appointmentId: z.string().uuid(),
   phone: z.string().min(10).max(20),
   patientName: z.string().min(1).max(100),
   scheduledAt: z.string(),
   serviceName: z.string().min(1).max(100),
 });
+
+const agendamentoSchema = z
+  .object({
+    id: z.string().uuid(),
+    phone: z.string().min(10).max(20),
+    // allow both PT/EN variants
+    patientName: z.string().min(1).max(100).optional(),
+    nome: z.string().min(1).max(100).optional(),
+    scheduledAt: z.string().optional(),
+    scheduled_at: z.string().optional(),
+    serviceName: z.string().min(1).max(100).optional(),
+    service_name: z.string().min(1).max(100).optional(),
+    professionalName: z.string().optional().nullable(),
+    professional_name: z.string().optional().nullable(),
+    duracao: z.number().optional().nullable(),
+    price: z.number().optional().nullable(),
+    notes: z.string().optional().nullable(),
+  })
+  .passthrough();
+
+const confirmationAgendamentoSchema = z
+  .object({
+    agendamento: agendamentoSchema,
+  })
+  .passthrough();
+
+const confirmationSchema = z.union([confirmationMinimalSchema, confirmationAgendamentoSchema]);
 
 // Webhook URL from environment variable for security
 const WEBHOOK_URL = Deno.env.get("N8N_CONFIRMATION_WEBHOOK_URL") ?? "";
@@ -73,16 +103,64 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { appointmentId, phone, patientName, scheduledAt, serviceName } = parseResult.data;
+    // Normalize input into a single appointment-like shape
+    const normalized = (() => {
+      if ("agendamento" in parseResult.data) {
+        const a = parseResult.data.agendamento;
+        const patientName = a.patientName ?? a.nome ?? "Paciente";
+        const scheduledAt = a.scheduledAt ?? a.scheduled_at ?? "";
+        const serviceName = a.serviceName ?? a.service_name ?? "Consulta";
+        const professionalName = a.professionalName ?? a.professional_name ?? "";
 
-    // Build minimal payload - only essential data
+        return {
+          appointmentId: a.id,
+          phone: a.phone,
+          patientName,
+          scheduledAt,
+          serviceName,
+          professionalName,
+          duracao: a.duracao ?? null,
+          price: a.price ?? null,
+          notes: a.notes ?? null,
+        };
+      }
+
+      // minimal
+      return {
+        appointmentId: parseResult.data.appointmentId,
+        phone: parseResult.data.phone,
+        patientName: parseResult.data.patientName,
+        scheduledAt: parseResult.data.scheduledAt,
+        serviceName: parseResult.data.serviceName,
+        professionalName: "",
+        duracao: null,
+        price: null,
+        notes: null,
+      };
+    })();
+
+    // Payload "como antes": enviar os dados do agendamento dentro de 'agendamento'
+    // (Mantém também variações de chaves para compatibilidade no n8n.)
     const payload = {
       user_id: userId,
-      appointment_id: appointmentId,
-      phone,
-      patient_name: patientName,
-      scheduled_at: scheduledAt,
-      service_name: serviceName,
+      agendamento: {
+        id: normalized.appointmentId,
+        appointmentId: normalized.appointmentId,
+        appointment_id: normalized.appointmentId,
+        phone: normalized.phone,
+        patientName: normalized.patientName,
+        nome: normalized.patientName,
+        patient_name: normalized.patientName,
+        scheduledAt: normalized.scheduledAt,
+        scheduled_at: normalized.scheduledAt,
+        serviceName: normalized.serviceName,
+        service_name: normalized.serviceName,
+        professionalName: normalized.professionalName,
+        professional_name: normalized.professionalName,
+        duracao: normalized.duracao,
+        price: normalized.price,
+        notes: normalized.notes,
+      },
     };
 
     // Get webhook credentials from environment (same as whatsapp-proxy)
