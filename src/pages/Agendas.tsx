@@ -288,7 +288,6 @@ export default function Agendas() {
 
   const handleDayClick = (date: Date) => {
     setSelectedDay(date);
-    setIsDaySheetOpen(true);
   };
 
   const handleCreateAppointment = async () => {
@@ -517,34 +516,46 @@ export default function Agendas() {
           </CardContent>
         </Card>
 
-        {/* Today's Appointments */}
+        {/* Day Appointments Card */}
         <Card className="col-span-12 lg:col-span-4 shadow-card flex flex-col">
           <CardHeader className="pb-2 flex-shrink-0">
             <CardTitle className="text-sm flex items-center gap-2">
               <CalendarIcon className="h-4 w-4 text-primary" />
-              Hoje
-              <Badge variant="secondary" className="ml-auto">{todaysAppointments.length}</Badge>
+              <span className="truncate">
+                {selectedDay 
+                  ? `Agendamentos de: ${format(selectedDay, "dd/MM/yyyy", { locale: ptBR })}`
+                  : "Agendamentos de Hoje"
+                }
+              </span>
+              <Badge variant="secondary" className="ml-auto flex-shrink-0">
+                {selectedDay ? getAppointmentsForDay(selectedDay).length : todaysAppointments.length}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-2">
-            {todaysAppointments.length > 0 ? todaysAppointments.map((apt) => (
-              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => openEditAppointment(apt)}>
-                <div className="flex items-center gap-3">
-                  <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{apt.patientName || "Paciente"}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />{extractTimeFromISO(apt.scheduled_at)} - {apt.serviceName}
-                    </p>
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+            {(() => {
+              const displayAppointments = selectedDay ? getAppointmentsForDay(selectedDay) : todaysAppointments;
+              return displayAppointments.length > 0 ? displayAppointments.map((apt) => (
+                <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => openEditAppointment(apt)}>
+                  <div className="flex items-center gap-3">
+                    <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{apt.patientName || "Paciente"}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />{extractTimeFromISO(apt.scheduled_at)} - {apt.serviceName}
+                      </p>
+                    </div>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )) : (
-              <p className="text-center text-muted-foreground py-6 text-sm">Nenhum agendamento hoje</p>
-            )}
+              )) : (
+                <p className="text-center text-muted-foreground py-6 text-sm">
+                  {selectedDay ? "Nenhum agendamento neste dia" : "Nenhum agendamento hoje"}
+                </p>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -678,29 +689,6 @@ export default function Agendas() {
         </DialogContent>
       </Dialog>
 
-      {/* Day Modal */}
-      <DetailModal isOpen={isDaySheetOpen} onClose={() => setIsDaySheetOpen(false)} title={selectedDay ? `Agendamentos - ${format(selectedDay, "dd 'de' MMMM", { locale: ptBR })}` : "Agendamentos"}>
-        <div className="space-y-3">
-          {selectedDay && getAppointmentsForDay(selectedDay).length > 0 ? (
-            getAppointmentsForDay(selectedDay).map((apt) => (
-              <div key={apt.id} className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => { setIsDaySheetOpen(false); openEditAppointment(apt); }}>
-                <div className="flex items-center gap-3">
-                  <StatusIndicator status={apt.status as AppointmentStatus} size="md" />
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{apt.patientName || "Paciente"}</p>
-                    <p className="text-xs text-muted-foreground">{extractTimeFromISO(apt.scheduled_at)} - {apt.serviceName}</p>
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <StatusSelect value={apt.status as AppointmentStatus} onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} size="sm" />
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-muted-foreground py-6">Nenhum agendamento</p>
-          )}
-        </div>
-      </DetailModal>
 
       {/* New Appointment Dialog */}
       <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
