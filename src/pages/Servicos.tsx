@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -139,8 +140,8 @@ export default function Servicos() {
               <div className="space-y-2"><Label>Nome *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nome do serviço" /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descrição do serviço" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Duração (min) *</Label><Input type="number" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} /></div>
-                <div className="space-y-2"><Label>Preço (R$) *</Label><Input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} /></div>
+                <div className="space-y-2"><Label>Duração (min) *</Label><NumericInput value={formData.duration} onChange={(v) => setFormData({ ...formData, duration: v })} /></div>
+                <div className="space-y-2"><Label>Preço (R$) *</Label><NumericInput value={formData.price} onChange={(v) => setFormData({ ...formData, price: v })} allowDecimals /></div>
               </div>
               <div className="space-y-2">
                 <Label>Categoria</Label>
@@ -200,8 +201,8 @@ export default function Servicos() {
                 <div className="space-y-2"><Label>Nome</Label><Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Descrição</Label><Textarea value={editData.description || ""} onChange={(e) => setEditData({ ...editData, description: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Duração (min)</Label><Input type="number" value={editData.duration} onChange={(e) => setEditData({ ...editData, duration: parseInt(e.target.value) || 0 })} /></div>
-                  <div className="space-y-2"><Label>Preço (R$)</Label><Input type="number" step="0.01" value={editData.price} onChange={(e) => setEditData({ ...editData, price: parseFloat(e.target.value) || 0 })} /></div>
+                  <div className="space-y-2"><Label>Duração (min)</Label><NumericInput value={editData.duration} onChange={(v) => setEditData({ ...editData, duration: v })} /></div>
+                  <div className="space-y-2"><Label>Preço (R$)</Label><NumericInput value={editData.price} onChange={(v) => setEditData({ ...editData, price: v })} allowDecimals /></div>
                 </div>
                 <div className="space-y-2"><Label>Categoria</Label><Select value={editData.category || "Preventivo"} onValueChange={(v) => setEditData({ ...editData, category: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{categories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select></div>
                 <div className="space-y-2">
