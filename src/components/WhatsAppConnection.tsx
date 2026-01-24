@@ -216,10 +216,31 @@ export default function WhatsAppConnection({ configId, isConnected }: WhatsAppCo
       </CardHeader>
       <CardContent>
         <div className="flex flex-col lg:flex-row gap-6 items-center">
-          {/* QR Code Area */}
+          {/* QR Code Area or Connected Badge */}
           <div className="flex-shrink-0">
             <AnimatePresence mode="wait">
-              {qrCode ? (
+              {connectionStatus === "connected" ? (
+                <motion.div
+                  key="connected-badge"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="w-48 h-48 rounded-xl flex items-center justify-center bg-gradient-to-br from-green-500/20 via-green-500/10 to-emerald-500/20 border-2 border-green-500/30"
+                >
+                  <div className="text-center">
+                    <div className="relative inline-flex">
+                      <div className="absolute inset-0 bg-green-500/20 rounded-full blur-xl animate-pulse" />
+                      <CheckCircle2 className="h-16 w-16 text-green-500 relative z-10" />
+                    </div>
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400 mt-3">
+                      Conectado
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      WhatsApp ativo
+                    </p>
+                  </div>
+                </motion.div>
+              ) : qrCode ? (
                 <motion.div
                   key="qr"
                   initial={{ opacity: 0, scale: 0.8 }}
