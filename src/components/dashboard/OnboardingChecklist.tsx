@@ -8,18 +8,16 @@ import {
   MessageSquare, 
   CheckCircle2, 
   ChevronRight,
-  X
+  X,
+  Settings,
+  AlertCircle
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import logoIcon from "@/assets/logo-icon.png";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface OnboardingStep {
   id: string;
   title: string;
-  description: string;
   icon: React.ElementType;
   route: string;
   isComplete: boolean;
@@ -40,36 +38,33 @@ export function OnboardingChecklist({
 }: OnboardingChecklistProps) {
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const steps: OnboardingStep[] = [
     {
       id: "ai-config",
-      title: "Configure o Agente de IA",
-      description: "Defina o nome da clínica, horários e regras do agente",
+      title: "Agente de IA",
       icon: Bot,
       route: "/ia-config",
       isComplete: hasAiConfig,
     },
     {
       id: "services",
-      title: "Cadastre seus Serviços",
-      description: "Adicione os serviços oferecidos pela clínica",
+      title: "Serviços",
       icon: Briefcase,
       route: "/servicos",
       isComplete: hasServices,
     },
     {
       id: "professionals",
-      title: "Cadastre os Profissionais",
-      description: "Adicione os profissionais que atendem na clínica",
+      title: "Profissionais",
       icon: UserCheck,
       route: "/agendas",
       isComplete: hasProfessionals,
     },
     {
       id: "whatsapp",
-      title: "Conecte o WhatsApp",
-      description: "Vincule o número do WhatsApp para atendimento",
+      title: "WhatsApp",
       icon: MessageSquare,
       route: "/ia-config",
       isComplete: hasWhatsAppConnection,
@@ -77,13 +72,13 @@ export function OnboardingChecklist({
   ];
 
   const completedSteps = steps.filter((s) => s.isComplete).length;
-  const progressPercent = (completedSteps / steps.length) * 100;
   const allComplete = completedSteps === steps.length;
+  const pendingSteps = steps.filter((s) => !s.isComplete);
 
-  // Auto-dismiss when all complete
+  // Auto-dismiss when all complete after 8 seconds
   useEffect(() => {
     if (allComplete) {
-      const timer = setTimeout(() => setIsDismissed(true), 5000);
+      const timer = setTimeout(() => setIsDismissed(true), 8000);
       return () => clearTimeout(timer);
     }
   }, [allComplete]);
@@ -108,121 +103,144 @@ export function OnboardingChecklist({
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, x: 100, scale: 0.9 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: 100, scale: 0.9 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed bottom-4 right-4 z-50"
       >
-        <Card className={cn(
-          "relative overflow-hidden border-0 shadow-card",
-          allComplete 
-            ? "bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 border-green-500/20" 
-            : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"
-        )}>
-          {/* Background decoration */}
-          <div className="absolute top-2 right-2 w-20 h-20 opacity-10">
-            <img src={logoIcon} alt="" className="w-full h-full object-contain" />
-          </div>
+        <div
+          className={cn(
+            "relative rounded-xl shadow-lg border overflow-hidden backdrop-blur-sm transition-all duration-300",
+            allComplete 
+              ? "bg-green-500/10 border-green-500/30" 
+              : "bg-background/95 border-primary/20"
+          )}
+          style={{ width: isExpanded ? "280px" : "auto" }}
+        >
+          {/* Collapsed state - just the indicator */}
+          {!isExpanded && (
+            <motion.button
+              onClick={() => setIsExpanded(true)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors",
+                allComplete 
+                  ? "text-green-600 dark:text-green-400 hover:bg-green-500/10" 
+                  : "text-primary hover:bg-primary/5"
+              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {allComplete ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Sistema Configurado</span>
+                </>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Settings className="h-4 w-4" />
+                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-orange-500 rounded-full animate-pulse" />
+                  </div>
+                  <span>Configurar Sistema</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({completedSteps}/{steps.length})
+                  </span>
+                </>
+              )}
+            </motion.button>
+          )}
 
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-base flex items-center gap-2">
+          {/* Expanded state - show details */}
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    {allComplete ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-orange-500" />
+                    )}
+                    <span className="text-xs font-semibold">
+                      {allComplete ? "Tudo Pronto!" : "Configure o Sistema"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setIsExpanded(false)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                {/* Content */}
+                <div className="p-2 space-y-1">
                   {allComplete ? (
-                    <>
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      <span className="text-green-600 dark:text-green-400">Configuração Completa!</span>
-                    </>
+                    <div className="text-center py-2">
+                      <p className="text-xs text-muted-foreground">
+                        Seu sistema está pronto para uso.
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 text-xs h-7"
+                        onClick={handleDismiss}
+                      >
+                        Fechar notificação
+                      </Button>
+                    </div>
                   ) : (
                     <>
-                      <img src={logoIcon} alt="" className="h-5 w-5 object-contain" />
-                      Bem-vindo! Configure seu sistema
+                      <p className="text-[10px] text-muted-foreground px-1 pb-1">
+                        Complete as etapas pendentes:
+                      </p>
+                      {pendingSteps.map((step) => {
+                        const Icon = step.icon;
+                        return (
+                          <motion.button
+                            key={step.id}
+                            onClick={() => {
+                              navigate(step.route);
+                              setIsExpanded(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left hover:bg-primary/5 transition-colors group"
+                            whileHover={{ x: 2 }}
+                          >
+                            <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Icon className="h-3 w-3 text-primary" />
+                            </div>
+                            <span className="text-xs font-medium flex-1">
+                              {step.title}
+                            </span>
+                            <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </motion.button>
+                        );
+                      })}
+
+                      {/* Completed steps indicator */}
+                      {completedSteps > 0 && (
+                        <div className="pt-1 mt-1 border-t border-border/50">
+                          <p className="text-[10px] text-green-600 dark:text-green-400 px-1">
+                            ✓ {completedSteps} etapa{completedSteps > 1 ? "s" : ""} completa{completedSteps > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {allComplete 
-                    ? "Seu sistema está pronto para uso. Bom trabalho!" 
-                    : "Complete as etapas abaixo para começar a usar o sistema"}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                onClick={handleDismiss}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-muted-foreground">Progresso</span>
-                <span className="font-medium">{completedSteps}/{steps.length} etapas</span>
-              </div>
-              <Progress value={progressPercent} className="h-2" />
-            </div>
-
-            {/* Steps */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-              {steps.map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <motion.button
-                    key={step.id}
-                    onClick={() => !step.isComplete && navigate(step.route)}
-                    disabled={step.isComplete}
-                    className={cn(
-                      "relative flex items-center gap-3 p-3 rounded-xl text-left transition-all",
-                      step.isComplete 
-                        ? "bg-green-500/10 border border-green-500/20 cursor-default" 
-                        : "bg-card border border-border hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
-                    )}
-                    whileHover={!step.isComplete ? { scale: 1.02 } : {}}
-                    whileTap={!step.isComplete ? { scale: 0.98 } : {}}
-                  >
-                    {/* Step number badge */}
-                    <div className={cn(
-                      "absolute -top-1 -left-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center",
-                      step.isComplete 
-                        ? "bg-green-500 text-white" 
-                        : "bg-primary text-primary-foreground"
-                    )}>
-                      {step.isComplete ? <CheckCircle2 className="h-3 w-3" /> : index + 1}
-                    </div>
-
-                    <div className={cn(
-                      "h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                      step.isComplete 
-                        ? "bg-green-500/20 text-green-600 dark:text-green-400" 
-                        : "bg-primary/10 text-primary"
-                    )}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "font-medium text-sm truncate",
-                        step.isComplete && "text-green-600 dark:text-green-400"
-                      )}>
-                        {step.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {step.description}
-                      </p>
-                    </div>
-
-                    {!step.isComplete && (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
     </AnimatePresence>
   );
