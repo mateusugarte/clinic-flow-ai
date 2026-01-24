@@ -361,9 +361,16 @@ export default function Agendas() {
         // Check for conflicts with existing appointments
         const hasConflict = existingAppointments.some(apt => {
           const aptTime = extractTimeFromISO(apt.scheduled_at);
-          const aptDuration = Number(apt.duracao) || intervalMin;
+          // Get duration from appointment, fallback to service duration or interval
+          let aptDuration = Number(apt.duracao) || 0;
+          if (!aptDuration && apt.service_id) {
+            const aptService = allServices?.find(s => s.id === apt.service_id);
+            aptDuration = aptService?.duration || intervalMin;
+          }
+          if (!aptDuration) aptDuration = intervalMin;
           
-          const aptStart = new Date(2000, 0, 1, parseInt(aptTime.split(":")[0]), parseInt(aptTime.split(":")[1]));
+          const [aptHour, aptMin] = aptTime.split(":").map(Number);
+          const aptStart = new Date(2000, 0, 1, aptHour, aptMin);
           const aptEnd = addMinutes(aptStart, aptDuration);
           
           // Check if new slot overlaps with existing appointment
