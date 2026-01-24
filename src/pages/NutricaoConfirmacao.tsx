@@ -245,9 +245,16 @@ export default function NutricaoConfirmacao() {
   // Check if date is the target date for sending confirmations (2 days ahead)
   const confirmationTargetDate = useMemo(() => addDays(today, 2), [today]);
 
-  // Tomorrow's date for risk calculation
-  const tomorrow = useMemo(() => addDays(today, 1), [today]);
-  const tomorrowKey = useMemo(() => format(tomorrow, "yyyy-MM-dd"), [tomorrow]);
+  // Risk calculation target date: tomorrow, unless today is Saturday (then use Monday)
+  const riskTargetDate = useMemo(() => {
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+    if (dayOfWeek === 6) {
+      // Saturday: skip Sunday and use Monday (2 days ahead)
+      return addDays(today, 2);
+    }
+    return addDays(today, 1);
+  }, [today]);
+  const riskTargetKey = useMemo(() => format(riskTargetDate, "yyyy-MM-dd"), [riskTargetDate]);
 
   // Risk calendar days
   const riskCalendarDays = useMemo(() => {
@@ -258,23 +265,23 @@ export default function NutricaoConfirmacao() {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [riskCalendarMonth]);
 
-  // Get appointments eligible for risk calculation (ONLY tomorrow's appointments with status = pendente)
+  // Get appointments eligible for risk calculation (ONLY target date's appointments with status = pendente)
   const riskEligibleAppointments = useMemo(() => {
     return appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      // Only appointments for tomorrow that haven't been calculated yet (status = pendente)
-      return date === tomorrowKey && apt.status === "pendente";
+      // Only appointments for target date that haven't been calculated yet (status = pendente)
+      return date === riskTargetKey && apt.status === "pendente";
     });
-  }, [appointments, tomorrowKey]);
+  }, [appointments, riskTargetKey]);
 
-  // Get appointments that already had risk calculated (status !== pendente for tomorrow)
+  // Get appointments that already had risk calculated (status !== pendente for target date)
   const riskCalculatedAppointments = useMemo(() => {
     return appointments.filter((apt) => {
       const { date } = extractDateTimeFromISO(apt.scheduled_at);
-      // Tomorrow's appointments with status different from pendente
-      return date === tomorrowKey && apt.status !== "pendente";
+      // Target date's appointments with status different from pendente
+      return date === riskTargetKey && apt.status !== "pendente";
     });
-  }, [appointments, tomorrowKey]);
+  }, [appointments, riskTargetKey]);
 
   // Calculate confirmation target date key (2 days ahead) - MOVED BEFORE EARLY RETURN
   const targetDateKey = useMemo(() => format(confirmationTargetDate, "yyyy-MM-dd"), [confirmationTargetDate]);
@@ -1109,7 +1116,7 @@ export default function NutricaoConfirmacao() {
               Risco de No-Show
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Calcule o risco de falta para agendamentos de amanhã ({format(tomorrow, "dd/MM/yyyy")}).
+              Calcule o risco de falta para agendamentos de {format(riskTargetDate, "EEEE, dd/MM", { locale: ptBR })}.
             </p>
           </CardHeader>
           <CardContent>
@@ -1139,15 +1146,15 @@ export default function NutricaoConfirmacao() {
                     const dateKey = format(day, "yyyy-MM-dd");
                     const dayData = appointmentsByDay[dateKey];
                     const isCurrentMonth = isSameMonth(day, riskCalendarMonth);
-                    const isTomorrow = isSameDay(day, tomorrow);
+                    const isRiskTarget = isSameDay(day, riskTargetDate);
                     
                     return (
                       <div
                         key={dateKey}
                         className={cn(
                           "p-1.5 text-xs rounded aspect-square flex flex-col items-center justify-center",
-                          isTomorrow && "bg-orange-500 text-white font-bold",
-                          !isTomorrow && isToday(day) && "bg-accent",
+                          isRiskTarget && "bg-orange-500 text-white font-bold",
+                          !isRiskTarget && isToday(day) && "bg-accent",
                           !isCurrentMonth && "text-muted-foreground/40"
                         )}
                       >
@@ -1156,7 +1163,7 @@ export default function NutricaoConfirmacao() {
                           <div className="flex gap-0.5 mt-0.5">
                             <div className={cn(
                               "w-1.5 h-1.5 rounded-full",
-                              isTomorrow ? "bg-white" : "bg-muted-foreground/40"
+                              isRiskTarget ? "bg-white" : "bg-muted-foreground/40"
                             )} />
                           </div>
                         )}
