@@ -83,6 +83,7 @@ export type Database = {
       appointments: {
         Row: {
           address: string | null
+          aguardando_confirmação: boolean | null
           confirmacaoEnviada: boolean | null
           created_at: string | null
           duracao: number | null
@@ -103,6 +104,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          aguardando_confirmação?: boolean | null
           confirmacaoEnviada?: boolean | null
           created_at?: string | null
           duracao?: number | null
@@ -123,6 +125,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          aguardando_confirmação?: boolean | null
           confirmacaoEnviada?: boolean | null
           created_at?: string | null
           duracao?: number | null
