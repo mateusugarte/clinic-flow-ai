@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Plus, Clock, DollarSign, Tag, Trash2, User, Edit, FlaskConical, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, Clock, DollarSign, Tag, Trash2, User, Edit, FlaskConical, AlertTriangle, ShieldAlert, CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,7 @@ export default function Servicos() {
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editData, setEditData] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" as typeof categories[number], products_used: "", contraindications: "", possible_reactions: "" });
+  const [formData, setFormData] = useState({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" as typeof categories[number], products_used: "", contraindications: "", possible_reactions: "", payment_methods: "" });
 
   const { data: services } = useQuery({
     queryKey: ["services", user?.id],
@@ -60,7 +60,7 @@ export default function Servicos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["services"] });
       setIsNewOpen(false);
-      setFormData({ name: "", description: "", duration: 30, price: 0, category: "Preventivo", products_used: "", contraindications: "", possible_reactions: "" });
+      setFormData({ name: "", description: "", duration: 30, price: 0, category: "Preventivo", products_used: "", contraindications: "", possible_reactions: "", payment_methods: "" });
       toast({ title: "Serviço criado com sucesso!" });
     },
     onError: () => toast({ variant: "destructive", title: "Erro ao criar serviço" }),
@@ -159,6 +159,10 @@ export default function Servicos() {
                 <Label className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" />Possíveis Reações</Label>
                 <Textarea value={formData.possible_reactions} onChange={(e) => setFormData({ ...formData, possible_reactions: e.target.value })} placeholder="Ex: Vermelhidão, inchaço temporário..." rows={2} />
               </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-emerald-500" />Formas de Pagamento</Label>
+                <Textarea value={formData.payment_methods} onChange={(e) => setFormData({ ...formData, payment_methods: e.target.value })} placeholder="Ex: PIX, cartão de crédito em até 12x, dinheiro..." rows={2} />
+              </div>
               <Button onClick={() => createService.mutate()} disabled={!formData.name || !formData.duration || createService.isPending} className="w-full gradient-primary">Criar Serviço</Button>
             </div>
           </DialogContent>
@@ -217,7 +221,11 @@ export default function Servicos() {
                   <Label className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" />Possíveis Reações</Label>
                   <Textarea value={editData.possible_reactions || ""} onChange={(e) => setEditData({ ...editData, possible_reactions: e.target.value })} rows={2} />
                 </div>
-                <Button onClick={() => updateService.mutate({ id: selectedService.id, data: { name: editData.name, description: editData.description, duration: editData.duration, price: editData.price, category: editData.category, products_used: editData.products_used, contraindications: editData.contraindications, possible_reactions: editData.possible_reactions } })} className="w-full gradient-primary">Salvar</Button>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-emerald-500" />Formas de Pagamento</Label>
+                  <Textarea value={editData.payment_methods || ""} onChange={(e) => setEditData({ ...editData, payment_methods: e.target.value })} rows={2} />
+                </div>
+                <Button onClick={() => updateService.mutate({ id: selectedService.id, data: { name: editData.name, description: editData.description, duration: editData.duration, price: editData.price, category: editData.category, products_used: editData.products_used, contraindications: editData.contraindications, possible_reactions: editData.possible_reactions, payment_methods: editData.payment_methods } })} className="w-full gradient-primary">Salvar</Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -248,6 +256,12 @@ export default function Servicos() {
                   <div className="p-3 bg-destructive/5 rounded-lg border border-destructive/10">
                     <Label className="text-xs flex items-center gap-1.5 text-destructive"><AlertTriangle className="h-3.5 w-3.5" />Possíveis Reações</Label>
                     <p className="text-sm mt-1">{selectedService.possible_reactions}</p>
+                  </div>
+                )}
+                {selectedService.payment_methods && (
+                  <div className="p-3 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                    <Label className="text-xs flex items-center gap-1.5 text-emerald-600"><CreditCard className="h-3.5 w-3.5" />Formas de Pagamento</Label>
+                    <p className="text-sm mt-1">{selectedService.payment_methods}</p>
                   </div>
                 )}
                 
