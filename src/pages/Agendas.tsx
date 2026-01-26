@@ -480,7 +480,7 @@ export default function Agendas() {
       </FadeIn>
 
       {/* Grid Layout */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-y-auto">
+      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
         {/* Main Calendar */}
         <Card className="col-span-12 lg:col-span-5 shadow-card flex flex-col min-h-[380px]">
           <CardHeader className="pb-2 flex-shrink-0">
@@ -524,7 +524,7 @@ export default function Agendas() {
         </Card>
 
         {/* Day Appointments Card */}
-        <Card className="col-span-12 lg:col-span-4 shadow-card flex flex-col">
+        <Card className="col-span-12 lg:col-span-4 shadow-card flex flex-col min-h-0 overflow-hidden">
           <CardHeader className="pb-2 flex-shrink-0">
             <CardTitle className="text-sm flex items-center gap-2">
               <CalendarIcon className="h-4 w-4 text-primary" />
@@ -539,7 +539,7 @@ export default function Agendas() {
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto space-y-2">
+          <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-2">
             {(() => {
               const displayAppointments = selectedDay ? getAppointmentsForDay(selectedDay) : todaysAppointments;
               return displayAppointments.length > 0 ? displayAppointments.map((apt) => (
