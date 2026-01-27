@@ -29,6 +29,7 @@ export type Database = {
           id: string
           instance_name: string | null
           negative_constraints: string | null
+          nicho: string | null
           opening_hours: string | null
           owner_name: string | null
           support_phone: string | null
@@ -50,6 +51,7 @@ export type Database = {
           id?: string
           instance_name?: string | null
           negative_constraints?: string | null
+          nicho?: string | null
           opening_hours?: string | null
           owner_name?: string | null
           support_phone?: string | null
@@ -71,6 +73,7 @@ export type Database = {
           id?: string
           instance_name?: string | null
           negative_constraints?: string | null
+          nicho?: string | null
           opening_hours?: string | null
           owner_name?: string | null
           support_phone?: string | null
@@ -173,6 +176,7 @@ export type Database = {
           agendamentoFeito: boolean | null
           created_at: string | null
           email: string | null
+          falha: boolean | null
           ia: string | null
           id: string
           last_interaction: string | null
@@ -190,6 +194,7 @@ export type Database = {
           agendamentoFeito?: boolean | null
           created_at?: string | null
           email?: string | null
+          falha?: boolean | null
           ia?: string | null
           id?: string
           last_interaction?: string | null
@@ -207,6 +212,7 @@ export type Database = {
           agendamentoFeito?: boolean | null
           created_at?: string | null
           email?: string | null
+          falha?: boolean | null
           ia?: string | null
           id?: string
           last_interaction?: string | null
