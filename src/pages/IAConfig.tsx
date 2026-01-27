@@ -21,6 +21,7 @@ export default function IAConfig() {
 
   const [formData, setFormData] = useState({
     clinic_name: "", agent_name: "", owner_name: "", support_phone: "", connected_phone: "",
+    nicho: "",
     opening_hours_start_day: "seg",
     opening_hours_end_day: "sex",
     opening_hours_start_time: "08:00",
@@ -82,6 +83,7 @@ export default function IAConfig() {
       setFormData({
         clinic_name: config.clinic_name || "", agent_name: config.agent_name || "", owner_name: config.owner_name || "",
         support_phone: config.support_phone || "", connected_phone: removePrefix(config.connected_phone),
+        nicho: config.nicho || "",
         opening_hours_start_day: parsedHours.startDay,
         opening_hours_end_day: parsedHours.endDay,
         opening_hours_start_time: parsedHours.startTime,
@@ -117,6 +119,7 @@ export default function IAConfig() {
         agent_name: formData.agent_name,
         owner_name: formData.owner_name,
         support_phone: formData.support_phone,
+        nicho: formData.nicho,
         addresses: formData.addresses,
         negative_constraints: formData.negative_constraints,
         delay_policy: formData.delay_policy,
@@ -182,9 +185,10 @@ export default function IAConfig() {
               <div className="space-y-2"><Label className="text-xs">Nome da Clínica</Label><Input value={formData.clinic_name} onChange={(e) => setFormData({ ...formData, clinic_name: e.target.value })} placeholder="Clínica Exemplo" /></div>
               <div className="space-y-2"><Label className="text-xs">Nome do Agente</Label><Input value={formData.agent_name} onChange={(e) => setFormData({ ...formData, agent_name: e.target.value })} placeholder="Sofia" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2"><Label className="text-xs">Proprietário</Label><Input value={formData.owner_name} onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })} placeholder="Dr. João Silva" /></div>
               <div className="space-y-2"><Label className="text-xs">Telefone de Suporte</Label><Input value={formData.support_phone} onChange={(e) => setFormData({ ...formData, support_phone: e.target.value })} placeholder="(11) 99999-9999" /></div>
+              <div className="space-y-2"><Label className="text-xs">Nicho</Label><Input value={formData.nicho} onChange={(e) => setFormData({ ...formData, nicho: e.target.value })} placeholder="Ex: Odontologia, Estética..." /></div>
             </div>
             {/* Opening Hours - Fixed Format */}
             <div className="space-y-2">
