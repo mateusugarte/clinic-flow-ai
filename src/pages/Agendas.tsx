@@ -14,7 +14,7 @@ function dayStartTs(dateKey: string) {
 function dayEndTs(dateKey: string) {
   return `${dateKey} 23:59:59+00`;
 }
-import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase, MapPin } from "lucide-react";
+import { Plus, User, Search, Edit, ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Users, Briefcase, MapPin, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import ProfessionalsTable from "@/components/ui/professionals-table";
 import { PageTransition, StaggerContainer, StaggerItem, FadeIn } from "@/components/ui/page-transition";
 import { cn } from "@/lib/utils";
@@ -210,6 +211,19 @@ export default function Agendas() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast({ title: "Status atualizado!" });
+    },
+  });
+
+  const deleteAppointment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("appointments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      setIsEditAppointmentOpen(false);
+      setEditingAppointment(null);
+      toast({ title: "Agendamento excluído!" });
     },
   });
 
@@ -847,11 +861,30 @@ export default function Agendas() {
                 <Label>Observações</Label>
                 <Textarea value={editingAppointment.notes || ""} onChange={(e) => setEditingAppointment({ ...editingAppointment, notes: e.target.value })} />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsEditAppointmentOpen(false)}>Cancelar</Button>
-                <Button className="gradient-primary" onClick={handleUpdateAppointment} disabled={updateAppointment.isPending}>
-                  {updateAppointment.isPending ? "Salvando..." : "Salvar"}
-                </Button>
+              <DialogFooter className="flex-row justify-between sm:justify-between">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-1">
+                      <Trash2 className="h-4 w-4" />Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir agendamento?</AlertDialogTitle>
+                      <AlertDialogDescription>Esta ação não pode ser desfeita. O agendamento será removido permanentemente.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteAppointment.mutate(editingAppointment.id)}>Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setIsEditAppointmentOpen(false)}>Cancelar</Button>
+                  <Button className="gradient-primary" onClick={handleUpdateAppointment} disabled={updateAppointment.isPending}>
+                    {updateAppointment.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </div>
               </DialogFooter>
             </div>
           )}
