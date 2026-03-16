@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { User, Phone, Mail, Calendar as CalendarIcon, TrendingUp, Star, Clock, Trash2 } from "lucide-react";
+import { User, Phone, Mail, Calendar as CalendarIcon, TrendingUp, Star, Clock, Trash2, ClipboardList, FileText, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,15 @@ import { DetailModal, StatusIndicator } from "@/components/ui/detail-modal";
 import { StatusSelect } from "@/components/ui/status-select";
 import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatISOToDisplay, extractTimeFromISO } from "@/lib/dateUtils";
 import { compareScheduledAt, dateKeyToLocalDate, formatDateKeyBR, getScheduledDateKey } from "@/lib/scheduledAt";
+import { FichaTemplateEditor } from "@/components/ficha/FichaTemplateEditor";
+import { FichaClienteForm } from "@/components/ficha/FichaClienteForm";
+import { FichaResumo } from "@/components/ficha/FichaResumo";
 
 type DateFilter = "7days" | "15days" | "30days" | "all";
 type AppointmentStatus = "pendente" | "confirmado" | "risco" | "cancelado" | "atendido";
@@ -37,6 +41,8 @@ export default function Clientes() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isFichaEditorOpen, setIsFichaEditorOpen] = useState(false);
+  const [fichaClienteOpen, setFichaClienteOpen] = useState<{ leadId: string; leadName: string } | null>(null);
 
   const getFilterDate = () => {
     if (dateFilter === "all") return null;
@@ -115,9 +121,7 @@ export default function Clientes() {
 
   const deleteClient = useMutation({
     mutationFn: async (leadId: string) => {
-      // First delete all appointments for this lead
       await supabase.from("appointments").delete().eq("lead_id", leadId);
-      // Then delete the lead
       const { error } = await supabase.from("leads").delete().eq("id", leadId);
       if (error) throw error;
     },
@@ -132,27 +136,33 @@ export default function Clientes() {
 
   return (
     <PageTransition className="h-full flex flex-col gap-3">
-      {/* Header - Compact */}
+      {/* Header */}
       <FadeIn direction="down" className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-lg font-bold text-foreground">Clientes</h1>
           <p className="text-xs text-muted-foreground">Leads que já realizaram agendamentos</p>
         </div>
-        <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg">
-          {dateFilters.map((f) => (
-            <Button key={f.value} variant={dateFilter === f.value ? "default" : "ghost"} size="sm" onClick={() => setDateFilter(f.value)} className={`h-6 px-2 text-xs ${dateFilter === f.value ? "" : ""}`}>{f.label}</Button>
-          ))}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setIsFichaEditorOpen(true)}>
+            <Settings className="h-3.5 w-3.5" />
+            Editar Ficha
+          </Button>
+          <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg">
+            {dateFilters.map((f) => (
+              <Button key={f.value} variant={dateFilter === f.value ? "default" : "ghost"} size="sm" onClick={() => setDateFilter(f.value)} className="h-6 px-2 text-xs">{f.label}</Button>
+            ))}
+          </div>
         </div>
       </FadeIn>
 
-      {/* Stats Row - Compact */}
+      {/* Stats Row */}
       <div className="grid grid-cols-3 gap-3 flex-shrink-0">
         <Card className="shadow-card border-0"><CardContent className="p-3 flex items-center gap-3"><TrendingUp className="h-4 w-4 text-primary" /><div><p className="text-sm font-bold truncate">{stats?.topService || "N/A"}</p><p className="text-[10px] text-muted-foreground">Serviço Popular</p></div></CardContent></Card>
         <Card className="shadow-card border-0"><CardContent className="p-3 flex items-center gap-3"><CalendarIcon className="h-4 w-4 text-primary" /><div><p className="text-sm font-bold">{stats?.topDay || "N/A"}</p><p className="text-[10px] text-muted-foreground">Dia Popular</p></div></CardContent></Card>
         <Card className="shadow-card border-0"><CardContent className="p-3 flex items-center gap-3"><Star className="h-4 w-4 text-primary" /><div><p className="text-sm font-bold">{clients?.length || 0}</p><p className="text-[10px] text-muted-foreground">Total Clientes</p></div></CardContent></Card>
       </div>
 
-      {/* Clients Grid - Fill remaining space */}
+      {/* Clients Grid */}
       <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 content-start overflow-y-auto">
         {clients?.map((client) => (
           <motion.div key={client.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -187,28 +197,47 @@ export default function Clientes() {
                 <div><Label className="text-muted-foreground text-xs">Nome</Label><p className="font-medium">{selectedClient.name}</p></div>
                 <div><Label className="text-muted-foreground text-xs">ID</Label><p className="font-mono text-sm">{selectedClient.id.slice(0, 8)}</p></div>
               </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
-                    <AlertDialogDescription>Isso excluirá o cliente e todos os seus agendamentos. Esta ação não pode ser desfeita.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => deleteClient.mutate(selectedClient.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    setFichaClienteOpen({ leadId: selectedClient.id, leadName: selectedClient.name });
+                  }}
+                  title="Ficha de Anamnese"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+                      <AlertDialogDescription>Isso excluirá o cliente e todos os seus agendamentos. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteClient.mutate(selectedClient.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-muted-foreground text-xs">Telefone</Label><p>{selectedClient.phone}</p></div>
               <div><Label className="text-muted-foreground text-xs">Email</Label><p>{selectedClient.email || "Não informado"}</p></div>
             </div>
+
+            {/* Ficha de Anamnese Summary */}
+            <div className="border-t pt-4">
+              <FichaResumo leadId={selectedClient.id} />
+            </div>
+
             <div className="border-t pt-4">
               <Label className="text-muted-foreground text-xs">Histórico de Agendamentos</Label>
               <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
@@ -220,10 +249,10 @@ export default function Clientes() {
                         <p className="font-medium text-sm">{apt.serviceName || "Serviço"}</p>
                         <p className="text-xs text-muted-foreground">{formatISOToDisplay(apt.scheduled_at)}</p>
                       </div>
-                      <StatusSelect 
-                        value={apt.status as AppointmentStatus} 
-                        onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })} 
-                        size="sm" 
+                      <StatusSelect
+                        value={apt.status as AppointmentStatus}
+                        onValueChange={(status) => updateAppointmentStatus.mutate({ id: apt.id, status })}
+                        size="sm"
                       />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -259,12 +288,12 @@ export default function Clientes() {
               <StatusIndicator status={selectedAppointment.status as AppointmentStatus} size="lg" />
               <span className="font-medium text-lg">{statusLabels[selectedAppointment.status as AppointmentStatus]}</span>
               <div className="ml-auto">
-                <StatusSelect 
-                  value={selectedAppointment.status as AppointmentStatus} 
+                <StatusSelect
+                  value={selectedAppointment.status as AppointmentStatus}
                   onValueChange={(status) => {
                     updateAppointmentStatus.mutate({ id: selectedAppointment.id, status });
                     setSelectedAppointment({ ...selectedAppointment, status });
-                  }} 
+                  }}
                 />
               </div>
             </div>
@@ -280,6 +309,32 @@ export default function Clientes() {
           </div>
         )}
       </DetailModal>
+
+      {/* Ficha Template Editor Dialog */}
+      <Dialog open={isFichaEditorOpen} onOpenChange={setIsFichaEditorOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Configurar Ficha de Anamnese</DialogTitle>
+          </DialogHeader>
+          <FichaTemplateEditor onClose={() => setIsFichaEditorOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Ficha Cliente Form Dialog */}
+      <Dialog open={!!fichaClienteOpen} onOpenChange={(open) => !open && setFichaClienteOpen(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Ficha de Anamnese</DialogTitle>
+          </DialogHeader>
+          {fichaClienteOpen && (
+            <FichaClienteForm
+              leadId={fichaClienteOpen.leadId}
+              leadName={fichaClienteOpen.leadName}
+              onClose={() => setFichaClienteOpen(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </PageTransition>
   );
 }
