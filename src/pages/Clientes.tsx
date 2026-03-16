@@ -4,8 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { User, Phone, Mail, Calendar as CalendarIcon, TrendingUp, Star, Clock, Trash2, ClipboardList, FileText, Settings } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User, Phone, Calendar as CalendarIcon, TrendingUp, Star, Trash2, ClipboardList, Settings } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,13 +14,10 @@ import { StatusSelect } from "@/components/ui/status-select";
 import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useNavigate as _nav } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, startOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { formatISOToDisplay, extractTimeFromISO } from "@/lib/dateUtils";
+import { subDays, startOfDay } from "date-fns";
+import { formatISOToDisplay } from "@/lib/dateUtils";
 import { compareScheduledAt, dateKeyToLocalDate, formatDateKeyBR, getScheduledDateKey } from "@/lib/scheduledAt";
-import { FichaTemplateEditor } from "@/components/ficha/FichaTemplateEditor";
 import { FichaClienteForm } from "@/components/ficha/FichaClienteForm";
 import { FichaResumo } from "@/components/ficha/FichaResumo";
 
@@ -37,13 +34,13 @@ const dateFilters: { label: string; value: DateFilter }[] = [
 export default function Clientes() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-  const [isFichaEditorOpen, setIsFichaEditorOpen] = useState(false);
   const [fichaClienteOpen, setFichaClienteOpen] = useState<{ leadId: string; leadName: string } | null>(null);
 
   const getFilterDate = () => {
