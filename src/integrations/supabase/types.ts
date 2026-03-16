@@ -280,11 +280,14 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean | null
+          is_seasonal: boolean | null
           name: string
           payment_methods: string | null
           possible_reactions: string | null
           price: number
           products_used: string | null
+          seasonal_end_date: string | null
+          seasonal_start_date: string | null
           user_id: string
         }
         Insert: {
@@ -296,11 +299,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_seasonal?: boolean | null
           name: string
           payment_methods?: string | null
           possible_reactions?: string | null
           price: number
           products_used?: string | null
+          seasonal_end_date?: string | null
+          seasonal_start_date?: string | null
           user_id: string
         }
         Update: {
@@ -312,11 +318,14 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_seasonal?: boolean | null
           name?: string
           payment_methods?: string | null
           possible_reactions?: string | null
           price?: number
           products_used?: string | null
+          seasonal_end_date?: string | null
+          seasonal_start_date?: string | null
           user_id?: string
         }
         Relationships: []
