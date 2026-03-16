@@ -137,8 +137,8 @@ export function FichaClienteForm({ leadId, leadName, onClose }: FichaClienteForm
   const filledCount = Object.values(respostas).filter((v) => v !== "" && v !== false && v !== undefined).length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="flex h-[75vh] min-h-0 flex-col space-y-4">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <ClipboardList className="h-5 w-5 text-primary" />
         <div>
           <h3 className="font-semibold text-foreground">Ficha de Anamnese</h3>
@@ -146,19 +146,19 @@ export function FichaClienteForm({ leadId, leadName, onClose }: FichaClienteForm
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <Badge variant="secondary" className="text-xs">
           {filledCount}/{activePerguntas.length} preenchido(s)
         </Badge>
       </div>
 
-      <ScrollArea className="h-[400px] pr-2">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         <div className="space-y-5">
           {activeCategorias.map((cat) => {
             const perguntas = activePerguntas.filter((p) => p.categoria === cat);
             return (
               <div key={cat} className="space-y-3">
-                <div className="flex items-center gap-2 sticky top-0 bg-background py-1 z-10">
+                <div className="sticky top-0 z-10 flex items-center gap-2 bg-background py-1">
                   <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                   <Label className="text-sm font-semibold text-foreground">{cat}</Label>
                 </div>
@@ -171,9 +171,9 @@ export function FichaClienteForm({ leadId, leadName, onClose }: FichaClienteForm
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="flex justify-end gap-2 pt-2 border-t border-border">
+      <div className="flex justify-end gap-2 pt-2 border-t border-border flex-shrink-0">
         {onClose && (
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancelar
