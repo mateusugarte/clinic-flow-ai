@@ -14,6 +14,7 @@ import { StatusSelect } from "@/components/ui/status-select";
 import { PageTransition, FadeIn } from "@/components/ui/page-transition";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useNavigate as _nav } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
