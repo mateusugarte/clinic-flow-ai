@@ -142,7 +142,7 @@ export default function Clientes() {
           <p className="text-xs text-muted-foreground">Leads que já realizaram agendamentos</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setIsFichaEditorOpen(true)}>
+          <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => navigate("/ficha-config")}>
             <Settings className="h-3.5 w-3.5" />
             Editar Ficha
           </Button>
