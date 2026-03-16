@@ -189,8 +189,8 @@ export default function FichaConfig() {
             </CardTitle>
             <p className="text-[10px] text-muted-foreground">Clique nas tags para incluir ou excluir da ficha</p>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0 p-0">
-            <ScrollArea className="h-full px-4 pb-4">
+          <CardContent className="flex-1 min-h-0 overflow-hidden p-0">
+            <div className="h-full overflow-y-auto px-4 pb-4">
               <div className="space-y-4">
                 {FICHA_CATEGORIAS.map((cat) => {
                   const perguntas = getPerguntasByCategoria(cat);
