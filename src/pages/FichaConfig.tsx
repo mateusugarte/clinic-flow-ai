@@ -244,7 +244,7 @@ export default function FichaConfig() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </CardContent>
         </Card>
       </div>
