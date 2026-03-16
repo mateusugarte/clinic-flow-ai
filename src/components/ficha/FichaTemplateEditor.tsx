@@ -80,7 +80,7 @@ export function FichaTemplateEditor({ onClose }: { onClose?: () => void }) {
         Selecione as perguntas que deseja incluir na ficha. As não selecionadas serão marcadas como "Não pedir".
       </p>
 
-      <ScrollArea className="h-[400px] pr-2">
+      <ScrollArea className="h-[60vh] max-h-[500px] pr-2">
         <div className="space-y-4">
           {FICHA_CATEGORIAS.map((cat) => {
             const perguntas = getPerguntasByCategoria(cat);
