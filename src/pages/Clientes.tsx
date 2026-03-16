@@ -309,15 +309,6 @@ export default function Clientes() {
         )}
       </DetailModal>
 
-      {/* Ficha Template Editor Dialog */}
-      <Dialog open={isFichaEditorOpen} onOpenChange={setIsFichaEditorOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Configurar Ficha de Anamnese</DialogTitle>
-          </DialogHeader>
-          <FichaTemplateEditor onClose={() => setIsFichaEditorOpen(false)} />
-        </DialogContent>
-      </Dialog>
 
       {/* Ficha Cliente Form Dialog */}
       <Dialog open={!!fichaClienteOpen} onOpenChange={(open) => !open && setFichaClienteOpen(null)}>
