@@ -171,6 +171,65 @@ export type Database = {
           },
         ]
       }
+      ficha_config: {
+        Row: {
+          created_at: string | null
+          id: string
+          perguntas_ativas: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          perguntas_ativas?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          perguntas_ativas?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ficha_respostas: {
+        Row: {
+          created_at: string | null
+          id: string
+          lead_id: string
+          respostas: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lead_id: string
+          respostas?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lead_id?: string
+          respostas?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ficha_respostas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           agendamentoFeito: boolean | null
