@@ -17,6 +17,7 @@ import IAConfig from "./pages/IAConfig";
 import Relatorios from "./pages/Relatorios";
 import NutricaoConfirmacao from "./pages/NutricaoConfirmacao";
 import FollowUp from "./pages/FollowUp";
+import FichaConfig from "./pages/FichaConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
