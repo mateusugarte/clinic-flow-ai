@@ -135,8 +135,12 @@ export default function Servicos() {
           <h1 className="text-lg font-bold text-foreground">Serviços</h1>
           <p className="text-xs text-muted-foreground">Gerencie os serviços da sua clínica</p>
         </div>
-        <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
-          <DialogTrigger asChild><Button size="sm" className="h-8 gradient-primary"><Plus className="h-4 w-4 mr-1.5" />Novo</Button></DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8" onClick={() => setIsCampanhasOpen(true)}>
+            <Megaphone className="h-4 w-4 mr-1.5" />Campanhas
+          </Button>
+          <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+            <DialogTrigger asChild><Button size="sm" className="h-8 gradient-primary"><Plus className="h-4 w-4 mr-1.5" />Novo</Button></DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Novo Serviço</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
