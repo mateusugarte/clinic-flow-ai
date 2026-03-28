@@ -174,6 +174,7 @@ export default function Servicos() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </FadeIn>
 
       {/* Services Grid - Fill remaining space */}
