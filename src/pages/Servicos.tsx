@@ -189,13 +189,37 @@ export default function Servicos() {
                       <h3 className={`font-semibold text-sm truncate ${!service.is_available ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{service.name}</h3>
                     </div>
                     {service.category && <Badge variant="secondary" className="mt-1 text-[10px]"><Tag className="h-2.5 w-2.5 mr-1" />{service.category}</Badge>}
+                    {service.is_seasonal && (() => {
+                      const now = new Date();
+                      const isActive = service.seasonal_start_date && service.seasonal_end_date && !isBefore(now, parseISO(service.seasonal_start_date)) && !isAfter(now, parseISO(service.seasonal_end_date));
+                      return isActive ? (
+                        <Badge className="mt-1 text-[10px] bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
+                          <Megaphone className="h-2.5 w-2.5 mr-1" />Campanha
+                        </Badge>
+                      ) : null;
+                    })()}
                   </div>
                   <Switch checked={service.is_available ?? true} onCheckedChange={(checked) => { toggleAvailability.mutate({ id: service.id, is_available: checked }); }} onClick={(e) => e.stopPropagation()} />
                 </div>
                 {service.description && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{service.description}</p>}
                 <div className="flex items-center justify-between pt-2 border-t border-border">
                   <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{service.duration}min</span>
-                  <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
+                  <div className="text-right">
+                    {service.has_promotion && service.promotional_price && service.is_seasonal && (() => {
+                      const now = new Date();
+                      const isActive = service.seasonal_start_date && service.seasonal_end_date && !isBefore(now, parseISO(service.seasonal_start_date)) && !isAfter(now, parseISO(service.seasonal_end_date));
+                      return isActive ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(service.price)}</span>
+                          <span className="font-semibold text-primary text-sm">{formatPrice(service.promotional_price)}</span>
+                        </div>
+                      ) : (
+                        <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
+                      );
+                    })() || (
+                      <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
