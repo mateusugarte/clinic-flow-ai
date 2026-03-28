@@ -230,6 +230,39 @@ export type Database = {
           },
         ]
       }
+      fila_envio: {
+        Row: {
+          created_at: string | null
+          id: number
+          lead_id: string | null
+          mensagem: string | null
+          scheduled_at: string | null
+          status: string | null
+          telefone: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          lead_id?: string | null
+          mensagem?: string | null
+          scheduled_at?: string | null
+          status?: string | null
+          telefone?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          lead_id?: string | null
+          mensagem?: string | null
+          scheduled_at?: string | null
+          status?: string | null
+          telefone?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           agendamentoFeito: boolean | null
@@ -241,6 +274,7 @@ export type Database = {
           last_interaction: string | null
           name: string
           notes: string | null
+          opt_out: boolean | null
           phone: string
           qualification:
             | Database["public"]["Enums"]["lead_qualification"]
@@ -259,6 +293,7 @@ export type Database = {
           last_interaction?: string | null
           name: string
           notes?: string | null
+          opt_out?: boolean | null
           phone: string
           qualification?:
             | Database["public"]["Enums"]["lead_qualification"]
@@ -277,6 +312,7 @@ export type Database = {
           last_interaction?: string | null
           name?: string
           notes?: string | null
+          opt_out?: boolean | null
           phone?: string
           qualification?:
             | Database["public"]["Enums"]["lead_qualification"]
@@ -334,6 +370,7 @@ export type Database = {
           category: Database["public"]["Enums"]["service_category"] | null
           contraindications: string | null
           created_at: string | null
+          data_aviso: string | null
           description: string | null
           duration: number
           id: string
@@ -353,6 +390,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["service_category"] | null
           contraindications?: string | null
           created_at?: string | null
+          data_aviso?: string | null
           description?: string | null
           duration: number
           id?: string
@@ -372,6 +410,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["service_category"] | null
           contraindications?: string | null
           created_at?: string | null
+          data_aviso?: string | null
           description?: string | null
           duration?: number
           id?: string
