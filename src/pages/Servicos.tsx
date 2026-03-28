@@ -32,6 +32,7 @@ export default function Servicos() {
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [isCampanhasOpen, setIsCampanhasOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" as typeof categories[number], products_used: "", contraindications: "", possible_reactions: "", payment_methods: "" });
 
   const { data: services } = useQuery({
