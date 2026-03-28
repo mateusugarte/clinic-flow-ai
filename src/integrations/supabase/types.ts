@@ -373,6 +373,7 @@ export type Database = {
           data_aviso: string | null
           description: string | null
           duration: number
+          has_promotion: boolean | null
           id: string
           image_url: string | null
           is_available: boolean | null
@@ -382,6 +383,7 @@ export type Database = {
           possible_reactions: string | null
           price: number
           products_used: string | null
+          promotional_price: number | null
           seasonal_end_date: string | null
           seasonal_start_date: string | null
           user_id: string
@@ -393,6 +395,7 @@ export type Database = {
           data_aviso?: string | null
           description?: string | null
           duration: number
+          has_promotion?: boolean | null
           id?: string
           image_url?: string | null
           is_available?: boolean | null
@@ -402,6 +405,7 @@ export type Database = {
           possible_reactions?: string | null
           price: number
           products_used?: string | null
+          promotional_price?: number | null
           seasonal_end_date?: string | null
           seasonal_start_date?: string | null
           user_id: string
@@ -413,6 +417,7 @@ export type Database = {
           data_aviso?: string | null
           description?: string | null
           duration?: number
+          has_promotion?: boolean | null
           id?: string
           image_url?: string | null
           is_available?: boolean | null
@@ -422,6 +427,7 @@ export type Database = {
           possible_reactions?: string | null
           price?: number
           products_used?: string | null
+          promotional_price?: number | null
           seasonal_end_date?: string | null
           seasonal_start_date?: string | null
           user_id?: string
