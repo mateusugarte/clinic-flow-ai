@@ -327,6 +327,8 @@ export default function Servicos() {
           </div>
         )}
       </DetailModal>
+
+      <CampanhasDialog open={isCampanhasOpen} onOpenChange={setIsCampanhasOpen} />
     </PageTransition>
   );
 }
