@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { Plus, Clock, DollarSign, Tag, Trash2, User, Edit, FlaskConical, AlertTriangle, ShieldAlert, CreditCard } from "lucide-react";
+import { Plus, Clock, DollarSign, Tag, Trash2, User, Edit, FlaskConical, AlertTriangle, ShieldAlert, CreditCard, Megaphone, Percent } from "lucide-react";
+import { CampanhasDialog } from "@/components/campanhas/CampanhasDialog";
+import { isBefore, isAfter, parseISO } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,7 @@ export default function Servicos() {
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [isCampanhasOpen, setIsCampanhasOpen] = useState(false);
   const [formData, setFormData] = useState({ name: "", description: "", duration: 30, price: 0, category: "Preventivo" as typeof categories[number], products_used: "", contraindications: "", possible_reactions: "", payment_methods: "" });
 
   const { data: services } = useQuery({
@@ -132,8 +135,12 @@ export default function Servicos() {
           <h1 className="text-lg font-bold text-foreground">Serviços</h1>
           <p className="text-xs text-muted-foreground">Gerencie os serviços da sua clínica</p>
         </div>
-        <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
-          <DialogTrigger asChild><Button size="sm" className="h-8 gradient-primary"><Plus className="h-4 w-4 mr-1.5" />Novo</Button></DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8" onClick={() => setIsCampanhasOpen(true)}>
+            <Megaphone className="h-4 w-4 mr-1.5" />Campanhas
+          </Button>
+          <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
+            <DialogTrigger asChild><Button size="sm" className="h-8 gradient-primary"><Plus className="h-4 w-4 mr-1.5" />Novo</Button></DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Novo Serviço</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-4">
@@ -167,6 +174,7 @@ export default function Servicos() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </FadeIn>
 
       {/* Services Grid - Fill remaining space */}
@@ -181,13 +189,37 @@ export default function Servicos() {
                       <h3 className={`font-semibold text-sm truncate ${!service.is_available ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{service.name}</h3>
                     </div>
                     {service.category && <Badge variant="secondary" className="mt-1 text-[10px]"><Tag className="h-2.5 w-2.5 mr-1" />{service.category}</Badge>}
+                    {service.is_seasonal && (() => {
+                      const now = new Date();
+                      const isActive = service.seasonal_start_date && service.seasonal_end_date && !isBefore(now, parseISO(service.seasonal_start_date)) && !isAfter(now, parseISO(service.seasonal_end_date));
+                      return isActive ? (
+                        <Badge className="mt-1 text-[10px] bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
+                          <Megaphone className="h-2.5 w-2.5 mr-1" />Campanha
+                        </Badge>
+                      ) : null;
+                    })()}
                   </div>
                   <Switch checked={service.is_available ?? true} onCheckedChange={(checked) => { toggleAvailability.mutate({ id: service.id, is_available: checked }); }} onClick={(e) => e.stopPropagation()} />
                 </div>
                 {service.description && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{service.description}</p>}
                 <div className="flex items-center justify-between pt-2 border-t border-border">
                   <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{service.duration}min</span>
-                  <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
+                  <div className="text-right">
+                    {service.has_promotion && service.promotional_price && service.is_seasonal && (() => {
+                      const now = new Date();
+                      const isActive = service.seasonal_start_date && service.seasonal_end_date && !isBefore(now, parseISO(service.seasonal_start_date)) && !isAfter(now, parseISO(service.seasonal_end_date));
+                      return isActive ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(service.price)}</span>
+                          <span className="font-semibold text-primary text-sm">{formatPrice(service.promotional_price)}</span>
+                        </div>
+                      ) : (
+                        <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
+                      );
+                    })() || (
+                      <span className="font-semibold text-primary text-sm flex items-center gap-1"><DollarSign className="h-3 w-3" />{formatPrice(service.price)}</span>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -295,6 +327,8 @@ export default function Servicos() {
           </div>
         )}
       </DetailModal>
+
+      <CampanhasDialog open={isCampanhasOpen} onOpenChange={setIsCampanhasOpen} />
     </PageTransition>
   );
 }
