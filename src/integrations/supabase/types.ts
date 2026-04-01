@@ -271,6 +271,7 @@ export type Database = {
           falha: boolean | null
           ia: string | null
           id: string
+          last_campaign_sent: boolean | null
           last_interaction: string | null
           name: string
           notes: string | null
@@ -290,6 +291,7 @@ export type Database = {
           falha?: boolean | null
           ia?: string | null
           id?: string
+          last_campaign_sent?: boolean | null
           last_interaction?: string | null
           name: string
           notes?: string | null
@@ -309,6 +311,7 @@ export type Database = {
           falha?: boolean | null
           ia?: string | null
           id?: string
+          last_campaign_sent?: boolean | null
           last_interaction?: string | null
           name?: string
           notes?: string | null
