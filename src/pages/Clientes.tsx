@@ -120,7 +120,10 @@ export default function Clientes() {
 
   const deleteClient = useMutation({
     mutationFn: async (leadId: string) => {
-      await supabase.from("appointments").delete().eq("lead_id", leadId);
+      const { error: fichaError } = await supabase.from("ficha_respostas").delete().eq("lead_id", leadId);
+      if (fichaError) throw fichaError;
+      const { error: aptError } = await supabase.from("appointments").delete().eq("lead_id", leadId);
+      if (aptError) throw aptError;
       const { error } = await supabase.from("leads").delete().eq("id", leadId);
       if (error) throw error;
     },
@@ -130,7 +133,10 @@ export default function Clientes() {
       setSelectedClient(null);
       toast({ title: "Cliente excluído!" });
     },
-    onError: () => toast({ variant: "destructive", title: "Erro ao excluir" }),
+    onError: (err) => {
+      console.error("Erro ao excluir cliente:", err);
+      toast({ variant: "destructive", title: "Erro ao excluir cliente" });
+    },
   });
 
   return (
